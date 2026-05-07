@@ -1,7 +1,7 @@
 {
   "name": "@amdahl/cookbook",
   "version": "0.1.0",
-  "description": "Runnable recipes for the Amdahl platform. REST + MCP examples in TypeScript.",
+  "description": "Runnable MCP recipes for the Amdahl platform. TypeScript examples for the Model Context Protocol surface.",
   "private": false,
   "license": "MIT",
   "homepage": "https://docs.amdahl.co",
@@ -17,16 +17,16 @@
   },
   "type": "module",
   "scripts": {
-    "run": "tsx scripts/run-recipe.ts",
     "lint": "tsc --noEmit",
-    "recipe:hello-world": "tsx recipes/01-hello-world.ts",
-    "recipe:create-session": "tsx recipes/02-create-a-session.ts",
-    "recipe:build-blueprint": "tsx recipes/03-build-a-blueprint.ts",
-    "recipe:stream-run": "tsx recipes/04-stream-an-agent-run.ts",
-    "recipe:publish-artifact": "tsx recipes/05-publish-an-artifact.ts"
+    "recipe:01": "tsx recipes/01-connect-and-list-tools.ts",
+    "recipe:02": "tsx recipes/02-search-amdahl-docs.ts",
+    "recipe:03": "tsx recipes/03-ask-amdahl.ts",
+    "recipe:04": "tsx recipes/04-tenant-mcp-list-artifacts.ts",
+    "recipe:05": "tsx recipes/05-claude-with-amdahl-mcp.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "dotenv": "^16.4.5",
     "tsx": "^4.19.0"
   },
@@ -38,8 +38,8 @@
     "amdahl",
     "cookbook",
     "recipes",
-    "platform-api",
     "mcp",
+    "model-context-protocol",
     "typescript"
   ]
 }

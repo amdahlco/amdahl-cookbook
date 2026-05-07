@@ -1,45 +1,47 @@
 # Amdahl Cookbook
 
-Runnable code examples for [Amdahl](https://amdahl.co), the customer intelligence platform. Each recipe is a self-contained TypeScript file that demonstrates a single end-to-end flow against the public Platform API.
+Runnable MCP recipes for [Amdahl](https://amdahl.co), the customer intelligence platform. Each recipe is a self-contained TypeScript file that demonstrates a single end-to-end flow against the Amdahl Model Context Protocol surface.
 
-This is the companion repository to the [Amdahl docs](https://docs.amdahl.co). For conceptual material and full API reference, start there. For copy-paste-and-run examples, you are in the right place.
+This is the companion repository to the [Amdahl docs](https://docs.amdahl.co). For conceptual material and full reference, start there. For copy-paste-and-run examples, you are in the right place.
 
 ## What is Amdahl
 
-Amdahl is a customer intelligence platform built around three primitives: **sessions** (a unit of work), **substrate** (the context layer that holds your data), and **artifacts** (the universal output format). Anything you can build through the dashboard you can also build through the Platform API or via the MCP server.
+Amdahl is a customer intelligence platform built around three primitives: **sessions** (a unit of work), **substrate** (the context layer that holds your data), and **artifacts** (the universal output format). The integration surface is the Model Context Protocol, served at two endpoints:
 
-The platform is API-first. Recipes in this repo are written in raw TypeScript using `fetch`, so they read the same way regardless of language ecosystem. Port them to Python, Go, or anything else by translating the HTTP calls.
+- **Public docs MCP** at `https://app.amdahl.co/mcp/public` — no auth, two read-only tools (`search`, `ask`) for querying Amdahl's docs corpus. Connect from Claude Desktop, Cursor, or any MCP client without an account.
+- **Tenant MCP** at `https://app.amdahl.co/mcp` — full surface (data, context, artifacts, knowledge_base, settings, authors, resources, external_search), API key required. This is the integration target for agents that work inside your business.
+
+> A REST surface is on the roadmap but not part of the public release yet. When it ships, REST recipes will land here too.
 
 ## What is a recipe
 
 A recipe is a single TypeScript file that:
 
-- Shows one focused capability (auth, session lifecycle, blueprint authoring, streaming, artifact publishing)
+- Shows one focused capability (connect, search, ask, list artifacts, build an agent loop)
 - Loads configuration from environment variables (no hardcoded secrets)
-- Uses raw `fetch` against the Platform API at `https://app.amdahl.co/api/platform/v1/`
-- Cleans up any test data it creates
+- Uses the official [`@modelcontextprotocol/sdk`](https://www.npmjs.com/package/@modelcontextprotocol/sdk) client
+- Operates read-only or cleans up any test data it creates
 - Prints a clear success or failure message
-- Is verified weekly by an automated cron run against the staging API
 
-Recipes are intentionally minimal. They favor clarity over completeness. If you want a production-grade pattern (retry, backoff, idempotency keys), see the [Amdahl docs guides section](https://docs.amdahl.co/guides).
+Recipes are intentionally minimal. They favor clarity over completeness. If you want a production-grade pattern (retry, backoff, observability), see the [Amdahl docs guides section](https://docs.amdahl.co/guides).
 
 ## Recipes in this repo
 
-| File | What it shows |
-|---|---|
-| [`recipes/01-hello-world.ts`](recipes/01-hello-world.ts) | Verify auth and connectivity by listing sessions |
-| [`recipes/02-create-a-session.ts`](recipes/02-create-a-session.ts) | Full session lifecycle: create, list, get, delete |
-| [`recipes/03-build-a-blueprint.ts`](recipes/03-build-a-blueprint.ts) | Author and run a custom agent blueprint via REST |
-| [`recipes/04-stream-an-agent-run.ts`](recipes/04-stream-an-agent-run.ts) | Stream tokens from a long agent run via Server-Sent Events |
-| [`recipes/05-publish-an-artifact.ts`](recipes/05-publish-an-artifact.ts) | Create an artifact, version it, share it publicly |
+| File | What it shows | Auth |
+|---|---|---|
+| [`recipes/01-connect-and-list-tools.ts`](recipes/01-connect-and-list-tools.ts) | Connect to the public MCP, list every exposed tool | none |
+| [`recipes/02-search-amdahl-docs.ts`](recipes/02-search-amdahl-docs.ts) | Call the `search` tool against the docs corpus | none |
+| [`recipes/03-ask-amdahl.ts`](recipes/03-ask-amdahl.ts) | Call the `ask` tool for a Claude-grounded answer with citations | none |
+| [`recipes/04-tenant-mcp-list-artifacts.ts`](recipes/04-tenant-mcp-list-artifacts.ts) | Connect to the tenant MCP with an API key, list your artifacts via the `read_resource` meta-tool | API key |
+| [`recipes/05-claude-with-amdahl-mcp.ts`](recipes/05-claude-with-amdahl-mcp.ts) | Wire the Anthropic Messages API to the Amdahl MCP so Claude can call Amdahl tools | Anthropic key |
 
 ## How to run
 
 You will need:
 
 - Node.js 20 or newer
-- An Amdahl API key (generate one at [app.amdahl.co/settings/api-keys](https://app.amdahl.co/settings/api-keys))
-- Your Amdahl business UUID (find it in the console URL)
+- For recipes 04+: an Amdahl MCP API key (generate one in the [Amdahl Console](https://app.amdahl.co) under Team Settings → MCP Keys)
+- For recipe 05: an Anthropic API key
 
 Setup:
 
@@ -48,55 +50,54 @@ git clone https://github.com/amdahlco/amdahl-cookbook.git
 cd amdahl-cookbook
 npm install
 cp .env.example .env
-# edit .env and fill in AMDAHL_API_KEY and AMDAHL_BUSINESS_ID
+# edit .env and fill in keys for whichever recipes you want to run
 ```
 
 Run an individual recipe:
 
 ```bash
-npx tsx recipes/01-hello-world.ts
+npx tsx recipes/01-connect-and-list-tools.ts
 ```
 
 Or use the named npm scripts:
 
 ```bash
-npm run recipe:hello-world
-npm run recipe:create-session
-npm run recipe:build-blueprint
-npm run recipe:stream-run
-npm run recipe:publish-artifact
+npm run recipe:01
+npm run recipe:02
+npm run recipe:03
+npm run recipe:04
+npm run recipe:05
 ```
 
-Run the type checker over every recipe:
+Recipes 02, 03, and 05 accept an optional CLI argument to override the default query:
+
+```bash
+npx tsx recipes/03-ask-amdahl.ts "What scopes does mcp_customer_agent grant?"
+```
+
+Type-check every recipe:
 
 ```bash
 npm run lint
 ```
 
-## How recipes are kept fresh
-
-Every Sunday at 02:00 UTC, a GitHub Actions cron job runs each recipe against the staging API. If a recipe fails, the failure is posted to a Slack webhook and an issue is opened in this repo. This is the contract that keeps recipes from rotting silently.
-
-The runner lives at [`scripts/run-recipe.ts`](scripts/run-recipe.ts). The workflow lives at [`.github/workflows/recipe-cron.yml`](.github/workflows/recipe-cron.yml).
-
 ## How to contribute
 
-We welcome new recipes. Good candidates are focused, self-contained flows that a developer might Google for at three in the morning.
+Good recipe candidates are focused, self-contained flows that a developer might search for at three in the morning.
 
 To propose a new recipe:
 
 1. Open an issue describing the flow you want to demonstrate
 2. Fork this repo and add a new file under `recipes/` following the existing naming pattern (`NN-short-slug.ts`)
 3. Include the standard frontmatter comment block (title, description, prerequisites, expected runtime, what gets created and cleaned up, `verified` date)
-4. Make sure your recipe creates and cleans up its own test data; never operate destructively on customer data
+4. Make sure your recipe creates and cleans up its own test data; never operate destructively on real customer data
 5. Run `npm run lint` and the recipe itself end-to-end before opening a PR
-6. Open a PR; the cron will pick up your recipe on the next Sunday run
 
 For larger contributions or feedback on the docs themselves, open an issue at [github.com/amdahlco/amdahl-cookbook/issues](https://github.com/amdahlco/amdahl-cookbook/issues).
 
-## Related repos
+## Related
 
-This is the first public repo under the [amdahlco GitHub organization](https://github.com/amdahlco). Other public repos and SDKs will land here over time. For now, the integration surface is the Platform API directly, documented at [docs.amdahl.co](https://docs.amdahl.co).
+This is the first public repo under the [amdahlco GitHub organization](https://github.com/amdahlco). For the underlying spec, see the [Amdahl docs](https://docs.amdahl.co). For the Model Context Protocol itself, see [modelcontextprotocol.io](https://modelcontextprotocol.io).
 
 ## License
 
