@@ -1,0 +1,48 @@
+name: recipe-cron
+
+# Weekly verification that every recipe still runs end-to-end against the
+# staging API. Failures post to Slack via SLACK_WEBHOOK_URL.
+#
+# Sundays at 02:00 UTC. Also runnable on demand via workflow_dispatch.
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  run-recipes:
+    name: Run recipe ${{ matrix.recipe }}
+    runs-on: ubuntu-latest
+    strategy:
+      # We want to see EVERY recipe's status, even if one fails.
+      fail-fast: false
+      matrix:
+        recipe:
+          - recipes/01-hello-world.ts
+          - recipes/02-create-a-session.ts
+          - recipes/03-build-a-blueprint.ts
+          - recipes/04-stream-an-agent-run.ts
+          - recipes/05-publish-an-artifact.ts
+    env:
+      AMDAHL_API_KEY: ${{ secrets.AMDAHL_API_KEY }}
+      AMDAHL_API_BASE: ${{ secrets.AMDAHL_API_BASE }}
+      AMDAHL_BUSINESS_ID: ${{ secrets.AMDAHL_BUSINESS_ID }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run recipe with 60s timeout
+        run: npx tsx scripts/run-recipe.ts ${{ matrix.recipe }} --timeout 60
