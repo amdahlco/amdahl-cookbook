@@ -17,7 +17,7 @@ Then `/reload-plugins` (or restart Claude Code) to activate.
 
 The first time you call any Amdahl tool, Claude Code will run the standard MCP OAuth flow in your browser (RFC 9728 / 8414 / 7591 / 7009, PKCE S256). No tokens to paste, no JSON to edit.
 
-> TODO for Vin: confirm `https://mcp.amdahl.co` is the production HTTPS MCP endpoint before announcing. If the production URL differs, update `plugins/amdahl-gtm/.claude-plugin/plugin.json`.
+Docs: <https://amdahl.co/mcp>
 
 ## What you get
 
@@ -66,12 +66,32 @@ amdahl-cookbook/
             └── messaging-check.md
 ```
 
-## Publishing notes (for Vin)
+## Publishing & releases
 
-- This marketplace is private until the repo is public. Once public, the one-line install above works for anyone.
-- To submit to Anthropic's **community marketplace** (`anthropics/claude-plugins-community`): see <https://code.claude.com/docs/en/plugins#submit-your-plugin-to-the-community-marketplace>. Adds automated validation and pins each release to a commit SHA.
-- The Anthropic **official marketplace** is curated and inclusion is at Anthropic's discretion — reach out to them directly if we want to be listed there alongside `github`, `linear`, `notion`, etc.
-- Bumping the plugin version: change `version` in both `plugins/amdahl-gtm/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`. Without a version bump, users follow the latest commit SHA.
+### Community marketplace (Anthropic-hosted)
+
+The Anthropic community marketplace at `anthropics/claude-plugins-community` does **not** accept direct PRs (they are auto-closed). Submit via the official form: <https://clau.de/plugin-directory-submission>. After Anthropic's automated security scan + internal review, the marketplace's `marketplace.json` is updated nightly. Once listed, users install with:
+
+```
+/plugin marketplace add anthropics/claude-plugins-community
+/plugin install amdahl-gtm@claude-community
+```
+
+### Official curated marketplace
+
+The Anthropic **official marketplace** is curated and inclusion is at Anthropic's discretion — reach out directly to be considered alongside the canonical plugins (`github`, `linear`, `notion`, etc.).
+
+### Cutting a release
+
+After merging, tag and push `v1.0.0` so installs pin to a release SHA instead of `main`:
+
+```
+git checkout main && git pull
+git tag -a v1.0.0 -m "amdahl-gtm v1.0.0 — initial release"
+git push origin v1.0.0
+```
+
+For each subsequent release, bump `version` in BOTH `plugins/amdahl-gtm/.claude-plugin/plugin.json` AND `.claude-plugin/marketplace.json` in the same commit before tagging. Without a bump, users follow the latest commit on `main`.
 
 ## License
 
