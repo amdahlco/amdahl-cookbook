@@ -1,0 +1,20 @@
+{
+  "name": "amdahl-gtm",
+  "displayName": "Amdahl GTM",
+  "version": "1.0.0",
+  "description": "The GTM divergence map for Claude Code. Fuses the external market with your own CRM + call-transcript corpus — research, positioning, content, and account prep grounded in what your customers actually said, not what a generic web search guesses.",
+  "author": {
+    "name": "Amdahl",
+    "url": "https://amdahl.co"
+  },
+  "homepage": "https://amdahl.co",
+  "repository": "https://github.com/amdahlco/amdahl-cookbook",
+  "license": "MIT",
+  "keywords": ["gtm", "go-to-market", "sales", "marketing", "crm", "research", "positioning", "amdahl"],
+  "mcpServers": {
+    "amdahl": {
+      "type": "http",
+      "url": "https://mcp.amdahl.co"
+    }
+  }
+}
