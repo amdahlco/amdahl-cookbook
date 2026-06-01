@@ -19,17 +19,15 @@ Six questions you'll be able to answer the minute you finish setup. Each one lin
 
 ---
 
-## Setup — Claude.ai (60 seconds)
+## Connect in the Claude UI — no key needed
 
-This is the path for everyone who isn't a developer. You'll do this once.
+Claude signs in to your workspace over OAuth. Works in the Claude web app and Claude Desktop — both expose Settings → Connectors.
 
-1. Open **claude.ai** and sign in.
-2. Go to **Settings → Connectors**.
-3. Click **Add custom connector**.
-4. Paste this URL: `https://app.amdahl.co/mcp`
-5. Click **Connect**. A popup opens.
-6. Log in with your Amdahl account and approve access.
-7. Done. Start a new chat and try one of the prompts below.
+1. Open Claude and go to **Settings → Connectors** (direct link: <https://claude.ai/customize/connectors>).
+2. Click **Add custom connector**.
+3. Name it **Amdahl** and set the URL to `https://app.amdahl.co/mcp`.
+4. Click **Connect**, then **Configure**.
+5. Sign in to Amdahl when prompted, then choose this workspace.
 
 <!-- TODO: screenshot of the connector-add UI here -->
 <!-- TODO: screenshot of the OAuth approval -->
@@ -104,7 +102,7 @@ Draft a LinkedIn post about {topic}. Ground it in real customer language from ou
 |---|---|---|
 | [Customer research](prompts/customer-research/) | Know an account before you walk in | 4 |
 | [Competitive intel](prompts/competitive-intel/) | Public posture vs. how buyers actually describe them | 3 |
-| [Positioning & messaging](prompts/positioning-messaging/) | Pressure-test copy against customer language | 3 |
+| [Positioning & messaging](prompts/positioning-messaging/) | Pressure-test copy against customer language | 4 |
 | [Pre-meeting prep](prompts/pre-meeting-prep/) | Sales calls, QBRs, renewals | 3 |
 | [Win/loss & deal postmortem](prompts/win-loss-deal-postmortem/) | Real reasons, not dropdown reasons | 3 |
 | [Content & outbound](prompts/content-and-outbound/) | Grounded posts, targeted outreach | 4 |

@@ -1,6 +1,6 @@
 # Recipe library
 
-23 copy-paste recipes for go-to-market work. Each recipe is a self-contained markdown file with one paste-ready prompt, a description of what comes back, a few variations, and tips.
+24 copy-paste recipes for go-to-market work. Each recipe is a self-contained markdown file with one paste-ready prompt, a description of what comes back, a few variations, and tips.
 
 New here? Start with the [main README](../README.md) for setup and the six headliner prompts.
 
@@ -23,13 +23,14 @@ Their public posture vs. how buyers actually describe them.
 - [Where they show up in our calls](competitive-intel/where-they-show-up-in-our-calls.md) — every call this competitor was mentioned on, and what was said.
 - [How buyers compare us](competitive-intel/how-buyers-compare-us.md) — the verbatim trade-offs buyers make between you and them.
 
-## Positioning & messaging (3)
+## Positioning & messaging (4)
 
 Pressure-test copy against the language your customers actually use.
 
 - [Audit our positioning](positioning-messaging/audit-our-positioning.md) — homepage / one-pager vs. real customer voice.
 - [Rep vs. buyer language](positioning-messaging/rep-vs-buyer-language.md) — where your reps talk past how buyers describe the problem.
 - [Stress-test a message](positioning-messaging/stress-test-a-message.md) — paste a draft, get back the parts that won't land and why.
+- [Rebuild your value narrative by segment](positioning-messaging/rebuild-value-narrative-by-segment.md) — pull raw customer voice per ICP segment with anti-contamination filters; the raw material for a positioning pivot.
 
 ## Pre-meeting prep (3)
 
