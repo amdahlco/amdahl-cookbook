@@ -1,6 +1,6 @@
 # Amdahl Cookbook
 
-**Turn Claude into your GTM intelligence team. In 60 seconds. No code.**
+**Turn Claude into your GTM intelligence team. No code.**
 
 Generic Claude reads the public internet. Connect Amdahl, and Claude can also read *your* CRM and *your* call transcripts — what buyers actually said, which objections actually surfaced, which competitors actually showed up late in your deals. The interesting signal is the **divergence** between the public story and your internal story. That's the moat. This cookbook is a copy-paste library that turns that moat into answers.
 
