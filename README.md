@@ -152,7 +152,7 @@ The full index lives at [prompts/README.md](prompts/README.md).
 
 - Product docs: <https://amdahl.co/mcp>
 - Home: <https://amdahl.co>
-- Support: support@amdahl.co
+- Support: hello@amdahl.co
 
 <details>
 <summary>What's actually happening under the hood?</summary>
