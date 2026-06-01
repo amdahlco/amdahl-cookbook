@@ -2,7 +2,7 @@
 
 **Turn Claude into your GTM intelligence team. In 60 seconds. No code.**
 
-Generic Claude reads the public internet. Connect Amdahl, and Claude can also read *your* CRM and *your* call transcripts — what buyers actually said, which objections actually surfaced, which competitors actually showed up late in deals. The interesting signal is the **divergence** between the public story and your internal story. That's the moat. This cookbook is a copy-paste library that turns that moat into answers.
+Generic Claude reads the public internet. Connect Amdahl, and Claude can also read *your* CRM and *your* call transcripts — what buyers actually said, which objections actually surfaced, which competitors actually showed up late in your deals. The interesting signal is the **divergence** between the public story and your internal story. That's the moat. This cookbook is a copy-paste library that turns that moat into answers.
 
 ---
 
@@ -10,12 +10,12 @@ Generic Claude reads the public internet. Connect Amdahl, and Claude can also re
 
 Six questions you'll be able to answer the minute you finish setup. Each one links to the full recipe.
 
-- "Why did we lose Acme Corp?" → [why we lost this deal](prompts/win-loss-deal-postmortem/why-we-lost-this-deal.md)
-- "What do buyers actually say about Apollo on our calls?" → [where they show up in our calls](prompts/competitive-intel/where-they-show-up-in-our-calls.md)
-- "Prep me for the QBR with Mercury tomorrow." → [QBR prep](prompts/pre-meeting-prep/qbr-prep.md)
-- "Which deals in the pipeline are quietly dying?" → [deals at risk](prompts/pipeline-pulse/deals-at-risk.md)
-- "Does our homepage hero match how customers describe us?" → [audit our positioning](prompts/positioning-messaging/audit-our-positioning.md)
-- "Find 25 outbound targets that look like our best closed-won deals." → [outbound targeting by signal](prompts/content-and-outbound/outbound-targeting-by-signal.md)
+- "Why did we lose Acme — what actually happened, not the dropdown reason?" → [why we lost this deal](prompts/win-loss-deal-postmortem/why-we-lost-this-deal.md)
+- "What do buyers actually say about {competitor} on our calls, and is that shifting?" → [where they show up in our calls](prompts/competitive-intel/where-they-show-up-in-our-calls.md)
+- "Prep me for the QBR with Mercury — recap, risks, the next thing to sell." → [QBR prep](prompts/pre-meeting-prep/qbr-prep.md)
+- "Which deals look healthy on paper but are quietly dying?" → [deals at risk](prompts/pipeline-pulse/deals-at-risk.md)
+- "Rewrite our value narrative in customer voice, segment by segment." → [rebuild your value narrative by segment](prompts/positioning-messaging/rebuild-value-narrative-by-segment.md)
+- "Find 25 outbound targets that look like our best closed-won deals — and tell me what filters to stop using." → [outbound targeting by signal](prompts/content-and-outbound/outbound-targeting-by-signal.md)
 
 ---
 
@@ -94,9 +94,21 @@ Draft a LinkedIn post about {topic}. Ground it in real customer language from ou
 
 ---
 
+## How recipes are organized
+
+The cookbook is organized around the seven GTM jobs people actually run — not by tool, channel, or team. Pick the job, find the recipe.
+
+- **Customer research** — know an account before you walk in.
+- **Competitive intel** — public posture vs. how buyers actually describe them.
+- **Positioning & messaging** — pressure-test copy against the language your customers actually use.
+- **Pre-meeting prep** — walk in knowing the room.
+- **Win/loss & deal postmortem** — real reasons, not dropdown reasons.
+- **Content & outbound** — grounded posts, smarter targeting, less generic outreach.
+- **Pipeline pulse** — weekly health, risk, triage.
+
 ## Browse the cookbook
 
-23 recipes, organized by the job you're trying to get done.
+24 recipes, organized by the seven jobs.
 
 | Category | What's in it | Recipes |
 |---|---|---|
@@ -115,24 +127,24 @@ The full index lives at [prompts/README.md](prompts/README.md).
 ## By your role
 
 **Sales leader**
-- [Why we lost this deal](prompts/win-loss-deal-postmortem/why-we-lost-this-deal.md)
-- [Deals at risk](prompts/pipeline-pulse/deals-at-risk.md)
-- [What separates won from lost](prompts/win-loss-deal-postmortem/what-separates-won-from-lost.md)
+- [Why we lost this deal](prompts/win-loss-deal-postmortem/why-we-lost-this-deal.md) — the honest postmortem on a deal that just closed-lost.
+- [Deals at risk](prompts/pipeline-pulse/deals-at-risk.md) — pipeline that looks healthy but isn't.
+- [What separates won from lost](prompts/win-loss-deal-postmortem/what-separates-won-from-lost.md) — the discriminators between deals that closed and ones that didn't.
 
 **Marketing leader**
-- [Audit our positioning](prompts/positioning-messaging/audit-our-positioning.md)
-- [How buyers compare us](prompts/competitive-intel/how-buyers-compare-us.md)
-- [Find content gaps](prompts/content-and-outbound/find-content-gaps.md)
+- [Rebuild your value narrative by segment](prompts/positioning-messaging/rebuild-value-narrative-by-segment.md) — raw customer voice per ICP segment, with anti-contamination filters.
+- [Audit our positioning](prompts/positioning-messaging/audit-our-positioning.md) — your copy vs. how customers actually describe you.
+- [Find content gaps](prompts/content-and-outbound/find-content-gaps.md) — questions buyers keep asking that your content doesn't answer.
 
 **RevOps**
-- [Pattern across cohort](prompts/win-loss-deal-postmortem/pattern-across-cohort.md)
-- [Weekly recap](prompts/pipeline-pulse/weekly-recap.md)
-- [Stalled pipeline triage](prompts/pipeline-pulse/stalled-pipeline-triage.md)
+- [Pattern across cohort](prompts/win-loss-deal-postmortem/pattern-across-cohort.md) — common threads across a group of deals.
+- [Weekly recap](prompts/pipeline-pulse/weekly-recap.md) — what moved, what stalled, what to watch.
+- [Stalled pipeline triage](prompts/pipeline-pulse/stalled-pipeline-triage.md) — chase / nurture / close-lost, with the honest reasons.
 
 **Founder**
-- [Deep-dive on account](prompts/customer-research/deep-dive-on-account.md)
-- [Stress-test a message](prompts/positioning-messaging/stress-test-a-message.md)
-- [Whose name comes up](prompts/customer-research/whose-name-comes-up.md)
+- [Deep-dive on account](prompts/customer-research/deep-dive-on-account.md) — fused public + internal view of one company.
+- [Stress-test a message](prompts/positioning-messaging/stress-test-a-message.md) — sanity-check copy before it ships.
+- [Whose name comes up](prompts/customer-research/whose-name-comes-up.md) — the shadow champions, blockers, and incumbents hiding in your transcripts.
 
 ---
 
