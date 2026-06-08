@@ -1,0 +1,21 @@
+{
+  "name": "amdahl-gtm",
+  "version": "1.0.0",
+  "description": "Turn Claude Code into your GTM intelligence team. Account research, competitive intel, meeting prep, deal postmortems, positioning audits, grounded content, and pipeline triage — fused from your own CRM + call transcripts and the public web. The divergence between the public story and your internal story is the moat.",
+  "author": {
+    "name": "Amdahl",
+    "email": "hello@amdahl.co"
+  },
+  "homepage": "https://amdahl.co/mcp",
+  "license": "MIT",
+  "keywords": [
+    "gtm",
+    "sales",
+    "crm",
+    "competitive-intelligence",
+    "revops",
+    "positioning",
+    "mcp",
+    "amdahl"
+  ]
+}
