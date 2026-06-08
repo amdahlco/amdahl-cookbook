@@ -49,9 +49,10 @@ The first time you call an Amdahl tool, the OAuth approval opens in your browser
 Prefer guided plays over remembering prompts? Install the **amdahl-gtm** plugin — it auto-connects the same `amdahl` MCP server *and* adds a set of `/amdahl-gtm:*` slash commands (account deep-dive, competitor intel, meeting prep, win-loss, positioning, grounded drafts, pipeline pulse), each wired to the recipes below.
 
 ```
-/plugin marketplace add amdahlco/amdahl-cookbook
-/plugin install amdahl-gtm@amdahl-cookbook
+claude plugin marketplace add amdahlco/amdahl-cookbook && claude plugin install amdahl-gtm@amdahl-cookbook
 ```
+
+(Already inside a Claude Code session? Use the slash form: `/plugin marketplace add amdahlco/amdahl-cookbook` then `/plugin install amdahl-gtm@amdahl-cookbook`.)
 
 Then run `/amdahl-gtm:setup` to confirm the connection, or jump straight to `/amdahl-gtm:company stripe.com`. The plugin lives in [`plugins/amdahl-gtm/`](plugins/amdahl-gtm/) — the recipes in this cookbook are its source material, so anything a command does, you can also do by pasting the matching recipe.
 

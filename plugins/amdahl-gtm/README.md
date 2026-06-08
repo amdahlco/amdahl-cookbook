@@ -8,12 +8,20 @@ It's the Claude Code companion to the [Amdahl cookbook](../../README.md): every 
 
 ## Install
 
+From your terminal:
+
+```
+claude plugin marketplace add amdahlco/amdahl-cookbook && claude plugin install amdahl-gtm@amdahl-cookbook
+```
+
+Already inside a Claude Code session? Use the slash form instead:
+
 ```
 /plugin marketplace add amdahlco/amdahl-cookbook
 /plugin install amdahl-gtm@amdahl-cookbook
 ```
 
-That single install gives you the MCP connection **and** the slash commands below.
+Either way, that single install gives you the MCP connection **and** the slash commands below.
 
 ## Connect (automatic, OAuth, no key)
 
