@@ -1,0 +1,18 @@
+{
+  "name": "amdahl-cookbook",
+  "owner": {
+    "name": "Amdahl",
+    "email": "hello@amdahl.co"
+  },
+  "metadata": {
+    "description": "Amdahl GTM intelligence, one-click into Claude Code. Fuse your own CRM + call transcripts with the public web — the divergence between the two is the moat.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "amdahl-gtm",
+      "source": "./plugins/amdahl-gtm",
+      "description": "Turn Claude Code into your GTM intelligence team: account research, competitive intel, meeting prep, deal postmortems, positioning audits, grounded content, and pipeline triage — grounded in your CRM + calls."
+    }
+  ]
+}
