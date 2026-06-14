@@ -18,8 +18,8 @@ Amdahl fuses the tenant's own CRM + call corpus with external data. The interest
 | Person enrichment | `external_search` { action: enrich_person, linkedin_url \| email — never a bare first name } |
 | Account history, deal context | `data` query + `context` query_substrate |
 | What our customers say about X | `data` cluster_search + `context` query_substrate |
-| Company profile / ICP / brand voice | `context` summary, `settings`, `authors` |
-| Draft content in tenant voice | `artifacts` create (content_piece) with grounding |
+| Company profile / ICP / brand voice | `context` summary |
+| Draft content in tenant voice | Draft in-conversation, grounded on `data` cluster_search + `context` query_substrate |
 | Reference library | `knowledge_base` (list / get / chat) |
 
 ## Operating rules

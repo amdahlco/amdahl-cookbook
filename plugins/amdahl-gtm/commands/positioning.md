@@ -10,7 +10,7 @@ The copy to pressure-test is: **$ARGUMENTS**
 
 **Wave 1 — gather in parallel:**
 - Customer voice → `data` cluster_search + `context` query_substrate: how our actual customers describe us, this category, and the problem — on calls, verbatim, with roles. Pull the recurring phrases.
-- Our voice on file → `context` summary + `authors` / `settings`: our stated positioning and brand voice.
+- Our voice on file → `context` summary: our stated positioning and brand voice.
 
 **Wave 2 — audit, line by line:**
 1. Where the copy **matches** customer language (quote both sides).
