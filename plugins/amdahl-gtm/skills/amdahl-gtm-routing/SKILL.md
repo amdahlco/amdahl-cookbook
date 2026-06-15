@@ -20,7 +20,7 @@ Amdahl fuses the tenant's own CRM + call corpus with external data. The interest
 | What our customers say about X | `data` cluster_search + `context` query_substrate |
 | Company profile / ICP / brand voice | `context` summary |
 | Draft content in tenant voice | Draft in-conversation, grounded on `data` cluster_search + `context` query_substrate |
-| Build a page / dashboard / data view | `/create-page` — author a TSX component via the `pages` tool (validate → create) |
+| Build a page / dashboard / data view | `/create-page` — author a page spec (catalog components + SQL bindings) via the `pages` tool (validate → create) |
 | Reference library | `knowledge_base` (list / get / chat) |
 
 ## Operating rules

@@ -1,5 +1,5 @@
 ---
-description: Author a Page — a custom TSX component that renders a designed UI (stats, charts, tables) over this tenant's live data. Validate it through the Amdahl pages tool, then create it as a draft you open in the console.
+description: Author a Page — a spec-defined dashboard (stats, charts, tables built from catalog components) over this tenant's live data. Validate it through the Amdahl pages tool, then create it as a draft you open in the console.
 argument-hint: <what the page should show>  (e.g. "pipeline health by stage")
 ---
 
@@ -7,45 +7,47 @@ Run the Amdahl create-a-page play. Use the connected **Amdahl** MCP `pages` tool
 
 What to build: **$ARGUMENTS**
 
-A **Page** is a single React component you author in TSX. The host renders it in the console over this tenant's live data — so the output is a real, designed dashboard, not a chat transcript. You write the component and its SQL; the platform handles the tenant binding, per-viewer access, and rendering.
+A **Page** is a **spec** — a tree of pre-built catalog components with data bindings, NOT a code file. The host renders it in the console over this tenant's live data, so the output is a real, designed dashboard, not a chat transcript. You describe the layout with catalog nodes and declare the SQL that feeds them; the platform handles the tenant binding, per-viewer access, and rendering. You never write or ship component code — you assemble catalog components.
 
 ## The contract — get this exactly right or `validate` rejects it
 
-**The component**
-- One file, a **default export**, **no required props** — it must render with empty data (the host mounts it before queries resolve).
-- Import ONLY from the allowlist: `react`, `@amdahl/ui`, `recharts`, `lucide-react`, `clsx`. Anything else fails validation.
-- Style with `@amdahl/ui` components (e.g. `Card`, `Stat`, `Grid`, `Heading`, `Table`) — do not hand-roll CSS or pull a UI framework.
-- No `eval`, no `fetch`, no `window` / `document` / `cookie` / `localStorage`, no dynamic `import()`, no network or browser-storage access of any kind. The component is pure: data in, UI out.
+**The spec**
+- A page body is `{ "version": 1, "root": <node> }`. There is exactly one `root`.
+- A **node** is `{ "type": <CatalogComponent>, "props"?: { … }, "children"?: [ <node>, … ] }`.
+- `type` must be a **catalog component** — you cannot invent one. The catalog:
+  - **Layout:** `Section`, `Row`, `Grid`, `Card`
+  - **Content:** `Heading`, `Text`, `Markdown`, `Stat`, `StatRow`, `Badge`, `Callout`, `List`, `Table`
+  - **Data-viz:** `BarChart`, `LineChart`, `PieChart`
+  - **Escape hatch:** `Custom` — a bespoke sandbox node, **gated by the `pages:admin` scope** and **not for normal authoring**. Don't reach for it; assemble the page from the catalog above. (If you genuinely think you need `Custom`, say so and stop — it's an admin-only path, not a fallback.)
+- Compose by nesting: `Section` → `Grid`/`Row` → `Card` → content/viz nodes. `props` and `children` are both optional per node.
 
 **The data**
 - The page declares **named queries** up front in `declared_queries`: `[{ name, source: 'sql', sql }]`.
 - Each `sql` is a single **`SELECT`** against the whitelisted tenant tables. Read-only — no DDL/DML.
 - SQL is **tenant-agnostic**: do **NOT** put `business_id` (or any tenant id) in the SQL. The host injects the tenant filter AND the per-viewer access predicate at run time. Writing your own `business_id` is both unnecessary and a validation failure.
-- The component reads a declared query by name: `const { data, loading, error } = Amdahl.useQuery('<name>')`. It can ONLY call queries it declared — there is no ad-hoc querying from inside the component.
+- There is **no raw SQL at render time** and no ad-hoc querying. A component prop can only reference a query you already declared, by name. Two binding shapes:
+  - **`{ "$query": "<name>" }`** — binds the named query's **rows**. Use for row-shaped props: a `Table`'s data, a chart's series.
+  - **`{ "$value": { "query": "<name>", "field": "<col>" } }`** — binds a **single scalar** from the first row. Use for a `Stat`'s value.
+- Every referenced query name must exist in `declared_queries`, or validate fails with an unbound-query error.
 
 ## The loop — validate before you create
 
-1. **Draft** the component + its `declared_queries`.
-2. Call `pages` action **`validate`** with `{ source_tsx, declared_queries }`. Read the **structured per-stage verdict** — it reports each stage separately: transpile, import allowlist, forbidden APIs, default-export presence, and per-query SQL validity.
-3. **Fix every rejection** and re-validate. Common ones: a forbidden import or API (`fetch`/`eval`/`cookie`), missing default export, a query that isn't a plain `SELECT`, a stray `business_id` in the SQL, or a `useQuery('x')` name with no matching entry in `declared_queries`.
+1. **Draft** the `spec` + its `declared_queries`.
+2. Call `pages` action **`validate`** with `{ spec, declared_queries }`. Read the **structured verdict** — it reports failures by kind: **unknown component** (a `type` not in the catalog), **bad prop** (a prop the component doesn't accept, or a malformed binding), **unbound query** (a `$query` / `$value` name with no matching `declared_queries` entry), and **invalid SQL** (not a plain `SELECT`, a stray `business_id`, an off-whitelist table).
+3. **Fix every rejection** and re-validate. Common ones: a made-up `type`, a `Stat` bound with `$query` instead of `$value` (or vice-versa), a `useless` raw value where a binding is required, a query name typo, a non-`SELECT` SQL, or a tenant id in the SQL.
 4. Once validate passes clean, call `pages` action **`create`** with the same payload. It lands as a **`draft`**.
 5. **Rendering happens in the console, not over MCP.** `create` returns a URL — give it to the user so they can open the page and see it render over live data. Do not try to "run" or screenshot the page from here.
 
-Be concise in chat: show the user the component, the declared queries, and the validate verdict. Don't paste the whole TSX twice.
+Be concise in chat: show the user the spec tree, the declared queries, and the validate verdict. Don't paste the whole spec twice.
 
 ## Worked example — a "Pipeline Health" page
 
-Two named SQL queries (note: NO `business_id` anywhere) feeding a `@amdahl/ui` `Stat` row and a recharts bar chart.
+Three named SQL queries (note: NO `business_id` anywhere) feeding a `StatRow` of `Stat`s (scalar `$value` bindings) and a `BarChart` (row-shaped `$query` binding), each inside its own `Section`.
 
 `declared_queries`:
 
 ```json
 [
-  {
-    "name": "pipeline_by_stage",
-    "source": "sql",
-    "sql": "SELECT deal_stage, COUNT(*) AS deals, SUM(amount) AS acv FROM interactions WHERE deal_stage IS NOT NULL GROUP BY deal_stage ORDER BY acv DESC"
-  },
   {
     "name": "open_pipeline_total",
     "source": "sql",
@@ -54,51 +56,77 @@ Two named SQL queries (note: NO `business_id` anywhere) feeding a `@amdahl/ui` `
   {
     "name": "win_rate_90d",
     "source": "sql",
-    "sql": "SELECT COUNT(*) FILTER (WHERE deal_stage = 'closed_won') AS won, COUNT(*) FILTER (WHERE deal_stage IN ('closed_won', 'closed_lost')) AS decided FROM interactions WHERE closed_at >= CURRENT_DATE - INTERVAL '90 days'"
+    "sql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE deal_stage = 'closed_won') / NULLIF(COUNT(*) FILTER (WHERE deal_stage IN ('closed_won', 'closed_lost')), 0)) AS win_pct FROM interactions WHERE closed_at >= CURRENT_DATE - INTERVAL '90 days'"
+  },
+  {
+    "name": "pipeline_by_stage",
+    "source": "sql",
+    "sql": "SELECT deal_stage, COUNT(*) AS deals, SUM(amount) AS acv FROM interactions WHERE deal_stage IS NOT NULL GROUP BY deal_stage ORDER BY acv DESC"
   }
 ]
 ```
 
-`source_tsx`:
+`spec`:
 
-```tsx
-import { Card, Grid, Heading, Stat } from '@amdahl/ui'
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { TrendingUp } from 'lucide-react'
-import { Amdahl } from '@amdahl/ui'
-
-export default function PipelineHealth() {
-  const totals = Amdahl.useQuery('open_pipeline_total')
-  const byStage = Amdahl.useQuery('pipeline_by_stage')
-  const winRate = Amdahl.useQuery('win_rate_90d')
-
-  const totalRow = totals.data?.[0] ?? { open_deals: 0, open_acv: 0 }
-  const wr = winRate.data?.[0]
-  const winPct = wr && wr.decided > 0 ? Math.round((wr.won / wr.decided) * 100) : 0
-
-  return (
-    <Card>
-      <Heading icon={<TrendingUp />}>Pipeline Health</Heading>
-
-      <Grid cols={3}>
-        <Stat label="Open deals" value={totalRow.open_deals} loading={totals.loading} />
-        <Stat label="Open ACV" value={`$${Number(totalRow.open_acv).toLocaleString()}`} loading={totals.loading} />
-        <Stat label="Win rate (90d)" value={`${winPct}%`} loading={winRate.loading} />
-      </Grid>
-
-      <ResponsiveContainer width="100%" height={280}>
-        <BarChart data={byStage.data ?? []}>
-          <XAxis dataKey="deal_stage" />
-          <YAxis />
-          <Tooltip />
-          <Bar dataKey="acv" />
-        </BarChart>
-      </ResponsiveContainer>
-    </Card>
-  )
+```json
+{
+  "version": 1,
+  "root": {
+    "type": "Section",
+    "props": { "title": "Pipeline Health" },
+    "children": [
+      {
+        "type": "Section",
+        "children": [
+          {
+            "type": "StatRow",
+            "children": [
+              {
+                "type": "Stat",
+                "props": {
+                  "label": "Open deals",
+                  "value": { "$value": { "query": "open_pipeline_total", "field": "open_deals" } }
+                }
+              },
+              {
+                "type": "Stat",
+                "props": {
+                  "label": "Open ACV",
+                  "format": "currency",
+                  "value": { "$value": { "query": "open_pipeline_total", "field": "open_acv" } }
+                }
+              },
+              {
+                "type": "Stat",
+                "props": {
+                  "label": "Win rate (90d)",
+                  "format": "percent",
+                  "value": { "$value": { "query": "win_rate_90d", "field": "win_pct" } }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Section",
+        "props": { "title": "ACV by stage" },
+        "children": [
+          {
+            "type": "BarChart",
+            "props": {
+              "data": { "$query": "pipeline_by_stage" },
+              "x": "deal_stage",
+              "y": "acv"
+            }
+          }
+        ]
+      }
+    ]
+  }
 }
 ```
 
-Notice: default export, no props, allowlist-only imports, every `useQuery` name matches a `declared_queries` entry, the component renders sensibly while `loading` is true and `data` is undefined, and the SQL carries no tenant id.
+Notice: every `type` is a catalog component (no invented nodes, no `Custom`), each `Stat` binds a single scalar with `$value` while the `BarChart` binds rows with `$query`, every bound query name matches a `declared_queries` entry, and the SQL carries no tenant id.
 
 When the example is clear, write the user's actual page for **$ARGUMENTS**, run the validate → fix → create loop, and hand back the console URL.
