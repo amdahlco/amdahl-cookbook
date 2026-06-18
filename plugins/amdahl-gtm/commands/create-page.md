@@ -13,24 +13,34 @@ A **Page** is a **spec** — a tree of pre-built catalog components with data bi
 
 Amdahl ships **page templates** — vetted, catalog-only specs you adapt instead of building from a blank slate. Always check them before drafting from scratch:
 
-1. **List** them by reading the resource **`page_template://list`** (slug, name, intent for each — today: `pipeline-health`, `voice-of-customer`, `competitive-battlecard`). The same set shows for every tenant; they live in code, not as pages in this workspace.
+1. **List** them by reading the resource **`page_template://list`** (slug, name, intent for each — today: dashboards `pipeline-health`, `voice-of-customer`, `competitive-battlecard`, plus single-viz starters `win-rate-gauge`, `pipeline-funnel`, `deal-size-distribution`). The same set shows for every tenant; they live in code, not as pages in this workspace.
 2. **If one fits $ARGUMENTS**, read **`page_template://<slug>`** for its full `spec` + `declared_queries`. That's your starting point — the layout is already correct.
 3. **Adapt it to THIS tenant's data.** The template's SQL is tenant-agnostic boilerplate; the table/column names won't match every workspace. Use the `data` tool (`explore` to see real tables/columns, `query` to sanity-check a `SELECT`) and rewrite each declared query to match what this tenant actually has. Keep the catalog spec structure; change query SQL and any labels/titles that should reflect this tenant.
 4. Then run the **validate → create loop** below on the adapted spec, exactly as if you'd authored it.
 
 If no template fits, draft the spec from scratch per the contract below. Either way, the validate → create loop is the same.
 
+## Dashboard or single visualization?
+
+A page can be a **dashboard** (several components laid out together) OR a **single visualization** (one chart that fills the whole canvas). Set it with the optional top-level `layout`:
+
+- Omit `layout` (or `"dashboard"`) → the normal multi-component page.
+- `"single"` → the page IS one visualization, rendered full-bleed. Use it when the answer is one chart: a win-rate gauge, a pipeline funnel, an ACV-by-stage bar. The `root` is just that one viz node (no `Section` wrapper needed).
+
+Reach for single-viz when $ARGUMENTS is "show me X as a chart" rather than "build me a dashboard of X."
+
 ## The contract — get this exactly right or `validate` rejects it
 
 **The spec**
-- A page body is `{ "version": 1, "root": <node> }`. There is exactly one `root`.
+- A page body is `{ "version": 1, "root": <node>, "layout"?: "dashboard" | "single" }`. There is exactly one `root`.
 - A **node** is `{ "type": <CatalogComponent>, "props"?: { … }, "children"?: [ <node>, … ] }`.
 - `type` must be a **catalog component** — you cannot invent one. The catalog:
-  - **Layout:** `Section`, `Row`, `Grid`, `Card`
-  - **Content:** `Heading`, `Text`, `Markdown`, `Stat`, `StatRow`, `Badge`, `Callout`, `List`, `Table`
-  - **Data-viz:** `BarChart`, `LineChart`, `PieChart`
+  - **Layout:** `Section`, `Row`, `Grid`, `Card`, `Divider`, `Spacer`
+  - **Content:** `Heading`, `Text`, `Markdown`, `Stat`, `StatRow`, `Badge`, `Callout`, `List`
+  - **Data-viz:** `Table`, `BarChart`, `LineChart`, `PieChart`, `AreaChart`, `ScatterChart`, `ComposedChart`, `FunnelChart`, `RadarChart`, `GaugeChart`, `Treemap`, `Sankey`, `SignalMap`, `Insight`
   - **Escape hatch:** `Custom` — a bespoke sandbox node, **gated by the `pages:admin` scope** and **not for normal authoring**. Don't reach for it; assemble the page from the catalog above. (If you genuinely think you need `Custom`, say so and stop — it's an admin-only path, not a fallback.)
-- Compose by nesting: `Section` → `Grid`/`Row` → `Card` → content/viz nodes. `props` and `children` are both optional per node.
+- **Pick the chart that fits the data:** trend over time → `LineChart` / `AreaChart`; compare categories → `BarChart`; ranking by magnitude → `Treemap` or horizontal `BarChart`; share of a whole → `PieChart`; conversion stages → `FunnelChart`; one number vs a target → `GaugeChart`; correlation → `ScatterChart`; multi-axis profile (e.g. competitor scorecard) → `RadarChart`; two measures on one frame → `ComposedChart`; flow between stages → `Sankey`; a single headline number → `Stat` (supports `trend` + `sparkline`); a written finding → `Insight`. Most viz bind their rows via `{ "$query": "<name>" }` and name columns by string (`x`, `y`, `value`, `label`, …); a few take richer shapes (`Sankey` takes `nodes` + `links`; `GaugeChart` takes a scalar `value`). When unsure of a type's props, read its schema — the `validate` verdict also tells you exactly what's wrong.
+- Compose by nesting: `Section` → `Grid`/`Row` → `Card` → content/viz nodes. `props` and `children` are both optional per node. (A single-viz page skips the nesting — `root` is the one viz node.)
 
 **The data**
 - The page declares **named queries** up front in `declared_queries`: `[{ name, source: 'sql', sql }]`.
