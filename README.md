@@ -136,6 +136,16 @@ The full index lives at [prompts/README.md](prompts/README.md).
 
 ---
 
+## Build your own recipes (blueprints)
+
+The recipes above are paste-ready prompts. When you want to save a repeatable multi-step workflow *inside Amdahl* so an agent can run it the same way every time, you author a **blueprint** — a typed recipe an LLM reads and walks step-by-step. (It's a different thing from a cookbook prompt; the guide opens by untangling the two.)
+
+- [How to write an Amdahl blueprint](prompts/blueprints/authoring-a-blueprint.md) — the mental model, the DSL anatomy, validating via the MCP `blueprints` tool, and two worked examples (one from scratch, one fork-and-customize).
+
+If you've installed the plugin, the `blueprint-authoring` skill drives the whole create -> validate -> fork -> iterate loop live against your workspace.
+
+---
+
 ## By your role
 
 **Sales leader**
