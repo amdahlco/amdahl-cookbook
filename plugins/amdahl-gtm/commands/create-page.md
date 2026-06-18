@@ -9,6 +9,17 @@ What to build: **$ARGUMENTS**
 
 A **Page** is a **spec** — a tree of pre-built catalog components with data bindings, NOT a code file. The host renders it in the console over this tenant's live data, so the output is a real, designed dashboard, not a chat transcript. You describe the layout with catalog nodes and declare the SQL that feeds them; the platform handles the tenant binding, per-viewer access, and rendering. You never write or ship component code — you assemble catalog components.
 
+## Start from a template first
+
+Amdahl ships **page templates** — vetted, catalog-only specs you adapt instead of building from a blank slate. Always check them before drafting from scratch:
+
+1. **List** them by reading the resource **`page_template://list`** (slug, name, intent for each — today: `pipeline-health`, `voice-of-customer`, `competitive-battlecard`). The same set shows for every tenant; they live in code, not as pages in this workspace.
+2. **If one fits $ARGUMENTS**, read **`page_template://<slug>`** for its full `spec` + `declared_queries`. That's your starting point — the layout is already correct.
+3. **Adapt it to THIS tenant's data.** The template's SQL is tenant-agnostic boilerplate; the table/column names won't match every workspace. Use the `data` tool (`explore` to see real tables/columns, `query` to sanity-check a `SELECT`) and rewrite each declared query to match what this tenant actually has. Keep the catalog spec structure; change query SQL and any labels/titles that should reflect this tenant.
+4. Then run the **validate → create loop** below on the adapted spec, exactly as if you'd authored it.
+
+If no template fits, draft the spec from scratch per the contract below. Either way, the validate → create loop is the same.
+
 ## The contract — get this exactly right or `validate` rejects it
 
 **The spec**
@@ -129,4 +140,4 @@ Three named SQL queries (note: NO `business_id` anywhere) feeding a `StatRow` of
 
 Notice: every `type` is a catalog component (no invented nodes, no `Custom`), each `Stat` binds a single scalar with `$value` while the `BarChart` binds rows with `$query`, every bound query name matches a `declared_queries` entry, and the SQL carries no tenant id.
 
-When the example is clear, write the user's actual page for **$ARGUMENTS**, run the validate → fix → create loop, and hand back the console URL.
+When the example is clear, build the user's actual page for **$ARGUMENTS**: check `page_template://list` for a template that fits and adapt it (per "Start from a template first"), or write the spec from scratch if none does. Either way, run the validate → fix → create loop and hand back the console URL.
