@@ -43,9 +43,13 @@ Reach for single-viz when $ARGUMENTS is "show me X as a chart" rather than "buil
 - Compose by nesting: `Section` → `Grid`/`Row` → `Card` → content/viz nodes. `props` and `children` are both optional per node. (A single-viz page skips the nesting — `root` is the one viz node.)
 
 **The data**
-- The page declares **named queries** up front in `declared_queries`: `[{ name, source: 'sql', sql }]`.
-- Each `sql` is a single **`SELECT`** against the whitelisted tenant tables. Read-only — no DDL/DML.
+- The page declares **named queries** up front in `declared_queries`: `[{ name, source, … }]`. Most are `source: 'sql'`, but a query can also draw from two other host sources (below).
+- For `source: 'sql'`: each `sql` is a single **`SELECT`** against the whitelisted tenant tables. Read-only — no DDL/DML.
 - SQL is **tenant-agnostic**: do **NOT** put `business_id` (or any tenant id) in the SQL. The host injects the tenant filter AND the per-viewer access predicate at run time. Writing your own `business_id` is both unnecessary and a validation failure.
+- **Two non-SQL sources** let a page bind to more than rows of SQL — the rows bind exactly the same way via `$query` / `$value`:
+  - `source: 'cluster_search'` — a semantic search over a corpus. Set `query` (the search text) + `target` (the corpus, e.g. `'interactions'`). Rows are the matching clusters.
+  - `source: 'kb_search'` — a search over the workspace Knowledge Base. Set `query` (the search text). Rows are the matching documents.
+- **Optional `params`** — a query may declare named `params` (a map of `name` → type hint) referenced as `@name` in the SQL. These are runtime inputs the page supplies when it renders (e.g. a date range), so you don't rewrite SQL to refilter.
 - There is **no raw SQL at render time** and no ad-hoc querying. A component prop can only reference a query you already declared, by name. Two binding shapes:
   - **`{ "$query": "<name>" }`** — binds the named query's **rows**. Use for row-shaped props: a `Table`'s data, a chart's series.
   - **`{ "$value": { "query": "<name>", "field": "<col>" } }`** — binds a **single scalar** from the first row. Use for a `Stat`'s value.
