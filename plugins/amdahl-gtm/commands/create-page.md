@@ -20,25 +20,27 @@ Amdahl ships **page templates** — vetted, catalog-only specs you adapt instead
 
 If no template fits, draft the spec from scratch per the contract below. Either way, the validate → create loop is the same.
 
-## Dashboard or single visualization?
+## Dashboard, single visualization, or document?
 
-A page can be a **dashboard** (several components laid out together) OR a **single visualization** (one chart that fills the whole canvas). Set it with the optional top-level `layout`:
+A page can be a **dashboard** (several components laid out together), a **single visualization** (one chart that fills the whole canvas), or a **document** (a centered, readable prose column). Set it with the optional top-level `layout`:
 
-- Omit `layout` (or `"dashboard"`) → the normal multi-component page.
+- Omit `layout` (or `"dashboard"`) → the normal multi-component grid of cards, stats, and charts.
 - `"single"` → the page IS one visualization, rendered full-bleed. Use it when the answer is one chart: a win-rate gauge, a pipeline funnel, an ACV-by-stage bar. The `root` is just that one viz node (no `Section` wrapper needed).
+- `"document"` → a centered, readable prose column for long-form narrative / report pages — a competitive brief, an account one-pager, a positioning memo, a battlecard. Built from the **content** catalog components (`Heading`, `Text`, `Markdown`, `Stat`, `Callout`, `List`) plus optional supporting charts/tables. `Markdown` is the workhorse here: a free-form markdown block with no data binding, so a pure-prose report needs **no declared queries at all** (`"declared_queries": []`).
 
-Reach for single-viz when $ARGUMENTS is "show me X as a chart" rather than "build me a dashboard of X."
+Reach for single-viz when $ARGUMENTS is "show me X as a chart"; reach for document when it's "write me a brief / one-pager / report on X" rather than "build me a dashboard of X."
 
 ## The contract — get this exactly right or `validate` rejects it
 
 **The spec**
-- A page body is `{ "version": 1, "root": <node>, "layout"?: "dashboard" | "single" }`. There is exactly one `root`.
+- A page body is `{ "version": 1, "root": <node>, "layout"?: "dashboard" | "single" | "document" }`. There is exactly one `root`.
 - A **node** is `{ "type": <CatalogComponent>, "props"?: { … }, "children"?: [ <node>, … ] }`.
 - `type` must be a **catalog component** — you cannot invent one. The catalog:
   - **Layout:** `Section`, `Row`, `Grid`, `Card`, `Divider`, `Spacer`
   - **Content:** `Heading`, `Text`, `Markdown`, `Stat`, `StatRow`, `Badge`, `Callout`, `List`
   - **Data-viz:** `Table`, `BarChart`, `LineChart`, `PieChart`, `AreaChart`, `ScatterChart`, `ComposedChart`, `FunnelChart`, `RadarChart`, `GaugeChart`, `Treemap`, `Sankey`, `SignalMap`, `Insight`
   - **Escape hatch:** `Custom` — a bespoke sandbox node, **gated by the `pages:admin` scope** and **not for normal authoring**. Don't reach for it; assemble the page from the catalog above. (If you genuinely think you need `Custom`, say so and stop — it's an admin-only path, not a fallback.)
+- **`Markdown` is the prose workhorse** — a free-form markdown content block (headings, paragraphs, lists, bold, links) with **no data binding**. It's the right node for the written parts of a report: a competitive brief, an account one-pager, a positioning memo, a battlecard, an exec summary above a chart. Pair it with `Heading` / `Callout` / `List` for structure and (optionally) a chart or `Table` for the supporting data. A page made only of `Markdown` (and other content nodes) declares **no queries** — see the `layout: "document"` example below.
 - **Pick the chart that fits the data:** trend over time → `LineChart` / `AreaChart`; compare categories → `BarChart`; ranking by magnitude → `Treemap` or horizontal `BarChart`; share of a whole → `PieChart`; conversion stages → `FunnelChart`; one number vs a target → `GaugeChart`; correlation → `ScatterChart`; multi-axis profile (e.g. competitor scorecard) → `RadarChart`; two measures on one frame → `ComposedChart`; flow between stages → `Sankey`; a single headline number → `Stat` (supports `trend` + `sparkline`); a written finding → `Insight`. Most viz bind their rows via `{ "$query": "<name>" }` and name columns by string (`x`, `y`, `value`, `label`, …); a few take richer shapes (`Sankey` takes `nodes` + `links`; `GaugeChart` takes a scalar `value`). When unsure of a type's props, read its schema — the `validate` verdict also tells you exactly what's wrong.
 - Compose by nesting: `Section` → `Grid`/`Row` → `Card` → content/viz nodes. `props` and `children` are both optional per node. (A single-viz page skips the nesting — `root` is the one viz node.)
 
@@ -154,4 +156,63 @@ Three named SQL queries (note: NO `business_id` anywhere) feeding a `StatRow` of
 
 Notice: every `type` is a catalog component (no invented nodes, no `Custom`), each `Stat` binds a single scalar with `$value` while the `BarChart` binds rows with `$query`, every bound query name matches a `declared_queries` entry, and the SQL carries no tenant id.
 
-When the example is clear, build the user's actual page for **$ARGUMENTS**: check `page_template://list` for a template that fits and adapt it (per "Start from a template first"), or write the spec from scratch if none does. Either way, run the validate → fix → create loop and hand back the console URL.
+## Worked example — a `layout: "document"` competitive brief
+
+When $ARGUMENTS is "write me a brief / one-pager / report on X," reach for `layout: "document"`: a centered prose column built from content nodes. Pure prose binds no data, so `declared_queries` is **empty**.
+
+`declared_queries`:
+
+```json
+[]
+```
+
+`spec`:
+
+```json
+{
+  "version": 1,
+  "layout": "document",
+  "root": {
+    "type": "Section",
+    "props": { "title": "Competitive brief — Acme vs. us" },
+    "children": [
+      {
+        "type": "Heading",
+        "props": { "text": "Where we win", "level": 2 }
+      },
+      {
+        "type": "Markdown",
+        "props": {
+          "body": "Buyers pick us over Acme when **time-to-value** is the deciding factor. On three closed-won calls this quarter the champion cited our onboarding finishing in days where Acme quoted weeks. Lead with the 30-day rollout story.\n\n- **Speed of deployment** — our strongest, most-repeated edge.\n- **Support responsiveness** — named on every win where Acme was shortlisted.\n- **Transparent pricing** — buyers contrast it with Acme's custom-quote friction."
+        }
+      },
+      {
+        "type": "Heading",
+        "props": { "text": "Where they win", "level": 2 }
+      },
+      {
+        "type": "Markdown",
+        "props": {
+          "body": "Acme wins on **breadth of integrations** and enterprise brand trust. When the buyer's evaluation is integration-led, we lose on the long-tail connector list.\n\n**Sidestep:** reframe the conversation from \"how many integrations\" to \"the three you actually run daily\", where our depth beats their breadth."
+        }
+      },
+      {
+        "type": "Callout",
+        "props": { "title": "Provenance", "tone": "neutral" },
+        "children": [
+          {
+            "type": "Text",
+            "props": {
+              "text": "Sources: 3 closed-won + 2 closed-lost calls, last 90 days. Re-run quarterly — Acme's posture shifts."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Notice: `layout` is `"document"`, the `root` is a `Section` of content nodes (`Heading` + `Markdown` + `Callout`), no node binds data, and `declared_queries` is `[]` — a pure-prose report needs no SQL. The `Markdown` node's prop is `body` (its raw markdown string); the `Callout` carries its message in a child `Text` node (its props are `title` + `tone`, where `tone` is `neutral` / `positive` / `warning`). If you wanted to anchor a number in the brief, you'd add one declared query and a `Stat` (`$value` binding) — or a small `Table` / chart — beside the prose; the rest of the document stays markdown.
+
+When the examples are clear, build the user's actual page for **$ARGUMENTS**: check `page_template://list` for a template that fits and adapt it (per "Start from a template first"), or write the spec from scratch if none does. Either way, run the validate → fix → create loop and hand back the console URL.
