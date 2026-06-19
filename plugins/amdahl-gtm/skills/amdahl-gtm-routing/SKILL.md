@@ -20,13 +20,14 @@ Amdahl fuses the tenant's own CRM + call corpus with external data. The interest
 | What our customers say about X | `data` cluster_search + `context` query_substrate |
 | Company profile / ICP / brand voice | `context` summary |
 | Draft content in tenant voice | Draft in-conversation, grounded on `data` cluster_search + `context` query_substrate |
+| Build a page / dashboard / data view | `/create-page` — author a page spec (catalog components + SQL bindings) via the `pages` tool (validate → create) |
 | Reference library | `knowledge_base` (list / get / chat) |
 
 ## Operating rules
 
 - Ground every claim: a verbatim call quote (speaker role + date) or a dated public source. No claims from memory.
 - The divergence section is the moat — generic tools cannot write it. Include it whenever both internal and external signal exist.
-- For the named plays (account deep-dive, competitor, meeting prep, win-loss, positioning, draft, pipeline), the `/amdahl-gtm:*` slash commands carry the full wave-structured recipe — prefer them when the user's ask maps cleanly to one.
+- For the named plays (account deep-dive, competitor, meeting prep, win-loss, positioning, draft, pipeline, create-page), the `/amdahl-gtm:*` slash commands carry the full wave-structured recipe — prefer them when the user's ask maps cleanly to one.
 - If the Amdahl server isn't connected or a call fails on auth, tell the user to run `/amdahl-gtm:setup`.
 - The deep routing detail and operational defaults live server-side in the `system/amdahl_gtm_playbook` MCP prompt — pull it when you need more than this table.
 
