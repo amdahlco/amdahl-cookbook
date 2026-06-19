@@ -146,6 +146,14 @@ If you've installed the plugin, the `blueprint-authoring` skill drives the whole
 
 ---
 
+## Push results to your team (notifications)
+
+The recipes above end in the chat. When the output should reach a teammate who isn't watching the session — the deal owner, your manager, RevOps — email it to them. Amdahl's notifications primitive is members-only (a non-member rejects the whole send), rate-capped, and idempotent, so an agent can deliver autonomously without becoming a spam cannon. Works the same over MCP and the REST API.
+
+- [Notify the workspace team](prompts/notifications/notify-the-workspace-team.md) — the full **list_recipients -> email_member -> list_sends** loop (discover who you can email, send, then confirm delivery + check the cap), with copy-paste MCP and REST shapes and the blueprint `tool`-step variant.
+
+---
+
 ## By your role
 
 **Sales leader**
