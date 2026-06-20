@@ -64,3 +64,9 @@ Weekly health, risk surfacing, and zombie cleanup — all on a cadence.
 - [Weekly recap](pipeline-pulse/weekly-recap.md) — what moved, what slipped, what's new, what went quiet, plus the one question to ask in standup.
 - [Deals at risk](pipeline-pulse/deals-at-risk.md) — deals that look healthy on paper but are at risk in the call content, sorted by ACV × severity.
 - [Stalled pipeline triage](pipeline-pulse/stalled-pipeline-triage.md) — chase / nurture / close-lost, with the honest verbatim "why it died" on each loss.
+
+## Pages & dashboards (1)
+
+Turn an answer into a real, designed Page in your console — a workspace data UI over your live tenant data, not a chat transcript. See the [section README](pages-and-dashboards/README.md) for the three page layouts (dashboard / single / document) and the [create-a-page command](../plugins/amdahl-gtm/commands/create-page.md) for the full contract.
+
+- [Build a markdown report page](pages-and-dashboards/markdown-report-page.md) — publish a written deliverable (competitive brief, account one-pager, positioning memo) as a `document`-layout Page: a centered prose column built from `Markdown` blocks, no SQL required.
