@@ -125,7 +125,7 @@ The cookbook is organized around the seven GTM jobs people actually run — not 
 | Category | What's in it | Recipes |
 |---|---|---|
 | [Customer research](prompts/customer-research/) | Know an account before you walk in | 4 |
-| [Competitive intel](prompts/competitive-intel/) | Public posture vs. how buyers actually describe them | 3 |
+| [Competitive intel](prompts/competitive-intel/) | Public posture vs. how buyers actually describe them | 4 |
 | [Positioning & messaging](prompts/positioning-messaging/) | Pressure-test copy against customer language | 4 |
 | [Pre-meeting prep](prompts/pre-meeting-prep/) | Sales calls, QBRs, renewals | 3 |
 | [Win/loss & deal postmortem](prompts/win-loss-deal-postmortem/) | Real reasons, not dropdown reasons | 3 |
