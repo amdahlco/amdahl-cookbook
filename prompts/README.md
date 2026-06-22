@@ -1,6 +1,6 @@
 # Recipe library
 
-24 copy-paste recipes for go-to-market work. Each recipe is a self-contained markdown file with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
+26 copy-paste recipes for go-to-market work. Each recipe is a self-contained markdown file with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
 
 New here? Start with the [main README](../README.md) for setup and the six headliner prompts.
 
@@ -65,8 +65,9 @@ Weekly health, risk surfacing, and zombie cleanup — all on a cadence.
 - [Deals at risk](pipeline-pulse/deals-at-risk.md) — deals that look healthy on paper but are at risk in the call content, sorted by ACV × severity.
 - [Stalled pipeline triage](pipeline-pulse/stalled-pipeline-triage.md) — chase / nurture / close-lost, with the honest verbatim "why it died" on each loss.
 
-## Pages & dashboards (1)
+## Pages & dashboards (2)
 
-Turn an answer into a real, designed Page in your console — a workspace data UI over your live tenant data, not a chat transcript. See the [section README](pages-and-dashboards/README.md) for the three page layouts (dashboard / single / document) and the [create-a-page command](../plugins/amdahl-gtm/commands/create-page.md) for the full contract.
+Turn an answer into a real, designed Page in your console — a workspace data UI over your live tenant data, not a chat transcript — and embed it live anywhere. See the [section README](pages-and-dashboards/README.md) for the three page layouts (dashboard / single / document) and the [create-a-page command](../plugins/amdahl-gtm/commands/create-page.md) for the full contract.
 
 - [Build a markdown report page](pages-and-dashboards/markdown-report-page.md) — publish a written deliverable (competitive brief, account one-pager, positioning memo) as a `document`-layout Page: a centered prose column built from `Markdown` blocks, no SQL required.
+- [Embed a live page](pages-and-dashboards/embed-a-page.md) — build a Page, then mint a self-scoped, signed, short-lived embed link to drop it live into another site. Fails closed by design; public/workspace embeds are admin-gated; rotating the per-tenant secret revokes every embed at once.
