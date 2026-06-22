@@ -216,3 +216,51 @@ When $ARGUMENTS is "write me a brief / one-pager / report on X," reach for `layo
 Notice: `layout` is `"document"`, the `root` is a `Section` of content nodes (`Heading` + `Markdown` + `Callout`), no node binds data, and `declared_queries` is `[]` — a pure-prose report needs no SQL. The `Markdown` node's prop is `body` (its raw markdown string); the `Callout` carries its message in a child `Text` node (its props are `title` + `tone`, where `tone` is `neutral` / `positive` / `warning`). If you wanted to anchor a number in the brief, you'd add one declared query and a `Stat` (`$value` binding) — or a small `Table` / chart — beside the prose; the rest of the document stays markdown.
 
 When the examples are clear, build the user's actual page for **$ARGUMENTS**: check `page_template://list` for a template that fits and adapt it (per "Start from a template first"), or write the spec from scratch if none does. Either way, run the validate → fix → create loop and hand back the console URL.
+
+## Embedding a live page
+
+A created Page lives in the console, but you can also drop it **live** into another site or app — an iframe that renders the real page over this tenant's data, refreshing every time it loads. The embed is safe by construction: every live embed carries a **signed, short-lived token** that scopes it to one page and one data slice, and it **fails closed** — a missing, invalid, expired, or empty-scope token renders **nothing**, never the tenant's full data. There is no "embed first, lock down later" hole.
+
+### Mint the embed token
+
+After the page is created, mint an embed token for it — either the `pages` tool's **`mint_embed`** action or `POST /api/platform/v1/pages/:id/embed-token`, with this body:
+
+```json
+{
+  "audience": "self",
+  "ttl_seconds": 3600,
+  "rules": { },
+  "origins": ["https://example.com"]
+}
+```
+
+- **`audience`** (required) — who the embed is for. `self` = only the minting principal can see it; `workspace` = any workspace member; `public` = anyone with the link (external viewers). See the audience gate below.
+- **`ttl_seconds`** (optional) — token lifetime; short by default. The embed stops rendering when it expires; re-mint to refresh.
+- **`rules`** (optional) — the data slice the token is scoped to (the same data-scope shape the page's access rules use). Omit to inherit the principal's own scope. The render never widens beyond this.
+- **`origins`** (optional) — an allowlist of sites permitted to frame the embed. Leave it off only for a truly public page.
+
+The response is `{ token, expires_at, embed_url }`. Paste the `embed_url` into an iframe:
+
+```html
+<iframe src="{embed_url}" style="width:100%;border:0" loading="lazy"></iframe>
+```
+
+That's the whole integration — the `embed_url` already carries the signed token, so the host page renders live with no extra auth on the embedder's side.
+
+### The audience gate (same fence as publishing)
+
+Minting is tiered by who can see the result, and it mirrors the publish gate exactly:
+
+- **`self`** — any page author can mint a self-scoped embed. It's visible only to them, scoped to what they can already see.
+- **`workspace`** and **`public`** — require **admin**. Exposing a page to every member, or to anyone with the link, is the same trust decision as publishing, so it carries the same admin gate. A non-admin asking for `workspace` or `public` is refused; tell the user an admin has to mint that tier in the console.
+
+### Agent vs. user is the SAME mint, clamped to the principal
+
+An agent — an MCP key or the in-app copilot — mints embeds through the identical action. There is no separate, weaker agent path: the mint is **clamped to the principal's own access**. An agent can self-mint an embed scoped to exactly what that key/copilot can already see, and the rendered embed never widens beyond the token's scope. Widening the audience to `public` stays **admin-gated** regardless of whether a human or an agent asks. So a copilot can confidently hand back a self-scoped embed link; it cannot quietly mint a public one.
+
+### Fail-closed + revoke-all
+
+Two guarantees worth stating to the user:
+
+- **Fail closed.** No token, an invalid or tampered token, an expired token, or a token whose scope resolves to nothing all render **nothing** — never a fallback to the tenant's full data. The empty/invalid case is the safe case by design.
+- **Rotating the secret revokes every embed.** Tokens are signed with a **per-tenant embedding secret** (generated in Settings). Rotating that secret in the console **immediately invalidates every outstanding embed** for the workspace — the one-click "revoke all live embeds everywhere" lever. Re-mint after a rotation to bring embeds back.
