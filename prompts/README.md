@@ -15,13 +15,14 @@ Walk into any account already smarter than the rep before you — fusing your in
 - [What they care about](customer-research/what-they-care-about.md) — the 3 themes one account keeps coming back to, in their words, with seriousness scored.
 - [Whose name comes up](customer-research/whose-name-comes-up.md) — shadow champions, blockers, incumbents, and people who aren't in the CRM but are in the calls.
 
-## Competitive intel (3)
+## Competitive intel (4)
 
 The gap between a competitor's marketing site and how buyers actually describe them on your calls — usually the most useful 200 words you'll read this quarter.
 
 - [Competitor deep-dive](competitive-intel/competitor-deep-dive.md) — public posture vs. call reality, with the divergences and the attack angles they imply.
 - [Where they show up in our calls](competitive-intel/where-they-show-up-in-our-calls.md) — the volume + trend view: are they showing up earlier, later, more, less, in which segments?
 - [How buyers compare us](competitive-intel/how-buyers-compare-us.md) — verbatim head-to-head trade-offs in three buckets, including the tie bucket nobody else looks at.
+- [Track a competitor's social presence](competitive-intel/track-competitor-social.md) — their public X / LinkedIn signal (cadence, engagement, follower trend) laid against what buyers actually say on your calls; the divergence is the lever.
 
 ## Positioning & messaging (4)
 
