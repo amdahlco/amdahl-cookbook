@@ -69,12 +69,12 @@ Content-Type: application/json
   "parent_page_id": "<notion-page-id>",
   "version_policy": "current_only",
   "on_kb_delete": "archive",
-  "drift_policy": "preserve",
+  "drift_policy": "overwrite",
   "include": { "starred_only": false }
 }
 ```
 
-Only `parent_page_id` is required; everything else defaults sensibly (see [Configure knobs](#configure-knobs)). The response tells you how many documents were queued for the initial mirror:
+Only `parent_page_id` is required; the values above are the defaults, so you can omit any of them (see [Configure knobs](#configure-knobs)). One worth knowing: `drift_policy` defaults to `overwrite` (Amdahl is the source of truth and re-writes the Notion page each sync); set it to `preserve` instead if you want human edits made directly in Notion to be kept. The response tells you how many documents were queued for the initial mirror:
 
 ```json
 {
