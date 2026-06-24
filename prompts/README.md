@@ -1,6 +1,6 @@
 # Recipe library
 
-26 copy-paste recipes for go-to-market work. Each recipe is a self-contained markdown file with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
+27 copy-paste recipes for go-to-market work. Each recipe is a self-contained markdown file with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
 
 New here? Start with the [main README](../README.md) for setup and the six headliner prompts.
 
@@ -72,3 +72,9 @@ Turn an answer into a real, designed Page in your console — a workspace data U
 
 - [Build a markdown report page](pages-and-dashboards/markdown-report-page.md) — publish a written deliverable (competitive brief, account one-pager, positioning memo) as a `document`-layout Page: a centered prose column built from `Markdown` blocks, no SQL required.
 - [Embed a live page](pages-and-dashboards/embed-a-page.md) — build a Page, then mint a self-scoped, signed, short-lived embed link to drop it live into another site. Fails closed by design; public/workspace embeds are admin-gated; rotating the per-tenant secret revokes every embed at once.
+
+## Knowledge sync (1)
+
+Mirror your Amdahl knowledge base into a Notion database in your own workspace — set it up once, then every document you promote in Amdahl shows up (and stays current) in Notion automatically. See the [section README](knowledge-sync/README.md).
+
+- [Mirror your knowledge base to Notion](knowledge-sync/mirror-knowledge-base-to-notion.md) — the **connect -> configure -> it-syncs-itself -> monitor** loop: connect Notion over OAuth, designate a parent page (provisions a database + backfills), then watch it mirror every promoted doc. One-way, current-version-only, self-healing on an hourly reconcile. Setup writes are REST + console; the config / status / ledger reads are on MCP too.

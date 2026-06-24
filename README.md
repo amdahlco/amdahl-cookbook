@@ -154,6 +154,14 @@ The recipes above end in the chat. When the output should reach a teammate who i
 
 ---
 
+## Mirror your knowledge base to Notion (knowledge sync)
+
+Your team lives in Notion but your canonical reference library — competitive briefs, positioning memos, the research your agents keep producing — lives in Amdahl. Mirror it: connect Notion once, pick a parent page, and every document you promote in Amdahl shows up (and stays current) in a Notion database your whole team can read. One-way, current-version-only, self-healing on an hourly reconcile — it runs server-side with no open session required.
+
+- [Mirror your knowledge base to Notion](prompts/knowledge-sync/mirror-knowledge-base-to-notion.md) — the **connect -> configure -> it-syncs-itself -> monitor** loop, with copy-paste REST and MCP shapes. Setup (connect + configure) is console/REST; the config / status / activity-ledger reads are on MCP, so an agent can tell you the sync is healthy and what just mirrored.
+
+---
+
 ## By your role
 
 **Sales leader**
