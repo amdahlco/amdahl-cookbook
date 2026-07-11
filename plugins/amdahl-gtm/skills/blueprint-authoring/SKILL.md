@@ -13,6 +13,8 @@ When the user wants to **save a repeatable multi-step workflow as a reusable rec
 - The user wants **one-shot deep work run server-side** → the MCP `search` tool (start → poll status → respond).
 - The user wants the **fully-typed, step-by-step contract** — declared inputs/outputs, a validated step graph, forkable starters → author a **Workflow (blueprint)** over REST, per this skill. If no API key is available, compose + explain the body and point the user at the console's Workflows surface.
 
+Rollout note: the v2 surface is enabled per workspace — if this session's tool list still carries a `blueprints` tool (and no `search`/`agents`), the workspace is on the pre-rollout surface: author/run blueprints with that tool as before and skip the Routine routing above.
+
 If an MCP call fails on auth, tell the user to run `/amdahl-gtm:setup`.
 
 Hold this mental model and keep the user on it:

@@ -143,6 +143,9 @@ The recipes above are paste-ready prompts. When you want work to repeat *inside 
 - **Routines** — the MCP-native way to schedule work. A Routine is a cron that fires a **Search** (one server-side Master agent turn, in a fresh Session) each occurrence. From any connected Claude session, ask for a standing refresh ("every Monday, refresh the pipeline health report") and Claude creates it with the `agents` tool's `create_routine` action — a name, a prompt, and a cron. No DSL required, and each fire shows up as its own Session you can open and read.
 - **Workflows (blueprints)** — the fully-typed path: a **blueprint** is a typed recipe with declared inputs, outputs, and a validated step graph that the platform can version, fork, schedule, and run headlessly. Authoring and running Workflows lives in the **console and the REST API** (the `blueprints` MCP tool was retired, so this path isn't driven from a Claude chat anymore). It's a different thing from a cookbook prompt; the guide opens by untangling the two.
 
+> **Rollout note:** the v2 agent platform (the `search` + `agents` MCP tools, with the `blueprints` and `pages` tools retired) is enabled **per workspace**. If your connected session still lists a `blueprints` or `pages` tool and no `search`/`agents`, your workspace is on the pre-rollout surface — keep using those tools as before, and ask your Amdahl admin about Agent Platform v2.
+
+
 - [How to write an Amdahl blueprint](prompts/blueprints/authoring-a-blueprint.md) — the mental model, the DSL anatomy, validating over the REST API, and two worked examples (one from scratch, one fork-and-customize).
 
 If you've installed the plugin, the `blueprint-authoring` skill routes "make this recur" asks to Routines and drives the Workflow create -> validate -> fork -> iterate loop over the REST API.

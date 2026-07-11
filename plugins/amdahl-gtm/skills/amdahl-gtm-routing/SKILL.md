@@ -9,6 +9,8 @@ When the user's request touches a **person, company, deal, account, customer voi
 
 Amdahl fuses the tenant's own CRM + call corpus with external data. The interesting answer is almost always the **divergence** between the public story and the internal story — surface it, don't bury it.
 
+Rollout note: the v2 agent platform is enabled per workspace. Route by what is actually in THIS session's tool list — if `search`/`agents` are absent and a `blueprints` or `pages` tool is present, the workspace is on the pre-rollout surface: use those tools for workflows/pages and skip the Search/Routine rows below.
+
 ## Routing
 
 | The user wants… | Use |
