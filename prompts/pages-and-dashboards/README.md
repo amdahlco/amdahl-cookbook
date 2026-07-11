@@ -1,6 +1,6 @@
 # Pages & dashboards
 
-How to turn an Amdahl answer into a real, designed **Page** in your console — a workspace-authored data UI rendered over your live tenant data, not a chat transcript. A Page is a **spec** (a tree of pre-built catalog components — stats, charts, tables, prose blocks) plus the declared SQL that feeds it; the platform handles the tenant binding, per-viewer access, and rendering. You assemble catalog components and let Claude run the validate → create loop.
+How to turn an Amdahl answer into a real, designed **Page** in your console — a workspace-authored data UI rendered over your live tenant data, not a chat transcript. A Page is a **spec** (a tree of pre-built catalog components — stats, charts, tables, prose blocks) plus the declared SQL that feeds it; the platform handles the tenant binding, per-viewer access, and rendering. You assemble catalog components and let Claude run the validate → create loop over the **pages REST API** — page authoring is console + REST (the `pages` MCP tool was retired), so these plays need a session that can call the REST API (e.g. Claude Code with a platform API key).
 
 A Page can take three shapes, set by its top-level `layout`:
 

@@ -136,13 +136,16 @@ The full index lives at [prompts/README.md](prompts/README.md).
 
 ---
 
-## Build your own recipes (blueprints)
+## Make it recur (Routines) or build your own recipes (blueprints)
 
-The recipes above are paste-ready prompts. When you want to save a repeatable multi-step workflow *inside Amdahl* so an agent can run it the same way every time, you author a **blueprint** — a typed recipe an LLM reads and walks step-by-step. (It's a different thing from a cookbook prompt; the guide opens by untangling the two.)
+The recipes above are paste-ready prompts. When you want work to repeat *inside Amdahl* — without you pasting anything — there are two paths in:
 
-- [How to write an Amdahl blueprint](prompts/blueprints/authoring-a-blueprint.md) — the mental model, the DSL anatomy, validating via the MCP `blueprints` tool, and two worked examples (one from scratch, one fork-and-customize).
+- **Routines** — the MCP-native way to schedule work. A Routine is a cron that fires a **Search** (one server-side Master agent turn, in a fresh Session) each occurrence. From any connected Claude session, ask for a standing refresh ("every Monday, refresh the pipeline health report") and Claude creates it with the `agents` tool's `create_routine` action — a name, a prompt, and a cron. No DSL required, and each fire shows up as its own Session you can open and read.
+- **Workflows (blueprints)** — the fully-typed path: a **blueprint** is a typed recipe with declared inputs, outputs, and a validated step graph that the platform can version, fork, schedule, and run headlessly. Authoring and running Workflows lives in the **console and the REST API** (the `blueprints` MCP tool was retired, so this path isn't driven from a Claude chat anymore). It's a different thing from a cookbook prompt; the guide opens by untangling the two.
 
-If you've installed the plugin, the `blueprint-authoring` skill drives the whole create -> validate -> fork -> iterate loop live against your workspace.
+- [How to write an Amdahl blueprint](prompts/blueprints/authoring-a-blueprint.md) — the mental model, the DSL anatomy, validating over the REST API, and two worked examples (one from scratch, one fork-and-customize).
+
+If you've installed the plugin, the `blueprint-authoring` skill routes "make this recur" asks to Routines and drives the Workflow create -> validate -> fork -> iterate loop over the REST API.
 
 ---
 

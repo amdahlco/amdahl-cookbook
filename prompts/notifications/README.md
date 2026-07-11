@@ -4,6 +4,6 @@ How to **email people on your workspace** from Amdahl — the last-mile delivery
 
 It works the same over MCP (the `notifications` coarse tool + the `notification_recipient://` and `notification_sends://` resources) and the REST API (`/notifications/*`).
 
-- [Notify the workspace team](notify-the-workspace-team.md) — the full loop with copy-paste call shapes for both protocols: **list_recipients -> email_member -> list_sends** (discover who you can email, send, then confirm it landed and check the rate caps), plus the blueprint `tool`-step variant and the honest caveat about when a blueprint actually sends (the LLM walks the recipe; there's no unattended runner yet).
+- [Notify the workspace team](notify-the-workspace-team.md) — the full loop with copy-paste call shapes for both protocols: **list_recipients -> email_member -> list_sends** (discover who you can email, send, then confirm it landed and check the rate caps), plus the unattended paths: a **Routine** (a scheduled Search with `email_member` in its `actions_allowed`) for "every Monday, no human present," and the Workflow `tool`-step variant for typed recipes.
 
 New here? Start with the [main README](../../README.md) for setup, then the [recipe library](../README.md) for the GTM prompts that produce the readouts worth emailing.

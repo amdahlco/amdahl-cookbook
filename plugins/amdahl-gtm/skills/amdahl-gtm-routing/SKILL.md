@@ -13,6 +13,8 @@ Amdahl fuses the tenant's own CRM + call corpus with external data. The interest
 
 | The user wants… | Use |
 |---|---|
+| A multi-step investigation Amdahl should run end-to-end | `search` { action: start } — opens a named Session and runs one Master agent turn server-side; returns handles immediately. Poll { action: status } (long-poll with `wait_ms` up to 30000) until it settles; { action: respond } answers a paused human question. Never expect the answer inside one tool call. |
+| A standing, scheduled refresh ("every Monday…") | `agents` { action: create_routine } — a Routine is a cron that fires a Search each occurrence, in a fresh Session. `run_routine_now` fires one immediately. |
 | Market / competitor / topic research | `external_search` { action: search \| enrich_topic } |
 | Company / lead enrichment | `external_search` { action: enrich_company, domain } |
 | Person enrichment | `external_search` { action: enrich_person, linkedin_url \| email — never a bare first name } |
@@ -20,7 +22,7 @@ Amdahl fuses the tenant's own CRM + call corpus with external data. The interest
 | What our customers say about X | `data` cluster_search + `context` query_substrate |
 | Company profile / ICP / brand voice | `context` summary |
 | Draft content in tenant voice | Draft in-conversation, grounded on `data` cluster_search + `context` query_substrate |
-| Build a page / dashboard / data view | `/create-page` — author a page spec (catalog components + SQL bindings) via the `pages` tool (validate → create) |
+| Build a page / dashboard / data view | `/create-page` — author a page spec (catalog components + SQL bindings) over the pages REST API (validate → create). Pages are console + REST only; the `pages` MCP tool was retired. |
 | Reference library | `knowledge_base` (list / get / chat) |
 
 ## Operating rules

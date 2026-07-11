@@ -22,7 +22,7 @@ The payoff: the brief becomes a durable, shareable artifact with its own URL. Re
   - `List` (`{ items: [...] }`) for a bulleted talk track, or just write the bullets inside a `Markdown` body.
 - **`declared_queries: []`** — a pure-prose report binds no data, so the query list is empty. (If you want to anchor one live number, add a single declared query and a `Stat` beside the prose; the rest stays markdown.)
 
-You don't write any of this by hand — you ask Claude to, and it runs the platform's **validate → create** loop (the same loop `/amdahl-gtm:create-page` uses) and hands you back a URL.
+You don't write any of this by hand — you ask Claude to, and it runs the platform's **validate → create** loop (the same loop `/amdahl-gtm:create-page` uses) and hands you back a URL. Page authoring is a **console + REST** surface — the `pages` MCP tool was retired — so this play needs a session that can call the REST API (e.g. Claude Code with a platform API key); from a connector-only claude.ai session, have Claude draft the spec and create it in the console yourself.
 
 ## Paste this into Claude
 
@@ -32,7 +32,7 @@ positioning memo for {segment}} grounded in our Amdahl data — fuse our interna
 call/CRM history with public signal, and call out the divergence between the two.
 Keep it tight and readable: a few short sections, each with a clear heading.
 
-Then publish it as an Amdahl Page using the pages tool, as a long-form document:
+Then publish it as an Amdahl Page over the pages REST API, as a long-form document:
 
 - Set the page layout to "document" so it renders as a centered, readable prose
   column (NOT a dashboard).
@@ -42,11 +42,11 @@ Then publish it as an Amdahl Page using the pages tool, as a long-form document:
   provenance / sources note at the end.
 - This is pure prose, so declared_queries MUST be []. Do not write any SQL and do
   not invent data bindings — there's nothing to bind.
-- Run the pages `validate` action first. Fix every rejection (a non-catalog node
+- Run POST /pages/validate first. Fix every rejection (a non-catalog node
   type, a Markdown node missing its `body`, a Callout given a `text` prop instead
   of a child Text node) and re-validate until it passes clean.
-- Then call `create` and give me the console URL. Don't try to render or
-  screenshot it from here — I'll open the link.
+- Then POST /pages to create it and give me the console URL. Don't try to render
+  or screenshot it from here — I'll open the link.
 
 If anything in the brief is a specific factual claim you can't ground in our data
 or a cited source, mark it clearly rather than stating it as fact.
