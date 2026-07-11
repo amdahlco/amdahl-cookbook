@@ -26,10 +26,10 @@ Hold this mental model and keep the user on it:
 
 | Method + path | Purpose | Key body/query params |
 |---|---|---|
-| `GET /agent-blueprints` | Every blueprint the workspace sees (Amdahl starters + tenant rows). | `search`, `source_filter`, `include_archived` |
-| `GET /agent-blueprints/:id` | Full v1 DSL body for one blueprint. | `:id` (UUID or slug) |
+| `GET /agent-blueprints` | Every blueprint the workspace sees (Amdahl starters + tenant rows). | `status`, `limit`, `offset` |
+| `GET /agent-blueprints/:id` | Full v1 DSL body for one blueprint. | `:id` (UUID always; slug resolves for Amdahl starters) |
 | `GET /step-kinds` | The 8 step kinds with fields + example bodies. | — |
-| `GET /prompt-fragments` | Registered `prompt://` fragments. | `scheme`, `include_body` |
+| `GET /prompt-fragments` | Registered `prompt://` fragments (lean list, no body). | `scheme` |
 | `POST /agent-blueprints/validate` | Dry-run the moat on a draft body. Returns `{ valid, errors[] }`. | `content` |
 | `POST /agent-blueprints` | Persist a new tenant blueprint. | `content`, `status` |
 | `PATCH /agent-blueprints/:id` | Patch a tenant blueprint (content is REPLACE-semantic). | `content`, `change_summary`, `status` |
@@ -41,7 +41,7 @@ Hold this mental model and keep the user on it:
 
 Always: **orient -> draft -> validate -> create/fork -> iterate.** Never write before validating.
 
-1. **Orient.** Pull the grammar so the body is right the first time: `GET /step-kinds`, and `GET /prompt-fragments` (filter with `?scheme=content_writer` or `?scheme=researcher`; `include_body=true` to read the text). If the user's ask is close to an existing recipe, `GET /agent-blueprints` then `GET /agent-blueprints/:id` for that starter and copy from it — forking beats authoring from scratch.
+1. **Orient.** Pull the grammar so the body is right the first time: `GET /step-kinds`, and `GET /prompt-fragments` (filter with `?scheme=content_writer` or `?scheme=researcher`; the list is lean — fetch `GET /prompt-fragments/:id` to read a fragment's text). If the user's ask is close to an existing recipe, `GET /agent-blueprints` then `GET /agent-blueprints/:id` for that starter and copy from it — forking beats authoring from scratch.
 2. **Draft.** Compose the v1 DSL body in your reasoning loop (see the anatomy below). Show it to the user before writing.
 3. **Validate.** `POST /agent-blueprints/validate` with `{ "content": <body> }`. Read `errors[]` and fix by `code` (see the error table). Re-validate until `valid: true`.
 4. **Create or fork.** `POST /agent-blueprints` with `{ "content": <body>, "status": "draft" }` for net-new; or `POST /agent-blueprints/fork` with `{ "source": "<slug>" }` to start from a starter, then `PATCH` the fork. Save the returned blueprint id.

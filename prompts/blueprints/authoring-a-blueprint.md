@@ -178,7 +178,7 @@ Reference the *alias* you bound (`output_alias`) rather than the step id where y
 
 `llm` steps can pull in shared, Amdahl-maintained prompt snippets via `prompt_resources` using the `prompt://<scheme>/<id>` URI. The renderer inlines the fragment body into the step prompt. This lets your recipe reuse battle-tested instructions (grounding discipline, audience scoping, synthesis rules) instead of re-writing them.
 
-Two schemes ship today: **`content_writer/*`** (16 fragments — including `grounding_rules`, `audience_scoping`, `channel_budget`, `cta_synthesis`, `hook_patterns`, `pillar_selection`, `cadence_rhythm`, `variant_drafting`) and **`researcher/*`** (8 fragments — including `topic_decomposition`, `evidence_synthesis`, `cross_pattern_synthesis`, `confidence_scoring`, `metric_grounding`, `document_render`, `eval_rubric`, `intent_routing`). Don't guess fragment ids — list them live with `GET /prompt-fragments` (optionally `?scheme=content_writer`, `include_body=true`). A typo'd `prompt://` id is one of the most common validation errors.
+The two schemes you will compose from most are **`content_writer/*`** (16 fragments — including `grounding_rules`, `audience_scoping`, `channel_budget`, `cta_synthesis`, `hook_patterns`, `pillar_selection`, `cadence_rhythm`, `variant_drafting`) and **`researcher/*`** (9 fragments — including `topic_decomposition`, `evidence_synthesis`, `cross_pattern_synthesis`, `confidence_scoring`, `metric_grounding`, `document_render`, `eval_rubric`, `intent_routing`); a few smaller schemes also exist. Don't guess fragment ids — list them live with `GET /prompt-fragments` (optionally `?scheme=content_writer`; the list is lean, so fetch `GET /prompt-fragments/:id` for a fragment's text). A typo'd `prompt://` id is one of the most common validation errors.
 
 `prompt_resources` also accepts `artifact://<id>` and `knowledge_base://<id>` URIs; those stay as "read this resource first" hints rather than being inlined.
 
@@ -220,7 +220,7 @@ When `outputs` is non-empty, map each declared output name to the step result th
 You don't have to hold all of this in your head. The REST API is self-documenting — ask it before you author (all paths under `/api/platform/v1`):
 
 - `GET /step-kinds` — the 8 step kinds with field tables and complete example bodies.
-- `GET /prompt-fragments` — every registered `prompt://` fragment (add `?scheme=` to filter, `include_body=true` to see the text).
+- `GET /prompt-fragments` — every registered `prompt://` fragment, lean projection (add `?scheme=` to filter; `GET /prompt-fragments/:id` returns the full text).
 - `GET /agent-blueprints` — every blueprint your workspace can see (Amdahl starters + your own).
 - `GET /agent-blueprints/research-report` — the full validated DSL of a shipped starter, to copy from.
 
@@ -308,7 +308,7 @@ That's a complete, valid, persisted blueprint. To run it, fire a headless run (`
 
 ## Worked example 2 — fork a starter and customize it
 
-Most real work starts from a starter. Amdahl ships several (`bootstrap-workspace`, `draft-piece`, `plan-and-draft-window`, `multi-persona-social-launch`, `research-report`, and a Substack newsletter recipe). Forking copies one into your workspace as a fresh, editable draft.
+Most real work starts from a starter. Amdahl ships roughly two dozen — content recipes like `bootstrap-workspace`, `draft-piece`, `plan-and-draft-window`, `multi-persona-social-launch`, `research-report`, a Substack newsletter recipe, plus a large family of Living GTM Docs generators (VoC, pipeline health, win/loss, ICP, and more). List them live with `GET /agent-blueprints`. Forking copies one into your workspace as a fresh, editable draft.
 
 Say your team only ever writes LinkedIn posts and you want a LinkedIn-locked drafter. Start from `draft-piece`.
 
