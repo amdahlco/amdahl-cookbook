@@ -14,15 +14,16 @@ The mint is also **clamped to whoever asks**. When Claude (or you) mints a `self
 
 ## Paste this into Claude
 
+Page authoring + embed minting are **console + REST** surfaces (the `pages` MCP tool was retired), so run this from a session that can call the REST API — e.g. Claude Code with a platform API key.
+
 ```
 First, build me an Amdahl Page for {what the page should show — e.g. "pipeline
-health by stage" or "win rate as a gauge"}. Check page_template://list for a
-template that fits and adapt it to our data; otherwise author the spec from
-scratch. Run the pages `validate` action, fix every rejection, re-validate until
-clean, then `create` it.
+health by stage" or "win rate as a gauge"} over the pages REST API. Check
+GET /pages/templates for a template that fits and adapt it to our data;
+otherwise author the spec from scratch. Run POST /pages/validate, fix every
+rejection, re-validate until clean, then POST /pages to create it.
 
-Then mint a LIVE embed link for that page using the pages tool's mint_embed
-action (or POST /pages/:id/embed-token):
+Then mint a LIVE embed link for that page via POST /pages/:id/embed-token:
 
 - Set audience to "self" — I just want a link scoped to what *I* can see, for
   now. Do NOT mint a "public" or "workspace" embed; that needs an admin and I
@@ -56,7 +57,7 @@ workspace, an admin has to mint that tier in the console.
 
 ## Variations
 
-- **Public / external embed (admin).** To put the page on a customer-facing site or a public status page, an **admin** mints with `audience: "public"` (and almost always an `origins` allowlist). Same `mint_embed` action, admin-gated tier — ask Claude to "mint a public embed" and, if you're not an admin, it'll tell you an admin has to do it in the console.
+- **Public / external embed (admin).** To put the page on a customer-facing site or a public status page, an **admin** mints with `audience: "public"` (and almost always an `origins` allowlist). Same embed-token endpoint, admin-gated tier — ask Claude to "mint a public embed" and, if you're not an admin, it'll tell you an admin has to do it in the console.
 - **Workspace embed.** For a page every teammate should see embedded in an internal tool, an admin mints `audience: "workspace"` — visible to any member, still scoped to the data slice on the token.
 - **Tighter data scope than your own.** Pass explicit `rules` at mint time to scope the embed to a narrower slice than the principal sees (e.g. one region's pipeline) — the render never widens past it.
 - **Embed a single-viz page.** Pages with `layout: "single"` (a gauge, a funnel, a treemap) embed beautifully as a compact widget — build one, then embed it the same way. See the [create-a-page command](../../plugins/amdahl-gtm/commands/create-page.md) for the single layout.
@@ -65,7 +66,7 @@ workspace, an admin has to mint that tier in the console.
 
 - **Fail-closed is the whole point — don't fight it.** If an embed shows nothing, the token is missing, expired, or scoped to an empty slice. That's the safe behavior, not a bug; re-mint or widen the (admin-gated) audience deliberately.
 - **`self` for tests, admin tiers for sharing.** A self-scoped embed is the right first move — it can't over-share. Promote to `workspace` / `public` only when you actually mean to, through an admin.
-- **The agent can't out-scope you.** Because the mint is clamped to the principal, asking the copilot to "embed this" only ever produces an embed scoped to what that copilot/key can already see. Audience-widening to public stays admin-gated regardless of who asks.
+- **The agent can't out-scope you.** Because the mint is clamped to the principal, asking an agent to "embed this" only ever produces an embed scoped to what that agent's key can already see. Audience-widening to public stays admin-gated regardless of who asks.
 - **Rotate the secret = revoke everything.** Keep that in your back pocket: one secret rotation in Settings invalidates every live embed across the workspace at once.
 - **Pair it with a page recipe.** This recipe is the embed step; the page itself comes from [build a markdown report page](markdown-report-page.md) (for a document) or the dashboard/single-viz flows in the [create-a-page command](../../plugins/amdahl-gtm/commands/create-page.md).
 

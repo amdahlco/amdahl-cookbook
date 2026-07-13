@@ -9,7 +9,7 @@
 Most cookbook recipes end in the chat: a brief, a draft, a target list. The last mile is getting that result to a human who isn't watching the session. `notifications.email_member` is that last mile — and it's deliberately narrow so an agent can use it autonomously without becoming a spam cannon:
 
 - **Members only.** Every recipient must be a current member of the workspace. Hand it an outside address and the *whole* call fails with `error.code: "invalid_argument"` and a `non_members[]` list telling you exactly which addresses were rejected — nothing is sent. This is the anti-spam guarantee: a leaked key or a confused agent can email your teammates, never your customers.
-- **Capped.** A per-business hourly cap (default 100) and a per-blueprint-run cap (default 20) bound the blast radius. Exceed either and the call returns `error.code: "rate_limited"` and sends nothing.
+- **Capped.** A per-business hourly cap (default 100) and a per-run cap (default 20) bound the blast radius. Exceed either and the call returns `error.code: "rate_limited"` and sends nothing.
 - **Idempotent.** Pass an `idempotency_key` and a repeat of the same call returns `skipped_duplicate: true` with no second email. Safe to retry; safe to re-walk a recipe.
 - **Autonomous + per-recipient resilient.** No confirmation gate — the agent can send without pausing — and one bad address doesn't sink the rest: the result splits into `sent[]` and `failed[]` so a partial send is legible.
 
@@ -214,9 +214,11 @@ and don't retry.
 - The verification read showing both rows at `status: "sent"`, plus the cap headroom.
 - If anything was rejected (`invalid_argument` + `non_members`) or capped (`rate_limited`), a plain statement of what happened and no silent retry.
 
-## Sending from a blueprint
+## Sending unattended — Routines and Workflows
 
-Inside an [Amdahl blueprint](../blueprints/authoring-a-blueprint.md), emailing the team is a normal `tool` step calling `notifications.email_member` — there's no special "notification" step kind. It looks like any other tool step:
+**The "every Monday, no human present" path is a Routine.** A Routine is a cron that fires a Chat — one server-side Master agent turn in a fresh Session — each occurrence, and its config carries an `actions_allowed` list: put `email_member` on it and the fired run may email the team, with every guardrail above (member-only, capped, idempotent) unchanged. Create one from any connected Claude session with the `agents` tool (`create_routine` with a name, a prompt like "compile the weekly pipeline recap and email it to {names}", and a cron). An agent-initiated send is only permitted when the action is on the run's `actions_allowed` list — the default is empty, so a run that wasn't granted the action gets a structured `action_not_allowed` and surfaces the send as a proposal instead.
+
+**Workflows (blueprints) can send too.** Inside an [Amdahl blueprint](../blueprints/authoring-a-blueprint.md) — a typed Workflow recipe, authored in the console or over the REST API — emailing the team is a normal `tool` step calling `notifications.email_member`; there's no special "notification" step kind. It looks like any other tool step:
 
 ```json
 {
@@ -233,9 +235,9 @@ Inside an [Amdahl blueprint](../blueprints/authoring-a-blueprint.md), emailing t
 }
 ```
 
-Add `notifications.email_member` to the blueprint's `policy.tool_allowlist` so the recipe documents that it intends to send mail. (Per the [authoring guide](../blueprints/authoring-a-blueprint.md), the allowlist is guidance for the reading LLM — the API key's `notifications:write` scope is the real boundary.)
+Add `notifications.email_member` to the blueprint's `policy.tool_allowlist` so the recipe documents that it intends to send mail (per the [authoring guide](../blueprints/authoring-a-blueprint.md), headless runs derive their scopes from the allowlist; the `notifications:write` scope is the real boundary).
 
-**The honest caveat — when does the email actually fire?** Amdahl has no server-side blueprint runner. A blueprint is a recipe an LLM reads and walks; the `notify_team` step's email goes out at the moment a connected agent (in a Claude session) or your own code *reaches that step while walking the recipe* — the render-and-walk / LLM-in-the-loop path. There is **no** fully unattended, scheduled blueprint email today: nothing on the platform wakes up at 9am, walks the recipe by itself, and sends. If you need "every Monday, no human present," wire `POST /notifications/email-member` into your own scheduler/cron and call the REST endpoint directly — that's the supported unattended path until a platform-side runner ships. (This mirrors the blueprint mental model: the platform authors, validates, versions, and forks recipes; it doesn't run them.)
+**When does the email actually fire?** On a headless Workflow run (fired from the console/REST, or by a Workflow schedule), the platform walks the recipe server-side and the `notify_team` step sends the moment the runner reaches it. On the interactive path, it sends when the agent walking the recipe reaches that step. Either is fully unattended once scheduled — but for most standing "email the team a digest" jobs, the Routine above is the simpler build: a prompt and a cron instead of a typed step graph.
 
 ## Variations
 
@@ -255,6 +257,6 @@ Add `notifications.email_member` to the blueprint's `policy.tool_allowlist` so t
 
 ## See also
 
-- [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md) — the `tool`-step model the blueprint variant above builds on, and why a blueprint is walked, not run.
+- [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md) — the `tool`-step model the Workflow variant above builds on, and when a Routine (a scheduled Chat) is the better fit.
 - The rest of the cookbook: [recipe library](../README.md) — paste-ready GTM prompts that produce the readouts worth emailing.
 - Product docs: <https://amdahl.co/mcp>.

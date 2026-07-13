@@ -47,7 +47,7 @@ Run `/amdahl-gtm:setup` to confirm the connection and see what's on file. If you
 The plugin ships two skills (auto-discovered from `skills/`):
 
 - **`amdahl-gtm-routing`** — a thin routing skill so that **ambient** GTM questions — ones where you didn't type a slash command — still route through Amdahl instead of generic `web_search`. Ask "help me write a cold email to a Series B fintech CTO" and it reaches for your corpus on its own.
-- **`blueprint-authoring`** — drives the create -> validate -> fork -> iterate loop for authoring an Amdahl **blueprint** (a reusable, typed recipe an LLM walks step-by-step) live against the `blueprints` MCP tool. Ask "save this workflow as a reusable recipe" or "fork the draft-piece starter and lock it to LinkedIn" and it walks the DSL with you. The narrative guide is [`prompts/blueprints/authoring-a-blueprint.md`](../../prompts/blueprints/authoring-a-blueprint.md).
+- **`blueprint-authoring`** — drives the create -> validate -> fork -> iterate loop for authoring an Amdahl **workflow (blueprint)** — a reusable, typed recipe the platform validates, versions, forks, and runs — over the REST API (the `blueprints` MCP tool was retired), and routes "make this recur" asks to **Routines**: scheduled Chats created with the `agents` MCP tool. Ask "save this workflow as a reusable recipe" or "fork the draft-piece starter and lock it to LinkedIn" and it walks the DSL with you. The narrative guide is [`prompts/blueprints/authoring-a-blueprint.md`](../../prompts/blueprints/authoring-a-blueprint.md).
 
 ## How it works
 
