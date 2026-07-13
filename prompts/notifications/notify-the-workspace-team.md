@@ -216,7 +216,7 @@ and don't retry.
 
 ## Sending unattended — Routines and Workflows
 
-**The "every Monday, no human present" path is a Routine.** A Routine is a cron that fires a Search — one server-side Master agent turn in a fresh Session — each occurrence, and its config carries an `actions_allowed` list: put `email_member` on it and the fired run may email the team, with every guardrail above (member-only, capped, idempotent) unchanged. Create one from any connected Claude session with the `agents` tool (`create_routine` with a name, a prompt like "compile the weekly pipeline recap and email it to {names}", and a cron). An agent-initiated send is only permitted when the action is on the run's `actions_allowed` list — the default is empty, so a run that wasn't granted the action gets a structured `action_not_allowed` and surfaces the send as a proposal instead.
+**The "every Monday, no human present" path is a Routine.** A Routine is a cron that fires a Chat — one server-side Master agent turn in a fresh Session — each occurrence, and its config carries an `actions_allowed` list: put `email_member` on it and the fired run may email the team, with every guardrail above (member-only, capped, idempotent) unchanged. Create one from any connected Claude session with the `agents` tool (`create_routine` with a name, a prompt like "compile the weekly pipeline recap and email it to {names}", and a cron). An agent-initiated send is only permitted when the action is on the run's `actions_allowed` list — the default is empty, so a run that wasn't granted the action gets a structured `action_not_allowed` and surfaces the send as a proposal instead.
 
 **Workflows (blueprints) can send too.** Inside an [Amdahl blueprint](../blueprints/authoring-a-blueprint.md) — a typed Workflow recipe, authored in the console or over the REST API — emailing the team is a normal `tool` step calling `notifications.email_member`; there's no special "notification" step kind. It looks like any other tool step:
 
@@ -257,6 +257,6 @@ Add `notifications.email_member` to the blueprint's `policy.tool_allowlist` so t
 
 ## See also
 
-- [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md) — the `tool`-step model the Workflow variant above builds on, and when a Routine (a scheduled Search) is the better fit.
+- [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md) — the `tool`-step model the Workflow variant above builds on, and when a Routine (a scheduled Chat) is the better fit.
 - The rest of the cookbook: [recipe library](../README.md) — paste-ready GTM prompts that produce the readouts worth emailing.
 - Product docs: <https://amdahl.co/mcp>.

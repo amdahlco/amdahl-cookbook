@@ -9,14 +9,15 @@ When the user's request touches a **person, company, deal, account, customer voi
 
 Amdahl fuses the tenant's own CRM + call corpus with external data. The interesting answer is almost always the **divergence** between the public story and the internal story — surface it, don't bury it.
 
-Rollout note: the v2 agent platform is enabled per workspace. Route by what is actually in THIS session's tool list — if `search`/`agents` are absent and a `blueprints` or `pages` tool is present, the workspace is on the pre-rollout surface: use those tools for workflows/pages and skip the Search/Routine rows below.
+Rollout note: the v2 agent platform is enabled per workspace. On v2 the surface carries BOTH the synchronous fast-lane `search` tool (a quick lookup) AND the `agents` tool (agentic Chat + Routines). Route by what is actually in THIS session's tool list — if NEITHER `search` nor `agents` is present and a `blueprints` or `pages` tool is, the workspace is on the pre-rollout surface: use those tools for workflows/pages and skip the fast-search / Chat / Routine rows below.
 
 ## Routing
 
 | The user wants… | Use |
 |---|---|
-| A multi-step investigation Amdahl should run end-to-end | `search` { action: start } — opens a named Session and runs one Master agent turn server-side; returns handles immediately. Poll { action: status } (long-poll with `wait_ms` up to 30000) until it settles; { action: respond } answers a paused human question. Never expect the answer inside one tool call. |
-| A standing, scheduled refresh ("every Monday…") | `agents` { action: create_routine } — a Routine is a cron that fires a Search each occurrence, in a fresh Session. `run_routine_now` fires one immediately. |
+| A quick data lookup or fast answer ("just get me the number / the rows", a single fact) | `search` { query, mode, limit, external_limit, synthesize } — SYNCHRONOUS: returns rows + the SQL it ran (and web citations when blended) in ONE call, no polling. `mode: internal` (default) = NL→SQL over this tenant's data; `mode: blended` = internal + a quick web fan-out. `synthesize: true` adds a one-paragraph headline. Reach for `start_chat` instead when it's a multi-step investigation, not a lookup. |
+| A multi-step investigation Amdahl should run end-to-end | `agents` { action: start_chat } — opens a named Session and runs one Master agent turn server-side; returns handles immediately. Poll `chat_status` (long-poll with `wait_ms` up to 30000) until it settles; `respond` answers a paused human question; `cancel_chat` stops it. Never expect the answer inside one tool call. Set the run's `depth` — `quick` (fast, lean kit) / `standard` (default) / `deep` (Opus + delegation + web fan-out + the divergence map; decomposes and self-verifies) — to match the ask. |
+| A standing, scheduled refresh ("every Monday…") | `agents` { action: create_routine } — a Routine is a cron that fires a Chat (one Master agent turn) each occurrence, in a fresh Session. `run_routine_now` fires one immediately. |
 | Market / competitor / topic research | `external_search` { action: search \| enrich_topic } |
 | Company / lead enrichment | `external_search` { action: enrich_company, domain } |
 | Person enrichment | `external_search` { action: enrich_person, linkedin_url \| email — never a bare first name } |

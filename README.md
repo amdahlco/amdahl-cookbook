@@ -120,7 +120,7 @@ The cookbook is organized around the seven GTM jobs people actually run — not 
 
 ## Browse the cookbook
 
-24 recipes, organized by the seven jobs.
+25 recipes, organized by the seven jobs.
 
 | Category | What's in it | Recipes |
 |---|---|---|
@@ -130,7 +130,7 @@ The cookbook is organized around the seven GTM jobs people actually run — not 
 | [Pre-meeting prep](prompts/pre-meeting-prep/) | Sales calls, QBRs, renewals | 3 |
 | [Win/loss & deal postmortem](prompts/win-loss-deal-postmortem/) | Real reasons, not dropdown reasons | 3 |
 | [Content & outbound](prompts/content-and-outbound/) | Grounded posts, targeted outreach | 4 |
-| [Pipeline pulse](prompts/pipeline-pulse/) | Weekly health, risk, triage | 3 |
+| [Pipeline pulse](prompts/pipeline-pulse/) | Weekly health, risk, triage, fast lookups | 4 |
 
 The full index lives at [prompts/README.md](prompts/README.md).
 
@@ -140,7 +140,7 @@ The full index lives at [prompts/README.md](prompts/README.md).
 
 The recipes above are paste-ready prompts. When you want work to repeat *inside Amdahl* — without you pasting anything — there are two paths in:
 
-- **Routines** — the MCP-native way to schedule work. A Routine is a cron that fires a **Search** (one server-side Master agent turn, in a fresh Session) each occurrence. From any connected Claude session, ask for a standing refresh ("every Monday, refresh the pipeline health report") and Claude creates it with the `agents` tool's `create_routine` action — a name, a prompt, and a cron. No DSL required, and each fire shows up as its own Session you can open and read.
+- **Routines** — the MCP-native way to schedule work. A Routine is a cron that fires a **Chat** (one server-side Master agent turn, in a fresh Session) each occurrence. From any connected Claude session, ask for a standing refresh ("every Monday, refresh the pipeline health report") and Claude creates it with the `agents` tool's `create_routine` action — a name, a prompt, and a cron. No DSL required, and each fire shows up as its own Session you can open and read.
 - **Workflows (blueprints)** — the fully-typed path: a **blueprint** is a typed recipe with declared inputs, outputs, and a validated step graph that the platform can version, fork, schedule, and run headlessly. Authoring and running Workflows lives in the **console and the REST API** (the `blueprints` MCP tool was retired, so this path isn't driven from a Claude chat anymore). It's a different thing from a cookbook prompt; the guide opens by untangling the two.
 
 > **Rollout note:** the v2 agent platform (the `search` + `agents` MCP tools, with the `blueprints` and `pages` tools retired) is enabled **per workspace**. If your connected session still lists a `blueprints` or `pages` tool and no `search`/`agents`, your workspace is on the pre-rollout surface — keep using those tools as before, and ask your Amdahl admin about Agent Platform v2.

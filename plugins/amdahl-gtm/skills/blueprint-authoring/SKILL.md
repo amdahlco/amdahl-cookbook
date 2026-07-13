@@ -1,6 +1,6 @@
 ---
 name: blueprint-authoring
-description: Author, validate, and fork Amdahl workflow recipes (blueprints) over the Amdahl REST API — and route "make this recur" asks to Routines. Use when the user wants to create / edit / fork / validate a workflow (blueprint), save a multi-step GTM workflow as a reusable recipe, customize a starter, schedule recurring work, or learn the blueprint DSL. The `blueprints` MCP tool was retired — workflow authoring is console + REST; over MCP, recurring work is a Routine (`agents` tool, a cron that fires a Search) and one-shot deep work is a `search`.
+description: Author, validate, and fork Amdahl workflow recipes (blueprints) over the Amdahl REST API — and route "make this recur" asks to Routines. Use when the user wants to create / edit / fork / validate a workflow (blueprint), save a multi-step GTM workflow as a reusable recipe, customize a starter, schedule recurring work, or learn the blueprint DSL. The `blueprints` MCP tool was retired — workflow authoring is console + REST; over MCP, recurring work is a Routine (`agents` tool, a cron that fires a Chat) and one-shot deep work is a Chat (`agents` `start_chat`).
 ---
 
 # Amdahl blueprint authoring
@@ -9,8 +9,8 @@ When the user wants to **save a repeatable multi-step workflow as a reusable rec
 
 **Route the ask first — Routine or Workflow?**
 
-- The user wants a **standing, scheduled refresh** in plain language ("every Monday, refresh the pipeline report") → don't author a blueprint. Create a **Routine** with the connected Amdahl MCP `agents` tool (`create_routine` with `name` + `prompt` + `cron`): a Routine is a cron that fires a Search — one server-side Master agent turn in a fresh Session — each occurrence. `run_routine_now` fires one immediately.
-- The user wants **one-shot deep work run server-side** → the MCP `search` tool (start → poll status → respond).
+- The user wants a **standing, scheduled refresh** in plain language ("every Monday, refresh the pipeline report") → don't author a blueprint. Create a **Routine** with the connected Amdahl MCP `agents` tool (`create_routine` with `name` + `prompt` + `cron`): a Routine is a cron that fires a Chat — one server-side Master agent turn in a fresh Session — each occurrence. `run_routine_now` fires one immediately.
+- The user wants **one-shot deep work run server-side** → the MCP `agents` tool's Chat (`start_chat` → poll `chat_status` → `respond`); set `depth: 'deep'` for a thorough investigation.
 - The user wants the **fully-typed, step-by-step contract** — declared inputs/outputs, a validated step graph, forkable starters → author a **Workflow (blueprint)** over REST, per this skill. If no API key is available, compose + explain the body and point the user at the console's Workflows surface.
 
 Rollout note: the v2 surface is enabled per workspace — if this session's tool list still carries a `blueprints` tool (and no `search`/`agents`), the workspace is on the pre-rollout surface: author/run blueprints with that tool as before and skip the Routine routing above.
@@ -20,7 +20,7 @@ If an MCP call fails on auth, tell the user to run `/amdahl-gtm:setup`.
 Hold this mental model and keep the user on it:
 
 - A blueprint is a **structured recipe (a typed DSL artifact) with two ways to run.** The platform runs Workflows **headlessly** (`POST /agent-blueprints/:id/run`, and cron schedules fired server-side); an agent reading the recipe over the console or REST can also **walk it interactively**, making the primitive calls itself (`data.query`, `external_search.execute`, `artifacts.create`, ...).
-- **Blueprints are off MCP.** Never tell the user to author or run a blueprint from an MCP session; from MCP the automation surfaces are Routines (`agents`) and Search (`search`).
+- **Blueprints are off MCP.** Never tell the user to author or run a blueprint from an MCP session; from MCP the automation surfaces are Routines and Chat (both the `agents` tool), plus the fast-lane `search` tool for quick synchronous lookups.
 - `policy.tool_allowlist` is **load-bearing on headless runs** — the platform derives the run's scopes from it (least-privilege) — and guidance for an interactive walker. `timeout_seconds` and `cost_cap_usd` are advisory authoring metadata. The API key's scope grammar remains the outer safety boundary.
 - A cookbook *recipe/prompt* (paste-into-Claude text) is a DIFFERENT thing from an in-app *blueprint* (the DSL artifact). If the user conflates them, clarify once.
 
@@ -102,7 +102,7 @@ A minimal valid body:
 - Prefer forking a starter (`POST /agent-blueprints/fork` with `source: "draft-piece" | "research-report" | ...`) over authoring from scratch when the ask is close to an existing recipe. Starters are read-only; fork first, then edit the fork.
 - Never put a literal secret in the body — reference `$secret.NAME`. A literal key is stored in plaintext on the artifact.
 - When the user says "run" the blueprint: publish it, then fire `POST /agent-blueprints/:id/run` (headless) — or, if what they really want is "run this on a cadence," offer a Routine instead (`agents create_routine` over MCP).
-- When the user asks to do any of this from an MCP-connected chat: the `blueprints` MCP tool was retired — route them to the console/REST, or to Routines + Search for the MCP-native equivalents.
+- When the user asks to do any of this from an MCP-connected chat: the `blueprints` MCP tool was retired — route them to the console/REST, or to Routines + Chat (both the `agents` tool) for the MCP-native equivalents.
 - The full narrative guide (mental model, anatomy, two worked examples) lives at `prompts/blueprints/authoring-a-blueprint.md` — point the user there for depth.
 
 This skill drives a live authoring loop; it stays thin and defers DSL depth to the guide so it remains correct as the platform's starters + fragments evolve.

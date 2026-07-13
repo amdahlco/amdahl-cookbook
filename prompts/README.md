@@ -1,6 +1,6 @@
 # Recipe library
 
-27 copy-paste recipes for go-to-market work. Each recipe is a self-contained markdown file with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
+28 copy-paste recipes for go-to-market work. Each recipe is a self-contained markdown file with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
 
 New here? Start with the [main README](../README.md) for setup and the six headliner prompts.
 
@@ -58,13 +58,14 @@ Grounded posts, smarter targeting, openers that aren't Mad Libs.
 - [Outbound targeting by signal](content-and-outbound/outbound-targeting-by-signal.md) — a target list built from the signals your wins actually shared, with a "stop targeting on" list of filters that don't correlate.
 - [Personalize cold outreach](content-and-outbound/personalize-cold-outreach.md) — a non-generic 2-sentence opener per prospect, with skips when the hook isn't real.
 
-## Pipeline pulse (3)
+## Pipeline pulse (4)
 
-Weekly health, risk surfacing, and zombie cleanup — all on a cadence.
+Weekly health, risk surfacing, zombie cleanup, and fast lookups — all on a cadence.
 
 - [Weekly recap](pipeline-pulse/weekly-recap.md) — what moved, what slipped, what's new, what went quiet, plus the one question to ask in standup.
 - [Deals at risk](pipeline-pulse/deals-at-risk.md) — deals that look healthy on paper but are at risk in the call content, sorted by ACV × severity.
 - [Stalled pipeline triage](pipeline-pulse/stalled-pipeline-triage.md) — chase / nurture / close-lost, with the honest verbatim "why it died" on each loss.
+- [Quick lookup (fast lane)](pipeline-pulse/quick-lookup-fast-lane.md) — one concrete question, one synchronous `search` call: the rows plus the SQL it ran, with an optional blended public angle. For "get me the number," not a multi-step investigation.
 
 ## Pages & dashboards (2)
 

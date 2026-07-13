@@ -2,7 +2,7 @@
 
 **What this is**: A practical guide to authoring an Amdahl *agent blueprint* — a structured, typed recipe the console calls a **Workflow**: declared inputs, outputs, and a validated step graph the platform can run headlessly or an agent can read and walk step-by-step. You author, validate, and fork blueprints in the console or over the REST API (`/api/platform/v1/agent-blueprints*`); the MCP `blueprints` tool was retired, so none of this is driven from an MCP-connected chat anymore. By the end you'll have written a one-step blueprint from scratch and forked a shipped starter into your own customized copy.
 
-**When to use it**: "I keep running the same multi-step GTM workflow by hand and I want to save it as a reusable recipe my team (or an agent) can run the same way every time" — and a plain-language **Routine** (a scheduled Search created with the `agents` MCP tool: a name, a prompt, a cron) isn't structured enough. Reach for a blueprint when you need the typed contract; reach for a Routine when a prompt on a cadence is enough.
+**When to use it**: "I keep running the same multi-step GTM workflow by hand and I want to save it as a reusable recipe my team (or an agent) can run the same way every time" — and a plain-language **Routine** (a scheduled Chat created with the `agents` MCP tool: a name, a prompt, a cron) isn't structured enough. Reach for a blueprint when you need the typed contract; reach for a Routine when a prompt on a cadence is enough.
 
 ---
 
@@ -24,7 +24,7 @@ A blueprint is **a typed recipe with two ways to run.**
 
 Three consequences fall out of this, and they're worth internalizing before you write anything:
 
-1. **None of this happens over MCP anymore.** The `blueprints` MCP tool was retired: an MCP-connected Claude session can't author, read, or run a blueprint. From MCP, the automation surfaces are **Search** (the `search` tool — one server-side Master agent turn, for one-shot deep work) and **Routines** (the `agents` tool — a cron that fires a Search each occurrence in a fresh Session, the scheduled-work noun). Blueprints are the console + REST path for when you need the fully-typed contract. (Rollout note: the v2 surface is enabled per workspace — if your connected session still lists a `blueprints` tool and no `search`/`agents`, your workspace is on the pre-rollout surface and the old tool still works; ask your Amdahl admin about Agent Platform v2.)
+1. **None of this happens over MCP anymore.** The `blueprints` MCP tool was retired: an MCP-connected Claude session can't author, read, or run a blueprint. From MCP, the automation surfaces are **Chat** (the `agents` tool's `start_chat` — one server-side Master agent turn, for one-shot deep work — polled via `chat_status`) and **Routines** (the `agents` tool — a cron that fires a Chat each occurrence in a fresh Session, the scheduled-work noun); for a fast synchronous lookup there's also the `search` tool. Blueprints are the console + REST path for when you need the fully-typed contract. (Rollout note: the v2 surface is enabled per workspace — if your connected session still lists a `blueprints` tool and no `search`/`agents`, your workspace is on the pre-rollout surface and the old tool still works; ask your Amdahl admin about Agent Platform v2.)
 2. **`policy.tool_allowlist` is load-bearing on headless runs.** A headless run derives its scopes from the allowlist (least-privilege), so keep it honest; on the interactive path it's guidance for the reading agent. Either way, the **scope grammar of the API key** remains the outer safety boundary — the key's scopes decide what any tool call is actually allowed to do.
 3. **`estimated_cost_cents` and `timeout_seconds` are authoring metadata.** They set expectations and document intent. Treat them as labels and hints for the human and the reading agent, not as runtime controls the platform enforces.
 
@@ -205,7 +205,7 @@ The two schemes you will compose from most are **`content_writer/*`** (16 fragme
 "trigger": { "manual": { "enabled": true } }
 ```
 
-(`event` and `webhook` trigger shapes exist in the schema as forward-compatible placeholders. And note: for "run a plain-language ask on a cadence," a **Routine** — a scheduled Search created with the `agents` MCP tool — is usually the better fit than a scheduled Workflow; reach for a schedule here when the typed step graph itself must recur.)
+(`event` and `webhook` trigger shapes exist in the schema as forward-compatible placeholders. And note: for "run a plain-language ask on a cadence," a **Routine** — a scheduled Chat created with the `agents` MCP tool — is usually the better fit than a scheduled Workflow; reach for a schedule here when the typed step graph itself must recur.)
 
 ### outputs_mapping
 
@@ -346,7 +346,7 @@ That's the whole loop: **fork -> read -> edit -> validate -> update -> publish.*
 
 ## Common mistakes (and the rule that prevents each)
 
-- **Trying to author or run a blueprint over MCP.** The `blueprints` MCP tool was retired — this whole loop is console + REST. From an MCP-connected session, use a Routine (`agents create_routine`) for recurring work or a `search` for one-shot deep work.
+- **Trying to author or run a blueprint over MCP.** The `blueprints` MCP tool was retired — this whole loop is console + REST. From an MCP-connected session, use a Routine (`agents create_routine`) for recurring work or a Chat (`agents start_chat`) for one-shot deep work.
 - **Authoring a Workflow when a Routine would do.** If the ask is "run this plain-language prompt every Monday," that's a Routine, not a blueprint. Reach for the DSL when the typed inputs/outputs/step contract earns its keep.
 - **Skipping `validate`.** `create` / `update` will reject a bad body anyway, but `validate` hands you the *full* error list in one round-trip. Always dry-run first.
 - **Guessing `prompt://` fragment ids or operation ids.** List them (`GET /prompt-fragments`, and consult the tool catalog for op ids). A typo is an `unknown_fragment` / `invalid_tool_id` reject.
