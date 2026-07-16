@@ -39,4 +39,15 @@ A read-only key (`mcp_read_only`) can run `search.run` and read chats, but canno
 - [Saved agents — reuse a prompt](saved-agents.md) — the agent library: create a named, reusable agent, pin it in a Chat, and schedule it as a Routine. CRUD over REST + MCP.
 - [The answer envelope](answer-envelope.md) — how to render a Chat answer in your own UI: the seven `content_block` types (`text` / `callout` / `citation` / `table` / `chart_spec` / `metric` / `cluster_finding`), `follow_ups`, and the `amdahl:q` / `amdahl:cite` link grammar (figures explore, claims prove).
 
+## End-to-end use cases
+
+The recipes above are the doors in isolation. These two assemble them into a real GTM job — over both REST and MCP — and are the best place to start if you're integrating.
+
+- [Voice of customer, end to end](voice-of-customer-end-to-end.md) — one question across both doors, and the exact `escalate_to_chat` handoff from the fast lane into Chat. The recipe that teaches the seam.
+- [Call prep + objection handling, end to end](call-prep-objection-end-to-end.md) — the flagship: who looks like this prospect, what worked/didn't, and the exact rebuttal — one Chat, grounded in your own corpus, then delivered.
+
+## Reference
+
+- [Operation reference — the live catalog](reference.md) — read the self-describing operation catalog (`GET /operations` / `operation://list`) for the exact, current input schema and required scope of any operation.
+
 New here? Start with the [main README](../../README.md) for the OAuth connect flow, then the [recipe library](../README.md) for the GTM prompts these doors were built to serve.

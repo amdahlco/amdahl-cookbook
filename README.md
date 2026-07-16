@@ -160,6 +160,7 @@ Everything above runs on two "ask Amdahl" doors, and you can drive both from you
 - **Agentic Chat** — the always-async Master agent: start, get handles, poll or stream for the cited answer, respond to a pause. For "investigate this." [Recipe](prompts/agent-platform/agentic-chat.md).
 - **Routines & saved agents** — put a Chat on a cron, or save a reusable agent and pin it. [Routines](prompts/agent-platform/routines.md) · [Saved agents](prompts/agent-platform/saved-agents.md).
 - **Rendering the answer** — the seven content-block types and the `amdahl:q` / `amdahl:cite` link grammar, for showing a Chat result in your own UI. [Recipe](prompts/agent-platform/answer-envelope.md).
+- **End-to-end use cases** — two full journeys over both surfaces: [voice of customer](prompts/agent-platform/voice-of-customer-end-to-end.md) (teaches the fast -> Chat handoff) and [call prep + objection handling](prompts/agent-platform/call-prep-objection-end-to-end.md) (the flagship).
 
 Requires Agent Platform v2 (the same per-workspace rollout as above): the `search` + `agents` MCP tools, or `POST /search` and `POST /chat` on REST.
 
