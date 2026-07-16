@@ -1,6 +1,6 @@
 # Recipe library
 
-36 recipes for go-to-market work. Most are self-contained markdown files with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips; the [agent-platform](agent-platform/README.md) section adds the developer-facing REST + MCP shapes for the same engine. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
+38 recipes for go-to-market work. Most are self-contained markdown files with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips; the [agent-platform](agent-platform/README.md) section adds the developer-facing REST + MCP shapes for the same engine. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
 
 New here? Start with the [main README](../README.md) for setup and the six headliner prompts.
 
@@ -80,9 +80,14 @@ Mirror your Amdahl knowledge base into a Notion database in your own workspace �
 
 - [Mirror your knowledge base to Notion](knowledge-sync/mirror-knowledge-base-to-notion.md) — the **connect -> configure -> it-syncs-itself -> monitor** loop: connect Notion over OAuth, designate a parent page (provisions a database + backfills), then watch it mirror every promoted doc. One-way, current-version-only, self-healing on an hourly reconcile. Setup writes are REST + console; the config / status / ledger reads are on MCP too.
 
-## Agent platform — API + MCP (8)
+## Agent platform — API + MCP (10)
 
 The developer-facing view of the engine the prompts above run on: how to drive Amdahl's two "ask Amdahl" doors — and the automation around them — from your own code, over REST and MCP. Requires Agent Platform v2 (the `search` + `agents` MCP tools). See the [section README](agent-platform/README.md).
+
+**The mental model:**
+
+- [Amdahl is one layer of your GTM brain](agent-platform/gtm-brain-architecture.md) — skills + agents + a shared MCP belt; Amdahl is one server on it, wired once. Why hand-rolled context breaks, and why it's a layer, not an integration.
+- [The four shapes of an Amdahl play](agent-platform/four-flows.md) — automated / interactive / scheduled / ad hoc, the one contract they share, and the outbound motion worked in full.
 
 **The doors + primitives:**
 

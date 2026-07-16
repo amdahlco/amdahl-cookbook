@@ -156,6 +156,8 @@ If you've installed the plugin, the `blueprint-authoring` skill routes "make thi
 
 Everything above runs on two "ask Amdahl" doors, and you can drive both from your own code — over the REST API and over MCP — not just by pasting prompts. The [agent-platform section](prompts/agent-platform/README.md) is the developer-facing walkthrough, with copy-paste REST + MCP request/response shapes for each door.
 
+- **The mental model** — where Amdahl sits in a GTM agent stack: one layer on your [shared MCP belt](prompts/agent-platform/gtm-brain-architecture.md), and the [four shapes](prompts/agent-platform/four-flows.md) every play takes (your skill asks, Amdahl answers, your skill acts).
+
 - **Fast lane (`search.run`)** — one synchronous call that returns the rows *and* the SQL it ran. For "get me the number." [Recipe](prompts/agent-platform/fast-lane-search.md).
 - **Agentic Chat** — the always-async Master agent: start, get handles, poll or stream for the cited answer, respond to a pause. For "investigate this." [Recipe](prompts/agent-platform/agentic-chat.md).
 - **Routines & saved agents** — put a Chat on a cron, or save a reusable agent and pin it. [Routines](prompts/agent-platform/routines.md) · [Saved agents](prompts/agent-platform/saved-agents.md).

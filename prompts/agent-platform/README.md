@@ -31,6 +31,13 @@ Everything here is covered by the **`mcp_customer_agent`** scope bundle (the def
 
 A read-only key (`mcp_read_only`) can run `search.run` and read chats, but cannot start one, answer a pause, or write an agent/routine.
 
+## Start with the mental model
+
+Before the individual calls, the shape of the whole thing — where Amdahl sits in a GTM agent stack, and the four shapes a play takes.
+
+- [Amdahl is one layer of your GTM brain](gtm-brain-architecture.md) — skills + agents + a shared MCP belt; Amdahl is one server on the belt, wired once. Why hand-rolled context breaks, the reference-architecture stack, and why it's a layer and not an integration.
+- [The four shapes of an Amdahl play](four-flows.md) — automated / interactive / scheduled / ad hoc, and the one contract they share (your skill asks, Amdahl answers, your skill acts). Includes the outbound motion worked in full.
+
 ## The recipes
 
 - [Fast lane — `search.run`](fast-lane-search.md) — one synchronous call over REST + MCP: the request, the full response envelope (`internal.status`, the SQL, blended citations), the typed-failure contract (it never throws past validation), and the `escalate_to_chat` handoff into Chat.
