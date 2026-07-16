@@ -8,7 +8,7 @@
 
 This is the single best showcase of the moat, and it's worth understanding why it's *one Chat*, not a pipeline you assemble. The ask — "prep me for this call, and give me the rebuttal" — is an investigation: the Master agent internally runs theme clustering over similar accounts, pulls the won/lost deals that match, reads the specific objection threads, and composes the brief. You don't orchestrate those steps; you ask the question and poll for the answer. The output is defensible precisely because a note-taker or a raw MCP connector can't produce it: they move data; this reads *what the data means* across every conversation you've had.
 
-Worked example (a real shape): prepping for **Artisian**, an AI-native sales company. The journey finds **11x.ai** — a close twin you closed — and surfaces the framing that won it ("Amdahl is the intelligence layer their agents query, not a competing tool"), finds **Degreed**'s near-identical MCP-gateway objection and how it was answered, and hands back the exact rebuttal for "why can't we just use our Granola MCP?" — plus the 349 lost SMB deals that show the failure mode to avoid.
+Worked example (illustrative names): prepping for **Spotify**, a large and technically sophisticated prospect already building on MCP internally. The journey finds **Airbnb** — a close twin you closed — and surfaces the framing that won it ("Amdahl is the intelligence layer their agents query, not a competing tool"), finds **Uber**'s near-identical MCP-gateway objection and how it was answered, and hands back the exact rebuttal for "why can't we just use our Zoom MCP?" — plus the 349 lost SMB deals that show the failure mode to avoid.
 
 ## The journey — one Chat, then deliver
 
@@ -24,7 +24,7 @@ Authorization: Bearer <api-key with conversations:write>
 Content-Type: application/json
 
 {
-  "input": "Prep me for a call with Artisian (AI-native sales company, they build AI SDRs). Which of our customers look most like them, and in those deals what worked and what didn't? Then give me the exact rebuttal for when they ask 'why can't we just use our own Granola MCP / build this in Claude ourselves?' Ground every claim in real call quotes from our corpus.",
+  "input": "Prep me for a call with Spotify (a large, technically sophisticated prospect already building on MCP internally). Which of our customers look most like them, and in those deals what worked and what didn't? Then give me the exact rebuttal for when they ask 'why can't we just use our own Zoom MCP / build this ourselves?' Ground every claim in real call quotes from our corpus.",
   "config": { "depth": "standard" }
 }
 ```
@@ -33,7 +33,7 @@ Content-Type: application/json
 
 ```
 agents start_chat
-  input  = "Prep me for a call with Artisian (AI-native sales company, they build AI SDRs). Which of our customers look most like them, and in those deals what worked and what didn't? Then give me the exact rebuttal for 'why can't we just use our own Granola MCP?' Ground every claim in real call quotes."
+  input  = "Prep me for a call with Spotify (a large, technically sophisticated prospect already building on MCP internally). Which of our customers look most like them, and in those deals what worked and what didn't? Then give me the exact rebuttal for 'why can't we just use our own Zoom MCP?' Ground every claim in real call quotes."
   config = { "depth": "standard" }
 ```
 
@@ -60,15 +60,15 @@ GET /chats/c_a1.../runs/r_b2...?wait_ms=30000
   "run": {
     "status": "complete",
     "answer": {
-      "answer_text": "Artisian is a close twin of 11x.ai, which we closed. The frame that worked: Amdahl is the intelligence layer their agents query, not a competing tool ...",
+      "answer_text": "Spotify is a close twin of Airbnb, which we closed. The frame that worked: Amdahl is the intelligence layer their agents query, not a competing tool ...",
       "content_blocks": [
-        { "type": "text", "markdown": "**The Granola/MCP rebuttal:** \"Granola captures the conversation. We turn it into intelligence ... Those are pipes. We're the brain that decides what flows through them.\"" },
+        { "type": "text", "markdown": "**The Zoom/MCP rebuttal:** \"Zoom captures the conversation. We turn it into intelligence ... Those are pipes. We're the brain that decides what flows through them.\"" },
         { "type": "cluster_finding", "cluster_id": "…_62", "label": "Reverse-Engineering Own Customer Data Mid-Call", "member_count": 367, "narrative_hook": "Internet-native teams hijack discovery to interrogate their own data ..." }
       ],
       "follow_ups": [
-        "What did 11x.ai's winning conversation look like in detail?",
-        "How did Degreed's MCP-gateway objection get resolved — show the thread?",
-        "Which AI/internet companies are open right now and at what stage?"
+        "What did Airbnb's winning conversation look like in detail?",
+        "How did Uber's MCP-gateway objection get resolved — show the thread?",
+        "Which technically sophisticated accounts are open right now and at what stage?"
       ]
     }
   }
@@ -94,7 +94,7 @@ Investigate over our own CRM + call corpus — a full Chat, not a lookup:
    and closed-lost matches and what actually happened in each.
 2. What worked and what didn't in those deals — the specific framing, in quotes.
 3. The exact rebuttal for when they say "{the objection you expect, e.g. why
-   can't we just use our own Granola MCP / build this ourselves}".
+   can't we just use our own Zoom MCP / build this ourselves}".
 
 Ground every claim in real call quotes (anonymized). End with 3 follow-ups.
 ```

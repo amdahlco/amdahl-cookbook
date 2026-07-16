@@ -11,10 +11,10 @@ Every settled Chat run carries an `answer` (on `read_url` / `chat_status`):
 ```json
 {
   "answer": {
-    "answer_text": "Artisian is a close twin of 11x.ai, which we closed ...",
+    "answer_text": "Spotify is a close twin of Airbnb, which we closed ...",
     "content_blocks": [ /* ordered, typed — see below */ ],
     "follow_ups": [
-      "What did 11x.ai's winning conversation look like in detail?",
+      "What did Airbnb's winning conversation look like in detail?",
       "Most common objections from VP-level buyers at AI-native companies?"
     ]
   }

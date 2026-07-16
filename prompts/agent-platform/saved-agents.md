@@ -71,7 +71,7 @@ Reference the slug on `chat.start` and the run uses your agent's prompt instead 
 ```
 POST /chat
 {
-  "input": "Prep me for the Artisian call.",
+  "input": "Prep me for the Spotify call.",
   "agent": "sdr-brief",
   "config": { "depth": "standard" }
 }
@@ -81,7 +81,7 @@ POST /chat
 
 ```
 agents start_chat
-  input = "Prep me for the Artisian call."
+  input = "Prep me for the Spotify call."
   agent = "sdr-brief"
 ```
 

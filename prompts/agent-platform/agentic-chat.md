@@ -2,7 +2,7 @@
 
 **What this does**: Runs a multi-step Master agent over your workspace — the door for "investigate this," not "get me the number." You **start** a Chat and get handles back immediately; the agent decomposes the question, calls the data / cluster / web tools itself, and composes a cited answer that you **poll** (or **stream**) for. If it needs a human decision mid-run it **pauses**, and you **respond**. Over the REST API and over the MCP `agents` tool.
 
-**When to use it**: The ask is an investigation — "why are enterprise deals stalling at security review, and what did buyers actually say?", "prep me for the Artisian call: who looks like them, what worked, and the exact objection rebuttal." Anything that needs more than one query and a synthesis pass. For a single number, use the [fast lane](fast-lane-search.md) — and note the fast lane hands off here automatically via `escalate_to_chat`.
+**When to use it**: The ask is an investigation — "why are enterprise deals stalling at security review, and what did buyers actually say?", "prep me for the Spotify call: who looks like them, what worked, and the exact objection rebuttal." Anything that needs more than one query and a synthesis pass. For a single number, use the [fast lane](fast-lane-search.md) — and note the fast lane hands off here automatically via `escalate_to_chat`.
 
 ## Why this matters
 
@@ -34,7 +34,7 @@ Authorization: Bearer <api-key with conversations:write>
 Content-Type: application/json
 
 {
-  "input": "Prep me for the Artisian call: which of our customers look like them, what worked and what didn't, and the exact rebuttal when they ask why they can't just use their Granola MCP.",
+  "input": "Prep me for the Spotify call: which of our customers look like them, what worked and what didn't, and the exact rebuttal when they ask why they can't just use their Zoom MCP.",
   "config": { "depth": "standard" }
 }
 ```
@@ -43,7 +43,7 @@ Content-Type: application/json
 
 ```
 agents start_chat
-  input  = "Prep me for the Artisian call: which of our customers look like them, what worked and what didn't, and the exact rebuttal when they ask why they can't just use their Granola MCP."
+  input  = "Prep me for the Spotify call: which of our customers look like them, what worked and what didn't, and the exact rebuttal when they ask why they can't just use their Zoom MCP."
   config = { "depth": "standard" }
 ```
 
@@ -109,13 +109,13 @@ agents chat_status
     "chat_id": "c_8f21...",
     "run_id": "r_4a90...",
     "status": "complete",
-    "input": "Prep me for the Artisian call ...",
+    "input": "Prep me for the Spotify call ...",
     "pending_input": null,
     "answer": {
-      "answer_text": "Artisian is a close twin of 11x.ai, which we closed ...",
+      "answer_text": "Spotify is a close twin of Airbnb, which we closed ...",
       "content_blocks": [ /* see the answer-envelope recipe */ ],
       "follow_ups": [
-        "What did 11x.ai's winning conversation look like in detail?",
+        "What did Airbnb's winning conversation look like in detail?",
         "Most common objections from VP-level buyers at AI-native companies?"
       ]
     },
@@ -150,8 +150,8 @@ If the run needs a decision (and `on_question` isn't `none`), it settles at `sta
     "status": "awaiting_input",
     "pending_input": {
       "type": "multiple_choice",
-      "context": { "question": "Two accounts match 'Artisian' — which one?" },
-      "schema": { "choice": ["Artisian (artisan.co)", "Artisian AI (artisian.ai)"] }
+      "context": { "question": "Two accounts match 'Spotify' — which one?" },
+      "schema": { "choice": ["Spotify (spotify.com)", "Spotify for Artists (artists.spotify.com)"] }
     }
   }
 }
@@ -166,7 +166,7 @@ POST /conversations/c_8f21.../turns/r_4a90.../resume
 Authorization: Bearer <api-key with workflows:write>
 Content-Type: application/json
 
-{ "choice": "Artisian AI (artisian.ai)" }
+{ "choice": "Spotify for Artists (artists.spotify.com)" }
 ```
 
 **MCP** (`respond`):
@@ -174,7 +174,7 @@ Content-Type: application/json
 ```
 agents respond
   run_id   = "r_4a90..."
-  response = { "choice": "Artisian AI (artisian.ai)" }
+  response = { "choice": "Spotify for Artists (artists.spotify.com)" }
 ```
 
 The run re-queues (`status: "queued"`); go back to Step 2 and keep polling. To abandon a run instead, cancel it — `POST /agents/:run_id/cancel` (REST) or `agents cancel_chat run_id=...` (MCP); cancellation cascades to any sub-agents it spawned.
@@ -199,9 +199,9 @@ The MCP-native version — Claude drives the `agents` tool for you:
 ```
 Investigate this over our own customer data — a full multi-step Chat, not a quick lookup.
 
-{e.g. "Prep me for the Artisian call: which of our customers look like them,
+{e.g. "Prep me for the Spotify call: which of our customers look like them,
 what worked and what didn't in those deals, and give me the exact rebuttal
-for when they ask why they can't just use their Granola MCP. Ground every
+for when they ask why they can't just use their Zoom MCP. Ground every
 claim in real call quotes."}
 
 Use our CRM + call corpus (the divergence map), not generic web knowledge. When you're done, give me the answer plus 3 follow-up questions I could ask next.

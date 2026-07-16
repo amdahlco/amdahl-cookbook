@@ -66,7 +66,7 @@ Success is always a `success: true` object. The shape:
     "sql": "SELECT deal_name, deal_amount, owner, last_touch_at FROM interactions WHERE ...",
     "explanation": "Open opportunities over $50K ACV with no interaction in 14 days.",
     "rows": [
-      { "deal_name": "Mercury", "deal_amount": 84000, "owner": "Sam Rivera", "last_touch_at": "2026-06-02" }
+      { "deal_name": "Netflix", "deal_amount": 84000, "owner": "Sam Rivera", "last_touch_at": "2026-06-02" }
     ],
     "row_count": 12,
     "truncated": false,
