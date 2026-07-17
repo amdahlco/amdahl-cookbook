@@ -1,0 +1,274 @@
+# =============================================================================
+# Claude Code Review (cookbook edition)
+# =============================================================================
+# Automated review + approval for the Amdahl Cookbook, mirroring the
+# amdahl-review-bot flow in amdahl-app / amdahl-frontend — adapted for a
+# Markdown docs repo (no code build, no TypeScript autofix machinery).
+#
+# What it does on every PR:
+#   1. Ask Claude to review the diff for DOCUMENTATION issues only (broken
+#      links, wrong API/MCP shapes, real customer names that should be
+#      placeholders, factual drift, malformed markdown).
+#   2. Post a summary comment (findings are advisory — they never block).
+#   3. Approve the PR as the amdahl-review-bot App ("review agent +1"),
+#      so a non-Critical docs PR gets an automatic +1 the same way the code
+#      repos do.
+#
+# Required secrets (an admin sets these on the repo or the amdahlco org):
+#   - PROD_ANTHROPIC_API_KEY   the Anthropic key the review call uses.
+#   - BOT_APP_ID + BOT_APP_PRIVATE_KEY   the amdahl-review-bot GitHub App
+#     (installed on this repo with pull-requests: write). Preferred — an App
+#     is never the PR author, so it can Approve, and its token auto-expires.
+#   - BOT_PAT   fallback if the App is not configured: a PAT on a dedicated
+#     bot user (NOT a common PR author — GitHub forbids self-approve).
+#   If none of the approve identities exist, the review still runs and
+#   comments; only the Approve is skipped (with a warning).
+#
+# For the Approve to satisfy branch protection, the bot identity must be an
+# allowed reviewer on the protected branch — that is branch-protection config,
+# not something this file can set.
+# =============================================================================
+
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: code-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Code Review
+    runs-on: ubuntu-latest
+    # Same-repo, non-draft PRs only (a fork PR cannot read secrets anyway).
+    if: >-
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      pull-requests: write
+    timeout-minutes: 10
+    # Job-level env so the app-token step's `if:` can gate on it (step-level
+    # env is not in scope for that same step's `if`).
+    env:
+      BOT_APP_ID: ${{ secrets.BOT_APP_ID }}
+      # Gate the mint on BOTH secrets so a half-configured App (id but no key)
+      # is a clean skip → BOT_PAT fallback, not a masked step failure.
+      BOT_APP_PRIVATE_KEY_EXISTS: ${{ secrets.BOT_APP_PRIVATE_KEY != '' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # -----------------------------------------------------------------
+      # Step 1: Review the diff (Claude writes findings to a JSON file).
+      # -----------------------------------------------------------------
+      - name: Generate review findings
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.PROD_ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eo pipefail
+          echo '[]' > /tmp/review_findings.json
+
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::warning::PROD_ANTHROPIC_API_KEY is not set — skipping the review step (the Approve step still runs)."
+            exit 0
+          fi
+
+          # Fetch the PR diff. gh pr diff 406s past GitHub's 20k-line API cap,
+          # so fall back to a local merge-base diff (fetch-depth 0 above).
+          BASE_REF='${{ github.event.pull_request.base.ref }}'
+          if ! gh pr diff ${{ github.event.pull_request.number }} > /tmp/pr.diff 2>/tmp/pr_diff_err.txt; then
+            echo "gh pr diff failed ($(head -1 /tmp/pr_diff_err.txt)); falling back to local git diff"
+            git fetch origin "$BASE_REF" --quiet
+            git diff "origin/${BASE_REF}...HEAD" > /tmp/pr.diff
+          fi
+          echo "Diff: $(wc -l < /tmp/pr.diff) lines, $(wc -c < /tmp/pr.diff) bytes"
+
+          cat > /tmp/review_prompt_header.txt << 'HEADER_EOF'
+          You are reviewing a pull request to the Amdahl Cookbook — a library of copy-paste GTM prompt recipes and developer guides written in Markdown. There is NO application code here. Do NOT review for code security, types, runtime bugs, or performance. Review the diff for DOCUMENTATION-QUALITY issues only, and output findings as JSON.
+
+          ═══════════════════════════════════════════════════════════════════
+          WHAT TO CHECK (documentation only)
+          ═══════════════════════════════════════════════════════════════════
+
+          ⚠️ LINKS: broken or wrong relative links / anchors (a link to a file or heading that does not exist).
+          ⚠️ CONTRACT: an API / MCP request or response shape, param name, default, or scope that is clearly wrong versus how the rest of the cookbook describes it (only flag a confident, concrete contradiction — not a guess).
+          ⚠️ NAMES: a real customer / prospect / deal name used as an example where a well-known placeholder brand (e.g. Spotify, Airbnb, Uber, Netflix) should be used instead. Ecosystem tool / vendor / data-source names (Clay, ZoomInfo, HeyReach, Gong, Salesforce, HubSpot, Slack, etc.) are FINE and are not findings.
+          ✨ CONSISTENCY: an internal contradiction or a factual claim that conflicts with another part of the same diff or file.
+          ✨ MARKDOWN: malformed code fences, broken tables, or a heading structure that clearly breaks rendering.
+
+          ═══════════════════════════════════════════════════════════════════
+          REDUCE FALSE POSITIVES
+          ═══════════════════════════════════════════════════════════════════
+
+          - Only flag an issue if you are CONFIDENT it is real. When uncertain, do NOT flag.
+          - Prose style, tone, wording, and formatting preferences are NOT findings.
+          - A link may resolve to a file not shown in the diff — do not assume it is broken unless the path is obviously wrong.
+          - Prefer false negatives (missing a small issue) over false positives (flagging correct docs).
+
+          ═══════════════════════════════════════════════════════════════════
+          OUTPUT FORMAT — CRITICAL
+          ═══════════════════════════════════════════════════════════════════
+
+          Output ONLY a raw JSON array — no markdown fences, no explanation.
+
+          [
+            { "path": "relative/path/to/file.md", "line": 42, "severity": "⚠️ Link", "summary": "One-line description", "body": "⚠️ Link: what is wrong and the concrete fix." }
+          ]
+
+          Rules:
+          - severity: one of "⚠️ Link", "⚠️ Contract", "⚠️ Names", "✨ Consistency", "✨ Markdown".
+          - If no issues: output [].
+
+          ═══════════════════════════════════════════════════════════════════
+          PR DIFF
+          ═══════════════════════════════════════════════════════════════════
+
+          HEADER_EOF
+
+          cat /tmp/review_prompt_header.txt /tmp/pr.diff > /tmp/full_prompt.txt
+
+          # Single-shot review via the Anthropic API (cookbook PRs are small).
+          python3 << 'APIEOF'
+          import urllib.request, urllib.error, json, os, sys, time
+
+          prompt = open('/tmp/full_prompt.txt').read()
+          # Guard against a huge diff blowing the context — trim to ~200k chars.
+          if len(prompt) > 200000:
+              prompt = prompt[:200000] + "\n\n[diff truncated for review]\n"
+
+          payload = json.dumps({
+              'model': 'claude-sonnet-4-5',
+              'max_tokens': 4096,
+              'messages': [{'role': 'user', 'content': prompt}],
+          }).encode()
+
+          def build_req():
+              return urllib.request.Request(
+                  'https://api.anthropic.com/v1/messages',
+                  data=payload,
+                  headers={
+                      'x-api-key': os.environ['ANTHROPIC_API_KEY'],
+                      'anthropic-version': '2023-06-01',
+                      'content-type': 'application/json',
+                  },
+              )
+
+          text = '[]'
+          for attempt in range(3):
+              try:
+                  with urllib.request.urlopen(build_req(), timeout=180) as resp:
+                      data = json.loads(resp.read())
+                      text = data['content'][0]['text']
+                      break
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()
+                  if e.code == 429:
+                      wait = int(e.headers.get('Retry-After', 30))
+                      print(f'Rate limited, waiting {wait}s (attempt {attempt + 1}/3)', file=sys.stderr)
+                      time.sleep(wait)
+                      continue
+                  print(f'HTTP {e.code}: {body[:300]}', file=sys.stderr)
+                  break
+              except Exception as e:
+                  print(f'Error: {e}', file=sys.stderr)
+                  break
+
+          import re
+          match = re.search(r'\[[\s\S]*\]', text)
+          findings = []
+          if match:
+              try:
+                  parsed = json.loads(match.group())
+                  if isinstance(parsed, list):
+                      findings = parsed
+              except json.JSONDecodeError as e:
+                  print(f'JSON parse error: {e} — snippet: {text[:300]}', file=sys.stderr)
+
+          json.dump(findings, open('/tmp/review_findings.json', 'w'), indent=2)
+          print(f'Review produced {len(findings)} finding(s)')
+          APIEOF
+
+      # -----------------------------------------------------------------
+      # Step 2: Mint the amdahl-review-bot App token (Approve identity).
+      # An App is never the PR author (no self-approve error) and its token
+      # auto-expires. Skipped (→ BOT_PAT fallback) until the App secrets exist.
+      # -----------------------------------------------------------------
+      - name: Mint GitHub App token (Approve identity)
+        id: app-token
+        if: ${{ env.BOT_APP_ID != '' && env.BOT_APP_PRIVATE_KEY_EXISTS == 'true' }}
+        continue-on-error: true
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
+      # -----------------------------------------------------------------
+      # Step 3: Post the summary comment + Approve.
+      # -----------------------------------------------------------------
+      - name: Comment and approve
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Prefer the App token (short-lived, never the PR author); fall back
+          # to a user PAT, then GITHUB_TOKEN. GITHUB_TOKEN Approves do NOT count
+          # toward required reviews — only the App token / PAT does.
+          BOT_PAT: ${{ steps.app-token.outputs.token || secrets.BOT_PAT }}
+          # App installation tokens have no `gh api user`; pass the bot login
+          # explicitly (empty on the PAT path, which keeps the gh-api-user path).
+          BOT_LOGIN: ${{ steps.app-token.outputs.app-slug != '' && format('{0}[bot]', steps.app-token.outputs.app-slug) || '' }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -eo pipefail
+          export GH_TOKEN="${BOT_PAT:-$GITHUB_TOKEN}"
+          if [ -z "${BOT_PAT:-}" ]; then
+            echo "::warning::BOT_PAT / App token is unset — an Approve via GITHUB_TOKEN will not count toward required reviews."
+          fi
+
+          COUNT=$(python3 -c "import json; print(len(json.load(open('/tmp/review_findings.json'))))" 2>/dev/null || echo 0)
+          echo "Findings: $COUNT"
+
+          if [ "$COUNT" -eq 0 ]; then
+            gh pr comment "$PR_NUMBER" --body '🤖 **Code Review Complete** — No issues found ✅
+
+          This PR looks clean. No fixes needed.
+
+          Approving this PR (review agent +1).'
+          else
+            # Build an advisory checklist — docs findings never block the Approve.
+            python3 -c "
+          import json
+          f = json.load(open('/tmp/review_findings.json'))
+          lines = [f'🤖 **Code Review Summary** — {len(f)} advisory finding(s)', '', '> Documentation findings are advisory — the review agent still approves. Address any that are real:', '']
+          for it in f:
+              path = it.get('path', '?'); line = it.get('line', 0)
+              first = (it.get('body') or it.get('summary') or '').split(chr(10))[0]
+              lines.append(f'- [ ] \`{path}:{line}\` — {first}')
+          open('/tmp/summary.md', 'w').write(chr(10).join(lines))
+          "
+            gh pr comment "$PR_NUMBER" --body-file /tmp/summary.md
+          fi
+
+          # -------- Approve (advisory; a failure warns, never blocks) --------
+          # Prefer BOT_LOGIN (an App slug has no `gh api user`); fall back to the
+          # authenticated user's login for the PAT path.
+          REVIEWER="${BOT_LOGIN:-$(gh api user -q .login 2>/dev/null || true)}"
+          AUTHOR="$(gh pr view "$PR_NUMBER" --json author -q .author.login 2>/dev/null || true)"
+
+          if [ -z "$REVIEWER" ] || [ -z "$AUTHOR" ]; then
+            echo "::warning::Could not resolve reviewer ('$REVIEWER') / author ('$AUTHOR') — skipping Approve to avoid a self-approve error."
+          elif [ "$REVIEWER" = "$AUTHOR" ]; then
+            echo "::warning::Skipping Approve — the Approve identity '$REVIEWER' is the PR author (GitHub forbids self-approve). Point BOT_PAT at a dedicated bot user or configure the amdahl-review-bot App."
+          else
+            gh pr review "$PR_NUMBER" --approve \
+              --body "🤖 **Code Review Approve** — automated review found no verified blocking issues." \
+              && echo "✅ Approved PR #$PR_NUMBER as $REVIEWER" \
+              || echo "::warning::Approve failed (reviewer=$REVIEWER author=$AUTHOR — check the bot's write access / branch protection)."
+          fi
