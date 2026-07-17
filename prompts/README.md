@@ -1,6 +1,6 @@
 # Recipe library
 
-28 copy-paste recipes for go-to-market work. Each recipe is a self-contained markdown file with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
+38 recipes for go-to-market work. Most are self-contained markdown files with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips; the [agent-platform](agent-platform/README.md) section adds the developer-facing REST + MCP shapes for the same engine. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
 
 New here? Start with the [main README](../README.md) for setup and the six headliner prompts.
 
@@ -79,3 +79,26 @@ Turn an answer into a real, designed Page in your console — a workspace data U
 Mirror your Amdahl knowledge base into a Notion database in your own workspace — set it up once, then every document you promote in Amdahl shows up (and stays current) in Notion automatically. See the [section README](knowledge-sync/README.md).
 
 - [Mirror your knowledge base to Notion](knowledge-sync/mirror-knowledge-base-to-notion.md) — the **connect -> configure -> it-syncs-itself -> monitor** loop: connect Notion over OAuth, designate a parent page (provisions a database + backfills), then watch it mirror every promoted doc. One-way, current-version-only, self-healing on an hourly reconcile. Setup writes are REST + console; the config / status / ledger reads are on MCP too.
+
+## Agent platform — API + MCP (10)
+
+The developer-facing view of the engine the prompts above run on: how to drive Amdahl's two "ask Amdahl" doors — and the automation around them — from your own code, over REST and MCP. Requires Agent Platform v2 (the `search` + `agents` MCP tools). See the [section README](agent-platform/README.md).
+
+**The mental model:**
+
+- [Amdahl is one layer of your GTM brain](agent-platform/gtm-brain-architecture.md) — skills + agents + a shared MCP belt; Amdahl is one server on it, wired once. Why hand-rolled context breaks, and why it's a layer, not an integration.
+- [The four shapes of an Amdahl play](agent-platform/four-flows.md) — automated / interactive / scheduled / ad hoc, the one contract they share, and the outbound motion worked in full.
+
+**The doors + primitives:**
+
+- [Fast lane — `search.run`](agent-platform/fast-lane-search.md) — one synchronous call: the request, the full response envelope (`internal.status`, the SQL, blended citations), the typed-failure contract, and the `escalate_to_chat` handoff.
+- [Agentic Chat — start, poll, respond](agent-platform/agentic-chat.md) — the always-async lane end to end: start -> poll (or stream) -> render -> answer a pause. REST + the MCP `agents` tool, plus the `depth` knob.
+- [Routines — make a Chat recur](agent-platform/routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now, and `actions_allowed` for autonomous sends.
+- [Saved agents — reuse a prompt](agent-platform/saved-agents.md) — the agent library: create a named agent, pin it in a Chat, schedule it as a Routine.
+- [The answer envelope](agent-platform/answer-envelope.md) — render a Chat answer in your own UI: the seven `content_block` types, `follow_ups`, and the `amdahl:q` / `amdahl:cite` link grammar.
+
+**End-to-end use cases + reference:**
+
+- [Voice of customer, end to end](agent-platform/voice-of-customer-end-to-end.md) — one question across both doors, teaching the `escalate_to_chat` fast -> Chat handoff.
+- [Call prep + objection handling, end to end](agent-platform/call-prep-objection-end-to-end.md) — the flagship: who looks like this prospect, what worked/didn't, and the exact rebuttal — one Chat, grounded in your corpus.
+- [Operation reference — the live catalog](agent-platform/reference.md) — the self-describing `GET /operations` / `operation://list` catalog for any operation's exact schema + scopes.

@@ -152,6 +152,22 @@ If you've installed the plugin, the `blueprint-authoring` skill routes "make thi
 
 ---
 
+## Build it into your own product (API + MCP)
+
+Everything above runs on two "ask Amdahl" doors, and you can drive both from your own code — over the REST API and over MCP — not just by pasting prompts. The [agent-platform section](prompts/agent-platform/README.md) is the developer-facing walkthrough, with copy-paste REST + MCP request/response shapes for each door.
+
+- **The mental model** — where Amdahl sits in a GTM agent stack: one layer on your [shared MCP belt](prompts/agent-platform/gtm-brain-architecture.md), and the [four shapes](prompts/agent-platform/four-flows.md) every play takes (your skill asks, Amdahl answers, your skill acts).
+
+- **Fast lane (`search.run`)** — one synchronous call that returns the rows *and* the SQL it ran. For "get me the number." [Recipe](prompts/agent-platform/fast-lane-search.md).
+- **Agentic Chat** — the always-async Master agent: start, get handles, poll or stream for the cited answer, respond to a pause. For "investigate this." [Recipe](prompts/agent-platform/agentic-chat.md).
+- **Routines & saved agents** — put a Chat on a cron, or save a reusable agent and pin it. [Routines](prompts/agent-platform/routines.md) · [Saved agents](prompts/agent-platform/saved-agents.md).
+- **Rendering the answer** — the seven content-block types and the `amdahl:q` / `amdahl:cite` link grammar, for showing a Chat result in your own UI. [Recipe](prompts/agent-platform/answer-envelope.md).
+- **End-to-end use cases** — two full journeys over both surfaces: [voice of customer](prompts/agent-platform/voice-of-customer-end-to-end.md) (teaches the fast -> Chat handoff) and [call prep + objection handling](prompts/agent-platform/call-prep-objection-end-to-end.md) (the flagship).
+
+Requires Agent Platform v2 (the same per-workspace rollout as above): the `search` + `agents` MCP tools, or `POST /search` and `POST /chat` on REST.
+
+---
+
 ## Push results to your team (notifications)
 
 The recipes above end in the chat. When the output should reach a teammate who isn't watching the session — the deal owner, your manager, RevOps — email it to them. Amdahl's notifications primitive is members-only (a non-member rejects the whole send), rate-capped, and idempotent, so an agent can deliver autonomously without becoming a spam cannon. Works the same over MCP and the REST API.
