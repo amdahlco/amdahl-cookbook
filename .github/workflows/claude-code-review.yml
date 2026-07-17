@@ -257,18 +257,24 @@ jobs:
           fi
 
           # -------- Approve (advisory; a failure warns, never blocks) --------
-          # Prefer BOT_LOGIN (an App slug has no `gh api user`); fall back to the
-          # authenticated user's login for the PAT path.
-          REVIEWER="${BOT_LOGIN:-$(gh api user -q .login 2>/dev/null || true)}"
-          AUTHOR="$(gh pr view "$PR_NUMBER" --json author -q .author.login 2>/dev/null || true)"
-
-          if [ -z "$REVIEWER" ] || [ -z "$AUTHOR" ]; then
-            echo "::warning::Could not resolve reviewer ('$REVIEWER') / author ('$AUTHOR') — skipping Approve to avoid a self-approve error."
-          elif [ "$REVIEWER" = "$AUTHOR" ]; then
-            echo "::warning::Skipping Approve — the Approve identity '$REVIEWER' is the PR author (GitHub forbids self-approve). Point BOT_PAT at a dedicated bot user or configure the amdahl-review-bot App."
+          # An approval only registers from an identity that is NOT the PR
+          # author AND is not the Actions token (GitHub blocks GITHUB_TOKEN from
+          # approving PRs). So the amdahl-review-bot App (BOT_APP_ID +
+          # BOT_APP_PRIVATE_KEY) or a BOT_PAT must be configured; without one,
+          # skip cleanly rather than attempt an approve that GitHub will refuse.
+          if [ -z "${BOT_PAT:-}" ]; then
+            echo "::warning::Approve skipped — no amdahl-review-bot App (BOT_APP_ID + BOT_APP_PRIVATE_KEY) or BOT_PAT is configured. GitHub blocks GITHUB_TOKEN from approving PRs, so no identity can approve. Configure the App to enable the auto-approve (+1)."
           else
-            gh pr review "$PR_NUMBER" --approve \
-              --body "🤖 **Code Review Approve** — automated review found no verified blocking issues." \
-              && echo "✅ Approved PR #$PR_NUMBER as $REVIEWER" \
-              || echo "::warning::Approve failed (reviewer=$REVIEWER author=$AUTHOR — check the bot's write access / branch protection)."
+            # Prefer BOT_LOGIN (an App slug has no `gh api user`); fall back to
+            # the authenticated user's login for the PAT path.
+            REVIEWER="${BOT_LOGIN:-$(gh api user -q .login 2>/dev/null || true)}"
+            AUTHOR="$(gh pr view "$PR_NUMBER" --json author -q .author.login 2>/dev/null || true)"
+            if [ -n "$REVIEWER" ] && [ "$REVIEWER" = "$AUTHOR" ]; then
+              echo "::warning::Skipping Approve — the Approve identity '$REVIEWER' is the PR author (GitHub forbids self-approve). Point BOT_PAT at a dedicated bot user or configure the amdahl-review-bot App."
+            else
+              gh pr review "$PR_NUMBER" --approve \
+                --body "🤖 **Code Review Approve** — automated review found no verified blocking issues." \
+                && echo "✅ Approved PR #$PR_NUMBER as ${REVIEWER:-bot}" \
+                || echo "::warning::Approve failed — check the bot's write access and that it is an allowed reviewer on the protected branch."
+            fi
           fi
