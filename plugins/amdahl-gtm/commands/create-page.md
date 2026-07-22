@@ -1,9 +1,9 @@
 ---
-description: Author a Page — a spec-defined dashboard (stats, charts, tables built from catalog components) over this tenant's live data. Validate it through the Amdahl pages REST API, then create it as a draft you open in the console.
+description: Draft a Page spec — a spec-defined dashboard (stats, charts, tables built from catalog components) over this tenant's live data — and hand the user the JSON to validate and create in the console's Pages surface.
 argument-hint: <what the page should show>  (e.g. "pipeline health by stage")
 ---
 
-Run the Amdahl create-a-page play. Page authoring is a **console + REST** surface — the `pages` MCP tool was retired from the Amdahl MCP server — so drive the validate → create loop over the **pages REST API** (`/api/platform/v1/pages*`, platform API key with `pages:read` + `pages:write`). If no API key is available, still draft the spec per the contract below and hand the user the JSON to create in the console. The connected Amdahl MCP server is still what you use for the `data` checks below; if it isn't connected, tell the user to run `/amdahl-gtm:setup`.
+Run the Amdahl create-a-page play. Page authoring is a **console capability** — the `pages` MCP tool was retired from the Amdahl MCP server, and the endpoints behind the console aren't reachable with an external API key — so your job is to **draft the spec** per the contract below and hand the user the finished JSON to paste into the console's Pages surface, where the validate → create loop runs. The connected Amdahl MCP server is still what you use for the data sanity checks below; if it isn't connected, tell the user to run `/amdahl-gtm:setup`.
 
 What to build: **$ARGUMENTS**
 
@@ -11,14 +11,13 @@ A **Page** is a **spec** — a tree of pre-built catalog components with data bi
 
 ## Start from a template first
 
-Amdahl ships **page templates** — vetted, catalog-only specs you adapt instead of building from a blank slate. Always check them before drafting from scratch:
+Amdahl ships **page templates** — vetted, catalog-only specs you adapt instead of building from a blank slate. The console's Pages surface shows the gallery (dashboards like `pipeline-health`, `voice-of-customer`, `competitive-battlecard`, plus single-viz starters `win-rate-gauge`, `pipeline-funnel`, `deal-size-distribution`; the same set for every tenant). Before drafting from scratch:
 
-1. **List** them via **`GET /pages/templates`** (slug, name, intent for each — today: dashboards `pipeline-health`, `voice-of-customer`, `competitive-battlecard`, plus single-viz starters `win-rate-gauge`, `pipeline-funnel`, `deal-size-distribution`). The same set shows for every tenant; they live in code, not as pages in this workspace.
-2. **If one fits $ARGUMENTS**, read **`GET /pages/templates/<slug>`** for its full `spec` + `declared_queries`. That's your starting point — the layout is already correct.
-3. **Adapt it to THIS tenant's data.** The template's SQL is tenant-agnostic boilerplate; the table/column names won't match every workspace. Use the `data` tool (`explore` to see real tables/columns, `query` to sanity-check a `SELECT`) and rewrite each declared query to match what this tenant actually has. Keep the catalog spec structure; change query SQL and any labels/titles that should reflect this tenant.
-4. Then run the **validate → create loop** below on the adapted spec, exactly as if you'd authored it.
+1. **If a template shape obviously fits $ARGUMENTS**, base your spec on that shape — a stat row + a chart per section for a dashboard, one full-bleed viz for a single, prose nodes for a document. (The user can also start from the template directly in the console and paste your adapted queries in.)
+2. **Adapt the data to THIS tenant.** Template-style SQL is tenant-agnostic boilerplate; the field names won't match every workspace. Use the `search` tool to ground it — `search` { action: fields } lists the real filterable fields per surface, and `search` { action: query } sanity-checks that a slice returns plausible rows — then write each declared query to match what this tenant actually has. Keep the catalog spec structure; make the SQL and any labels/titles reflect this tenant. (*Pre-rollout fallback:* on a legacy session, use the `data` tool — `explore` for tables/columns, `query` to sanity-check.)
+3. Then run the **draft → hand off** loop below on the adapted spec, exactly as if you'd authored it.
 
-If no template fits, draft the spec from scratch per the contract below. Either way, the validate → create loop is the same.
+If no template fits, draft the spec from scratch per the contract below. Either way, the hand-off is the same.
 
 ## Dashboard, single visualization, or document?
 
@@ -57,15 +56,16 @@ Reach for single-viz when $ARGUMENTS is "show me X as a chart"; reach for docume
   - **`{ "$value": { "query": "<name>", "field": "<col>" } }`** — binds a **single scalar** from the first row. Use for a `Stat`'s value.
 - Every referenced query name must exist in `declared_queries`, or validate fails with an unbound-query error.
 
-## The loop — validate before you create
+## The loop — draft, self-check, hand off
 
 1. **Draft** the `spec` + its `declared_queries`.
-2. Call **`POST /pages/validate`** with `{ spec, declared_queries }`. Read the **structured verdict** — it reports failures by kind: **unknown component** (a `type` not in the catalog), **bad prop** (a prop the component doesn't accept, or a malformed binding), **unbound query** (a `$query` / `$value` name with no matching `declared_queries` entry), and **invalid SQL** (not a plain `SELECT`, a stray `business_id`, an off-whitelist table).
-3. **Fix every rejection** and re-validate. Common ones: a made-up `type`, a `Stat` bound with `$query` instead of `$value` (or vice-versa), a `useless` raw value where a binding is required, a query name typo, a non-`SELECT` SQL, or a tenant id in the SQL.
-4. Once validate passes clean, call **`POST /pages`** with the same payload. It lands as a **`draft`**.
-5. **Rendering happens in the console, not here.** `create` returns a URL — give it to the user so they can open the page and see it render over live data. Do not try to "run" or screenshot the page from here.
+2. **Self-check against the contract** before you hand it over — the console's Validate reports failures by kind, so pre-empt them: **unknown component** (a `type` not in the catalog), **bad prop** (a prop the component doesn't accept, or a malformed binding), **unbound query** (a `$query` / `$value` name with no matching `declared_queries` entry), and **invalid SQL** (not a plain `SELECT`, a stray `business_id`, an off-whitelist table).
+3. **Hand off**: give the user the finished `spec` + `declared_queries` JSON in one block, with the console steps — Pages -> New page -> paste -> **Validate** -> fix (with you, if it flags anything) -> **Create**. It lands as a **`draft`**.
+4. **Rendering happens in the console, not here.** Once created, the page has its own URL over live data. Do not try to "run" or screenshot the page from here.
 
-Be concise in chat: show the user the spec tree, the declared queries, and the validate verdict. Don't paste the whole spec twice.
+Common rejections to pre-empt: a made-up `type`, a `Stat` bound with `$query` instead of `$value` (or vice-versa), a raw value where a binding is required, a query name typo, a non-`SELECT` SQL, or a tenant id in the SQL.
+
+Be concise in chat: show the user the spec tree, the declared queries, and the self-check outcome. Don't paste the whole spec twice.
 
 ## Worked example — a "Pipeline Health" page
 
@@ -215,7 +215,7 @@ When $ARGUMENTS is "write me a brief / one-pager / report on X," reach for `layo
 
 Notice: `layout` is `"document"`, the `root` is a `Section` of content nodes (`Heading` + `Markdown` + `Callout`), no node binds data, and `declared_queries` is `[]` — a pure-prose report needs no SQL. The `Markdown` node's prop is `body` (its raw markdown string); the `Callout` carries its message in a child `Text` node (its props are `title` + `tone`, where `tone` is `neutral` / `positive` / `warning`). If you wanted to anchor a number in the brief, you'd add one declared query and a `Stat` (`$value` binding) — or a small `Table` / chart — beside the prose; the rest of the document stays markdown.
 
-When the examples are clear, build the user's actual page for **$ARGUMENTS**: check `GET /pages/templates` for a template that fits and adapt it (per "Start from a template first"), or write the spec from scratch if none does. Either way, run the validate → fix → create loop and hand back the console URL.
+When the examples are clear, build the user's actual page for **$ARGUMENTS**: base it on a template shape that fits (per "Start from a template first"), or write the spec from scratch if none does. Either way, run the draft → self-check → hand-off loop and walk the user through Validate + Create in the console.
 
 ## Embedding a live page
 
@@ -223,23 +223,14 @@ A created Page lives in the console, but you can also drop it **live** into anot
 
 ### Mint the embed token
 
-After the page is created, mint an embed token for it — **`POST /api/platform/v1/pages/:id/embed-token`**, with this body:
-
-```json
-{
-  "audience": "self",
-  "ttl_seconds": 3600,
-  "rules": { },
-  "origins": ["https://example.com"]
-}
-```
+After the page is created, the user mints an embed token from the page in the **console** (the page's embed panel). The mint takes:
 
 - **`audience`** (required) — who the embed is for. `self` = only the minting principal can see it; `workspace` = any workspace member; `public` = anyone with the link (external viewers). See the audience gate below.
 - **`ttl_seconds`** (optional) — token lifetime; short by default. The embed stops rendering when it expires; re-mint to refresh.
 - **`rules`** (optional) — the data slice the token is scoped to (the same data-scope shape the page's access rules use). Omit to inherit the principal's own scope. The render never widens beyond this.
 - **`origins`** (optional) — an allowlist of sites permitted to frame the embed. Leave it off only for a truly public page.
 
-The response is `{ token, expires_at, embed_url }`. Paste the `embed_url` into an iframe:
+The mint returns `{ token, expires_at, embed_url }`. Paste the `embed_url` into an iframe:
 
 ```html
 <iframe src="{embed_url}" style="width:100%;border:0" loading="lazy"></iframe>
@@ -254,9 +245,9 @@ Minting is tiered by who can see the result, and it mirrors the publish gate exa
 - **`self`** — any page author can mint a self-scoped embed. It's visible only to them, scoped to what they can already see.
 - **`workspace`** and **`public`** — require **admin**. Exposing a page to every member, or to anyone with the link, is the same trust decision as publishing, so it carries the same admin gate. A non-admin asking for `workspace` or `public` is refused; tell the user an admin has to mint that tier in the console.
 
-### Agent vs. user is the SAME mint, clamped to the principal
+### Every mint is clamped to the principal
 
-An agent or script holding an API key mints embeds through the identical endpoint. There is no separate, weaker agent path: the mint is **clamped to the principal's own access**. An agent can self-mint an embed scoped to exactly what its key can already see, and the rendered embed never widens beyond the token's scope. Widening the audience to `public` stays **admin-gated** regardless of whether a human or an agent asks. So an agent can confidently hand back a self-scoped embed link; it cannot quietly mint a public one.
+There is no weaker side door: the mint is **clamped to the minter's own access**. A `self` embed is scoped to exactly what the minting principal can already see, and the rendered embed never widens beyond the token's scope. Widening the audience to `public` stays **admin-gated** regardless of who asks.
 
 ### Fail-closed + revoke-all
 

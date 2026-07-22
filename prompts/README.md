@@ -1,6 +1,6 @@
 # Recipe library
 
-43 recipes for go-to-market work. Most are self-contained markdown files with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips; the [agent-platform](agent-platform/README.md) section adds the developer-facing REST + MCP shapes for the same engine. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
+46 recipes for go-to-market work. Most are self-contained markdown files with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips; the [agent-platform](agent-platform/README.md) section adds the developer-facing REST + MCP shapes for the same engine. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
 
 New here? Start with the [main README](../README.md) for setup and the six headliner prompts.
 
@@ -69,7 +69,7 @@ Weekly health, risk surfacing, zombie cleanup, and fast lookups — all on a cad
 
 ## Pages & dashboards (2)
 
-Turn an answer into a real, designed Page in your console — a workspace data UI over your live tenant data, not a chat transcript — and embed it live anywhere. Page authoring is console + REST (the `pages` MCP tool was retired), so these plays run over the pages REST API. See the [section README](pages-and-dashboards/README.md) for the three page layouts (dashboard / single / document) and the [create-a-page command](../plugins/amdahl-gtm/commands/create-page.md) for the full contract.
+Turn an answer into a real, designed Page in your console — a workspace data UI over your live tenant data, not a chat transcript — and embed it live anywhere. Page authoring is a **console capability** (the `pages` MCP tool was retired and the endpoints behind the console aren't reachable with an external API key), so these plays have Claude draft the page spec and you create it in the console's Pages surface. See the [section README](pages-and-dashboards/README.md) for the three page layouts (dashboard / single / document) and the [create-a-page command](../plugins/amdahl-gtm/commands/create-page.md) for the full contract.
 
 - [Build a markdown report page](pages-and-dashboards/markdown-report-page.md) — publish a written deliverable (competitive brief, account one-pager, positioning memo) as a `document`-layout Page: a centered prose column built from `Markdown` blocks, no SQL required.
 - [Embed a live page](pages-and-dashboards/embed-a-page.md) — build a Page, then mint a self-scoped, signed, short-lived embed link to drop it live into another site. Fails closed by design; public/workspace embeds are admin-gated; rotating the per-tenant secret revokes every embed at once.
@@ -78,7 +78,19 @@ Turn an answer into a real, designed Page in your console — a workspace data U
 
 Mirror your Amdahl knowledge base into a Notion database in your own workspace — set it up once, then every document you promote in Amdahl shows up (and stays current) in Notion automatically. See the [section README](knowledge-sync/README.md).
 
-- [Mirror your knowledge base to Notion](knowledge-sync/mirror-knowledge-base-to-notion.md) — the **connect -> configure -> it-syncs-itself -> monitor** loop: connect Notion over OAuth, designate a parent page (provisions a database + backfills), then watch it mirror every promoted doc. One-way, current-version-only, self-healing on an hourly reconcile. Setup writes are REST + console; the config / status / ledger reads are on MCP too.
+- [Mirror your knowledge base to Notion](knowledge-sync/mirror-knowledge-base-to-notion.md) — the **connect -> configure -> it-syncs-itself -> monitor** loop: connect Notion over OAuth, designate a parent page (provisions a database + backfills), then watch it mirror every promoted doc. One-way, current-version-only, self-healing on an hourly reconcile. Setup and monitoring live in the console; agents feed it through the knowledge base.
+
+## Notifications (1)
+
+Email people on your workspace from an agent run — members-only, rate-capped, idempotent, so an agent can deliver autonomously without becoming a spam cannon. Driven through Chat and Routines (`actions_allowed`). See the [section README](notifications/README.md).
+
+- [Notify the workspace team](notifications/notify-the-workspace-team.md) — the **discover -> send -> verify** discipline, the guardrail contract (member-only / capped / idempotent), and the unattended paths: a Routine with `email_member` granted, or a Workflow `tool` step.
+
+## Workflows & blueprints (1)
+
+Author reusable, typed **Workflow** recipes (blueprints) the platform can validate, version, fork, schedule, and run headlessly. A console capability — from a connected Claude session, recurring work is a Routine and one-shot deep work is a Chat. See the [section README](blueprints/README.md).
+
+- [How to write an Amdahl blueprint](blueprints/authoring-a-blueprint.md) — the mental model, the full DSL anatomy (inputs, outputs, the 8 step kinds, `$`-references, `prompt://` fragments, policy, trigger), validating in the console, and two worked examples (from scratch, and fork-a-starter).
 
 ## Agent platform — API + MCP (15)
 
@@ -93,7 +105,7 @@ The developer-facing view of the engine the prompts above run on: how to drive A
 
 - [Fast lane — `search.run`](agent-platform/fast-lane-search.md) — one synchronous call: the request, the full response envelope (`internal.status`, the SQL, blended citations), the typed-failure contract, and the `escalate_to_chat` handoff.
 - [Structured search — typed filters](agent-platform/structured-search.md) — the config-DSL lane of `search.query`: declarative `{field, op, value}` filters, `group_by` + `metrics` aggregations, and the `search.fields` vocabulary catalog (the compiled SQL comes back as the receipt).
-- [Semantic search — meaning over the call corpus](agent-platform/semantic-search.md) — the vector lane of the same verb: meaning-shaped asks, semantic query + filters, and reading `mode_ran` + `freshness`.
+- [Semantic search — meaning over the call corpus](agent-platform/semantic-search.md) — the vector lane of the same endpoint: meaning-shaped asks, semantic query + filters, and reading `mode_ran` + `freshness`.
 - [Tiered enrichment — company, person, topic](agent-platform/tiered-enrichment.md) — `enrich.*`: cached brief instantly, first-party evidence on a miss with the full brief rebuilding in the background, `mode: "full"` to wait for the deep brief.
 - [Lookalikes — nearest accounts, deals, and themes](agent-platform/lookalikes.md) — `lookalike.find` + `themes`: "more like this one" over your own corpus, with the honest `available: false` contract while centroids materialize.
 - [Agentic Chat — start, poll, respond](agent-platform/agentic-chat.md) — the always-async lane end to end: start -> poll (or stream) -> render -> answer a pause. REST + the MCP `agents` tool, plus the `depth` knob.
@@ -105,5 +117,5 @@ The developer-facing view of the engine the prompts above run on: how to drive A
 
 - [Voice of customer, end to end](agent-platform/voice-of-customer-end-to-end.md) — one question across both doors, teaching the `escalate_to_chat` fast -> Chat handoff.
 - [Call prep + objection handling, end to end](agent-platform/call-prep-objection-end-to-end.md) — the flagship: who looks like this prospect, what worked/didn't, and the exact rebuttal — one Chat, grounded in your corpus.
-- [The expansion motion, end to end](agent-platform/expansion-motion-end-to-end.md) — the multi-verb flagship: lookalike your best closed-won, fast-enrich each match, then semantic-search the objections they already raised.
-- [Operation reference — the live catalog](agent-platform/reference.md) — the self-describing `GET /operations` / `operation://list` catalog for any operation's exact schema + scopes.
+- [The expansion motion, end to end](agent-platform/expansion-motion-end-to-end.md) — the multi-endpoint flagship: lookalike your best closed-won, fast-enrich each match, then semantic-search the objections they already raised.
+- [Operation reference](agent-platform/reference.md) — where the authoritative contracts live (the docs tool catalog + the OpenAPI-driven API reference), and the recipe-to-operation map for the public surface.

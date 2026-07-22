@@ -2,7 +2,7 @@
 
 **What this does**: Slices your warehouse with **declarative, typed filters** instead of prose or hand-written SQL — "open deals over $50K, largest first", "external-speaker utterances at Acme in June", "deal count + total amount by stage" — in one synchronous call. You send `filters: [{field, op, value}]` against a discoverable field catalog; Amdahl compiles them into one tenant-scoped query and returns the rows **and the compiled SQL**.
 
-**When to use it**: You know exactly which fields and conditions you want, and you want a deterministic result — no model interpreting your wording. It's the config-DSL lane of the routed `search.query` verb: same door as [semantic search](semantic-search.md), different lane. If your ask is plain language rather than predicates, use [`search.run`](fast-lane-search.md) (the NL lane) or let `search.query`'s auto-router pick.
+**When to use it**: You know exactly which fields and conditions you want, and you want a deterministic result — no model interpreting your wording. It's the config-DSL lane of the routed `search.query` endpoint: same door as [semantic search](semantic-search.md), different lane. If your ask is plain language rather than predicates, use [`search.run`](fast-lane-search.md) (the NL lane) or let `search.query`'s auto-router pick.
 
 ## Why this matters
 
@@ -207,5 +207,5 @@ reuse the exact slice later.
 
 - [Semantic search](semantic-search.md) — the meaning-shaped lane of the same `search.query` door.
 - [Fast lane — `search.run`](fast-lane-search.md) — the plain-language NL lane when you'd rather describe than predicate.
-- [The expansion motion, end to end](expansion-motion-end-to-end.md) — filter slices as the connective tissue of a multi-verb workflow.
+- [The expansion motion, end to end](expansion-motion-end-to-end.md) — filter slices as the connective tissue of a multi-endpoint workflow.
 - [Agent platform overview](README.md) — the flag prerequisite and the scope table.

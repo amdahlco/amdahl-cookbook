@@ -9,24 +9,30 @@ When the user's request touches a **person, company, deal, account, customer voi
 
 Amdahl fuses the tenant's own CRM + call corpus with external data. The interesting answer is almost always the **divergence** between the public story and the internal story — surface it, don't bury it.
 
-Rollout note: the v2 agent platform is enabled per workspace. On v2 the surface carries BOTH the synchronous fast-lane `search` tool (a quick lookup) AND the `agents` tool (agentic Chat + Routines). Route by what is actually in THIS session's tool list — if NEITHER `search` nor `agents` is present and a `blueprints` or `pages` tool is, the workspace is on the pre-rollout surface: use those tools for workflows/pages and skip the fast-search / Chat / Routine rows below.
+The current surface is four tools: **`search`** (synchronous reads over the tenant corpus — three lanes), **`enrich`** (tiered company / person / topic intelligence), **`lookalike`** (similarity over the corpus), and **`agents`** (agentic Chat + the agent library + Routines). Route by what the ask needs:
 
 ## Routing
 
 | The user wants… | Use |
 |---|---|
-| A quick data lookup or fast answer ("just get me the number / the rows", a single fact) | `search` { query, mode, limit, external_limit, synthesize } — SYNCHRONOUS: returns rows + the SQL it ran (and web citations when blended) in ONE call, no polling. `mode: internal` (default) = NL→SQL over this tenant's data; `mode: blended` = internal + a quick web fan-out. `synthesize: true` adds a one-paragraph headline. Reach for `start_chat` instead when it's a multi-step investigation, not a lookup. |
-| A multi-step investigation Amdahl should run end-to-end | `agents` { action: start_chat } — opens a named Session and runs one Master agent turn server-side; returns handles immediately. Poll `chat_status` (long-poll with `wait_ms` up to 30000) until it settles; `respond` answers a paused human question; `cancel_chat` stops it. Never expect the answer inside one tool call. Set the run's `depth` — `quick` (fast, lean kit) / `standard` (default) / `deep` (Opus + delegation + web fan-out + the divergence map; decomposes and self-verifies) — to match the ask. |
-| A standing, scheduled refresh ("every Monday…") | `agents` { action: create_routine } — a Routine is a cron that fires a Chat (one Master agent turn) each occurrence, in a fresh Session. `run_routine_now` fires one immediately. |
-| Market / competitor / topic research | `external_search` { action: search \| enrich_topic } |
-| Company / lead enrichment | `external_search` { action: enrich_company, domain } |
-| Person enrichment | `external_search` { action: enrich_person, linkedin_url \| email — never a bare first name } |
-| Account history, deal context | `data` query + `context` query_substrate |
-| What our customers say about X | `data` cluster_search + `context` query_substrate |
-| Company profile / ICP / brand voice | `context` summary |
-| Draft content in tenant voice | Draft in-conversation, grounded on `data` cluster_search + `context` query_substrate |
-| Build a page / dashboard / data view | `/create-page` — author a page spec (catalog components + SQL bindings) over the pages REST API (validate → create). Pages are console + REST only; the `pages` MCP tool was retired. |
-| Reference library | `knowledge_base` (list / get / chat) |
+| A quick data lookup or fast answer ("just get me the number / the rows", a single fact) | `search` { action: run, query, mode } — SYNCHRONOUS: returns rows + the SQL it ran (and web citations when `mode: blended`) in ONE call, no polling. `synthesize: true` adds a one-paragraph headline. |
+| A deterministic slice or an aggregate (exact filters, group-bys, metrics) | `search` { action: query } with typed `filters` + `group_by`/`metrics` — the compiled SQL comes back as the receipt. Discover the field vocabulary first with `search` { action: fields }. |
+| "What do customers say about X" / any meaning-shaped ask no column encodes | `search` { action: query, mode: semantic } — ranked matches over the call corpus; read `mode_ran` + `freshness` before trusting the results. |
+| Company / lead enrichment | `enrich` { action: company, domain } — cached brief instantly; first-party evidence on a miss while the full brief rebuilds; `mode: "full"` to wait for the fused brief. |
+| Person enrichment | `enrich` { action: person, linkedin_url \| email — never a bare name }. |
+| Market / competitor / topic research | `enrich` { action: topic } for the fused market-vs-customers read. |
+| "More accounts / deals like this one" | `lookalike` { action: find, seed } — centroid similarity over the tenant's own corpus. "Which themes does this angle land on" → `lookalike` { action: themes }. Honest `available: false` while centroids materialize — degrade to themes/semantic, don't invent. |
+| A multi-step investigation Amdahl should run end-to-end | `agents` { action: start_chat } — opens a named Session and runs one Master agent turn server-side; returns handles immediately. Poll `chat_status` (long-poll with `wait_ms` up to 30000) until it settles; `respond` answers a paused question; `cancel_chat` stops it. Never expect the answer inside one tool call. Set `depth` — `quick` / `standard` (default) / `deep` (Opus + web fan-out + the divergence map) — to match the ask. |
+| A standing, scheduled refresh ("every Monday…") | `agents` { action: create_routine } — a cron that fires a Chat each occurrence, in a fresh Session. `run_routine_now` fires one immediately. Mind `actions_allowed`: absent = ALL outbound actions allowed; name a list to narrow, `[]` to disable. |
+| Account history, deal context | `search` { action: run } and { action: query } over the interactions + deals surfaces. |
+| Company profile / ICP / brand voice | These live server-side — run the ask as a Chat (`agents` start_chat); the Master pulls the workspace context itself. |
+| Draft content in tenant voice | Ground on `search` (semantic) + `lookalike` themes and draft in-conversation; for an on-voice draft or one that should persist, run it as a Chat (`write_outputs: true` lands a knowledge-base version the user promotes). |
+| Build a page / dashboard / data view | `/create-page` — draft the page spec (catalog components + SQL bindings) and hand the user the JSON for the console's Pages surface. Page authoring is console-only. |
+| Reference library (knowledge base) | Console capability. Feed it via a Chat/Routine with `write_outputs: true`; the user promotes in the console. |
+
+## Legacy fallback (pre-rollout workspaces)
+
+The v2 agent platform is enabled per workspace. If THIS session's tool list has none of `search` / `enrich` / `lookalike` / `agents` but does list `data` / `context` / `external_search` / `knowledge_base` (and possibly `blueprints` / `pages`), the workspace is on the pre-rollout surface. Route with those instead: `data` query + cluster_search for corpus reads, `context` query_substrate / summary for account context and voice, `external_search` (enrich_company / enrich_person / enrich_topic / search) for public signal, `knowledge_base` for the reference library, and the `blueprints` / `pages` tools for workflows and pages. Skip the Chat / Routine rows above; suggest the user ask their Amdahl admin about Agent Platform v2.
 
 ## Operating rules
 

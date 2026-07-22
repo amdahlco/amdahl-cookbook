@@ -5,7 +5,7 @@ argument-hint: <company name or domain> [deal size, segment, stage when lost]
 
 Run the Amdahl "why we lost this deal" postmortem for **$ARGUMENTS**. Use the connected **Amdahl** MCP tools. If the server isn't connected, tell the user to run `/amdahl-gtm:setup`. The job is to learn, not to make anyone feel better — be honest.
 
-**Wave 1 — gather in parallel (over `data` query + cluster_search):**
+**Wave 1 — gather in parallel (over `search` — the `run` and `query` actions; use the semantic lane for objection / sentiment moments):**
 - **Timeline**: every meaningful touch (call, email, internal note) in chronological order, date + 1-line summary.
 - **Verbatim buyer signal**: the 5 most important things they said across the deal about priorities, our product, the competition, timeline, budget (speaker role + date).
 - **Turning point**: the call or moment where sentiment, urgency, or engagement clearly shifted away — cite the specific signal (a quote, an attendee drop-off, a delayed response, a sudden new requirement).
@@ -21,5 +21,7 @@ Run the Amdahl "why we lost this deal" postmortem for **$ARGUMENTS**. Use the co
 5. Competitive context — who, when, how late, who let them in.
 6. CRM reason vs. call reality — same or divergent?
 7. The 3 do-overs — each tied to a specific moment in the timeline.
+
+If the deal is long or the record is dense, escalate the whole postmortem to `agents` { action: start_chat } and poll it — this is exactly the shape a server-side investigation is for. *Pre-rollout fallback:* on a legacy session (`data` / `context` tools), run the gathers over `data` query + cluster_search.
 
 If a competitor showed up late (after stage 3), chase WHY they got the late look — it's almost always something WE did that opened the door. Full recipe + variations — `prompts/win-loss-deal-postmortem/why-we-lost-this-deal.md`.

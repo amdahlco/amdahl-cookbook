@@ -47,13 +47,13 @@ Run `/amdahl-gtm:setup` to confirm the connection and see what's on file. If you
 The plugin ships two skills (auto-discovered from `skills/`):
 
 - **`amdahl-gtm-routing`** — a thin routing skill so that **ambient** GTM questions — ones where you didn't type a slash command — still route through Amdahl instead of generic `web_search`. Ask "help me write a cold email to a Series B fintech CTO" and it reaches for your corpus on its own.
-- **`blueprint-authoring`** — drives the create -> validate -> fork -> iterate loop for authoring an Amdahl **workflow (blueprint)** — a reusable, typed recipe the platform validates, versions, forks, and runs — over the REST API (the `blueprints` MCP tool was retired), and routes "make this recur" asks to **Routines**: scheduled Chats created with the `agents` MCP tool. Ask "save this workflow as a reusable recipe" or "fork the draft-piece starter and lock it to LinkedIn" and it walks the DSL with you. The narrative guide is [`prompts/blueprints/authoring-a-blueprint.md`](../../prompts/blueprints/authoring-a-blueprint.md).
+- **`blueprint-authoring`** — helps you author an Amdahl **workflow (blueprint)** — a reusable, typed recipe the platform validates, versions, forks, and runs. Workflow authoring is a console capability (the `blueprints` MCP tool was retired and the endpoints behind the console aren't reachable with an external key), so the skill composes + checks the DSL body with you and hands you the finished JSON for the console's Workflows surface — and routes "make this recur" asks to **Routines**: scheduled Chats created with the `agents` MCP tool. Ask "save this workflow as a reusable recipe" or "fork the draft-piece starter and lock it to LinkedIn" and it walks the DSL with you. The narrative guide is [`prompts/blueprints/authoring-a-blueprint.md`](../../prompts/blueprints/authoring-a-blueprint.md).
 
 ## How it works
 
-Each command runs a **wave structure**: an explicit parallel gather (internal corpus via `data` + `context`, public signal via `external_search`) followed by a synthesis pass whose centerpiece is the **divergence** between the two. Every claim is grounded — a verbatim call quote (speaker + date) or a dated public source. When a command writes a deliverable back to Amdahl (e.g. `/amdahl-gtm:draft`), the platform's fact-check gate runs on the write and hands back a shareable console link.
+Each command runs a **wave structure**: an explicit parallel gather (internal corpus via the synchronous `search` endpoint — structured, NL, and semantic lanes; entity + topic signal via `enrich`; similarity via `lookalike`) followed by a synthesis pass whose centerpiece is the **divergence** between what the market says and what your buyers said. When the job outgrows synchronous calls, a command escalates to `agents` (`start_chat`) — one server-side Master agent turn that decomposes the ask and composes a cited answer. Every claim is grounded: a verbatim call quote (speaker + date) or a dated public source. To make a deliverable durable, ask for a Chat with `write_outputs` on — it commits a knowledge-base version you promote in the console.
 
-The deep routing detail and operational defaults live server-side in the `system/amdahl_gtm_playbook` MCP prompt, so the plugin stays thin and the playbook can evolve without a plugin release.
+(Workspaces still on the pre-rollout surface see the legacy `data` / `context` / `external_search` / `knowledge_base` tools instead; the commands carry a fallback note for them.) The deep routing detail and operational defaults live server-side in the `system/amdahl_gtm_playbook` MCP prompt, so the plugin stays thin and the playbook can evolve without a plugin release.
 
 ## Troubleshooting
 
@@ -63,7 +63,7 @@ The deep routing detail and operational defaults live server-side in the `system
 
 ## Docs & support
 
-- Product docs: <https://amdahl.co/mcp>
+- Product docs: <https://docs.amdahl.co>
 - Home: <https://amdahl.co>
 - Support: hello@amdahl.co
 

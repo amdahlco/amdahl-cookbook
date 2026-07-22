@@ -1,12 +1,12 @@
 # Use case: the expansion motion, end to end
 
-**What this does**: Chains the three fast verbs into one workflow: take a top closed-won account as the seed, [`lookalike`](lookalikes.md) the accounts in your corpus that sound most like it, [`enrich`](tiered-enrichment.md) each match on the fast tier, then run a [semantic search](semantic-search.md) across the matches for the objections that will come up — ending in a ranked expansion list where every account carries a "why them" and a "what they'll push back on."
+**What this does**: Chains the three endpoints into one workflow: take a top closed-won account as the seed, [`lookalike`](lookalikes.md) the accounts in your corpus that sound most like it, [`enrich`](tiered-enrichment.md) each match on the fast tier, then run a [semantic search](semantic-search.md) across the matches for the objections that will come up — ending in a ranked expansion list where every account carries a "why them" and a "what they'll push back on."
 
 **When to use it**: You're building an expansion / reactivation push from evidence instead of intuition. Every step is a fast synchronous call, so the whole motion runs inline in an agent turn or a script — no multi-step Chat required (though the *interpretation* at the end is a good [Chat](agentic-chat.md) ask).
 
 ## Why this matters
 
-The usual expansion list is firmographic: same industry, same size band as your wins. This motion ranks by something sharper — **accounts whose conversations resemble your best win's conversations** — and then arms each name before anyone reaches out. It also composes honestly: lookalike matches are entities already in your corpus (dormant accounts, stalled deals, early conversations), so this is a *mine-your-own-data* motion; the semantic pass at the end reads what those exact accounts already told you, which is prep no external tool can generate. One seed in, a briefed target list out, four verbs, no waiting on a deep investigation.
+The usual expansion list is firmographic: same industry, same size band as your wins. This motion ranks by something sharper — **accounts whose conversations resemble your best win's conversations** — and then arms each name before anyone reaches out. It also composes honestly: lookalike matches are entities already in your corpus (dormant accounts, stalled deals, early conversations), so this is a *mine-your-own-data* motion; the semantic pass at the end reads what those exact accounts already told you, which is prep no external tool can generate. One seed in, a briefed target list out, four endpoints, no waiting on a deep investigation.
 
 ## Step 1 — pick the seed (structured search)
 
@@ -178,6 +178,6 @@ account where the evidence is thin instead of padding it.
 
 ## See also
 
-- [Lookalikes](lookalikes.md) · [Tiered enrichment](tiered-enrichment.md) · [Structured search](structured-search.md) · [Semantic search](semantic-search.md) — the four verbs this motion chains.
+- [Lookalikes](lookalikes.md) · [Tiered enrichment](tiered-enrichment.md) · [Structured search](structured-search.md) · [Semantic search](semantic-search.md) — the four endpoints this motion chains.
 - [Call prep + objection handling, end to end](call-prep-objection-end-to-end.md) — the single-account sibling of this play.
 - The GTM prompt version: [outbound targeting by signal](../content-and-outbound/outbound-targeting-by-signal.md) — the market-side complement.

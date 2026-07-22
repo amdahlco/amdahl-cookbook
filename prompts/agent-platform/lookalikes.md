@@ -6,7 +6,7 @@
 
 ## Why this matters
 
-Every "lookalike audience" tool ranks companies by firmographics: industry, headcount, funding. Amdahl's lookalikes rank by **conversation**: each company / deal / theme gets a centroid vector built from its utterances in your corpus, and similarity is distance between centroids. That's a materially different signal — the account whose buying committee raises the same concerns, in the same words, as your last three wins is a better expansion bet than the one that merely shares an industry code. The flip side is honesty about scope: centroids exist only for entities **in your corpus**, and they're materialized by a background pipeline on its own cadence — so the verb tells you plainly when they aren't there yet rather than padding a list.
+Every "lookalike audience" tool ranks companies by firmographics: industry, headcount, funding. Amdahl's lookalikes rank by **conversation**: each company / deal / theme gets a centroid vector built from its utterances in your corpus, and similarity is distance between centroids. That's a materially different signal — the account whose buying committee raises the same concerns, in the same words, as your last three wins is a better expansion bet than the one that merely shares an industry code. The flip side is honesty about scope: centroids exist only for entities **in your corpus**, and they're materialized by a background pipeline on its own cadence — so the endpoint tells you plainly when they aren't there yet rather than padding a list.
 
 ## The operations
 

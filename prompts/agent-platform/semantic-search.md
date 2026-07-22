@@ -2,7 +2,7 @@
 
 **What this does**: Finds the moments in your conversation data that **mean** what you asked, not the rows that literally match it — "what do customers say about onboarding friction", "complaints that sound like security review fatigue" — in one synchronous call. Matches come back ranked by similarity, with a `freshness` stamp telling you which index answered and how current it is.
 
-**When to use it**: The thing you're looking for is a *concept*, and no column encodes it. Filters answer "rows WHERE stage = open"; semantic answers "utterances that sound like pricing pushback." It's the third lane of the routed `search.query` verb, beside [typed filters](structured-search.md) and the fuzzy NL→SQL lane.
+**When to use it**: The thing you're looking for is a *concept*, and no column encodes it. Filters answer "rows WHERE stage = open"; semantic answers "utterances that sound like pricing pushback." It's the third lane of the routed `search.query` endpoint, beside [typed filters](structured-search.md) and the fuzzy NL→SQL lane.
 
 ## Why this matters
 

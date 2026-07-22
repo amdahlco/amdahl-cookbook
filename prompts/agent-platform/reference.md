@@ -1,75 +1,42 @@
-# Operation reference — the live catalog
+# Operation reference — where the contracts live
 
-**What this does**: Points you at the **self-describing** operation catalog instead of a hand-maintained list. Every Amdahl operation — its id, description, kind, sensitivity, required scopes, and input schema — is queryable at runtime, so the authoritative reference is the API itself, always current with your workspace.
+**What this does**: Points you at the authoritative reference for the public operations — the **tool catalog** and the **OpenAPI-driven API reference** on <https://docs.amdahl.co> — and maps every recipe in this section to its operation ids so you know exactly which contract to look up.
 
-**When to use it**: You want the exact input schema or required scope for an operation, you're building a tool picker, or you want to confirm which operations your key can actually reach. Read the catalog rather than trusting a doc that can drift.
+**When to use it**: You want the exact input schema, response shape, or required scope for an operation, or you're checking why a call was refused. Read the published reference rather than trusting a doc that can drift.
 
-## Why the reference is live
+## The reference surfaces
 
-The cookbook recipes describe the operations you'll use most, but the *complete, current* contract lives in the registry. Reading it back means you never integrate against a stale field list — the catalog reflects exactly what's registered on the server you're calling.
+- **The API reference** — <https://docs.amdahl.co/api-reference> — the interactive, OpenAPI-driven console: every public REST operation with its full request/response schema, required scopes, and a browser-side "Try it" runner against `https://app.amdahl.co`.
+- **The tool catalog** — on <https://docs.amdahl.co> — the generated per-operation catalog (the same descriptions the agent sees), grouped by family.
 
-## Read the catalog
+Both are generated from the platform's operation registry, so they track the deployed contract.
 
-| Job | REST | MCP | Scope |
-|---|---|---|---|
-| List all operations | `GET /operations` | resource `operation://list` | `artifacts:read` |
-| One operation's full contract | `GET /operations/:id` | resource `operation://<id>` | `artifacts:read` |
+> **Don't build a discovery loop on `GET /operations`.** The registry's self-introspection surface (`GET /operations` / the `operation://list` resource) is console-internal: an external API key gets a `403` (`not_on_public_api`), and it isn't on the v2 MCP resource surface either. The published docs above are the discovery path for integrations.
 
-**REST:**
+## The public surface, recipe by recipe
 
-```
-GET /operations?kind=compute
-Authorization: Bearer <api-key with artifacts:read>
-```
-
-Filters: `?namespace=` (e.g. `chat`, `search`, `routines`), `?kind=read|write|compute|workflow`, `?include_admin=false` (default).
-
-**What comes back** — one lean entry per operation:
-
-```json
-{
-  "operations": [
-    {
-      "id": "search.run",
-      "namespace": "search",
-      "name": "Fast Search",
-      "description": "Use when you want one concrete question answered in a single synchronous call ...",
-      "kind": "compute",
-      "sensitivity": "safe",
-      "required_scopes": ["data:read"],
-      "input_schema": { "type": "object", "properties": { "query": { "type": "string" }, "mode": { "enum": ["internal", "blended"] } } },
-      "expected_latency_ms": 6000
-    }
-  ],
-  "namespaces": { "search": 1, "chat": 5, "routines": 6, "agents": 5 },
-  "count": 167
-}
-```
-
-**One operation:**
-
-```
-GET /operations/chat.start   ->   { "operation": { "id": "chat.start", "required_scopes": ["conversations:write"], "input_schema": { ... } } }
-```
-
-## The operations behind this section
-
-The agent-platform recipes map to these registry ids — read any of them with `GET /operations/<id>` for the exact current schema:
+The agent-platform recipes map to these operation ids — look any of them up in the API reference for the exact current schema:
 
 | Recipe | Operation ids |
 |---|---|
 | [Fast lane](fast-lane-search.md) | `search.run` |
-| [Agentic Chat](agentic-chat.md) | `chat.start`, `chat.get_run`, `chat.get`, `chat.list`, `chat.rename`, `agents.cancel` |
+| [Structured search](structured-search.md) | `search.query`, `search.fields` |
+| [Semantic search](semantic-search.md) | `search.query` (semantic lane), `search.fields` |
+| [Tiered enrichment](tiered-enrichment.md) | `enrich.company`, `enrich.person`, `enrich.topic` |
+| [Lookalikes](lookalikes.md) | `lookalike.find`, `lookalike.similar_themes` |
+| [Agentic Chat](agentic-chat.md) | `chat.start`, `chat.get_run`, `chat.get`, `chat.list`, `chat.rename`, `agents.resume`, `agents.cancel` |
 | [Routines](routines.md) | `routines.create`, `routines.list`, `routines.get`, `routines.update`, `routines.delete`, `routines.run_now` |
 | [Saved agents](saved-agents.md) | `agents.create_agent`, `agents.list_agents`, `agents.get_agent`, `agents.update_agent`, `agents.delete_agent` |
 
+These families — `search`, `enrich`, `lookalike`, and the `chat` / `routines` / agent-library surface — are the whole public API. An external key calling anything outside it gets a `403` with `error.code: "not_on_public_api"`; those operations serve the console only.
+
 ## Tips
 
-- **The catalog is the source of truth.** If a recipe's field list and `GET /operations/:id` ever disagree, the live schema wins — it's what the server enforces.
-- **Filter by namespace to scope your read.** `?namespace=chat` returns just the Chat door's operations.
-- **Check `required_scopes` before you call.** It's the fastest way to see why a `403` happened — compare the operation's scopes to what your key holds.
+- **The published reference is the source of truth.** If a recipe's field list and the API reference ever disagree, the reference wins — it's generated from what the server enforces.
+- **Check the operation's scopes before you call.** The reference lists `required_scopes` per operation — the fastest way to see why a `403` happened is to compare them to what your key holds.
+- **A `403 not_on_public_api` means the wrong surface, not the wrong scope.** You called a console-internal operation with an external key; the fix is to use the public equivalents above (or do the job in the console), not to request more scopes.
 
 ## See also
 
 - [Agent platform overview](README.md) — the two doors, the flag prerequisite, and the scope table.
-- Product docs: <https://amdahl.co/mcp>.
+- Product docs: <https://docs.amdahl.co>.

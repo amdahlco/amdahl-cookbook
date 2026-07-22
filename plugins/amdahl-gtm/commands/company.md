@@ -10,9 +10,11 @@ Use the connected **Amdahl** MCP tools — they fuse this tenant's own CRM + cal
 **Disambiguate first.** If "$ARGUMENTS" is a nickname or an ambiguous name, resolve it to a domain (ask the user if unsure). If it's a giant multi-BU company, ask which division to focus on before you spend the calls.
 
 **Wave 1 — gather in parallel:**
-- Internal history → `data` query (the interactions corpus) + `context` query_substrate: every deal, call, support ticket, email, CRM note. Surface deal stage, ACV, who we've talked to (with roles), the last 3 meaningful things said on calls (verbatim, speaker + date), open objections, sentiment trajectory.
-- Public signal (last 90 days first, last 12 months if thin) → `external_search` { action: enrich_company, domain }: funding, hiring patterns, product launches, leadership changes, M&A, regulatory / earnings news, public commentary from their execs.
-- Adjacent mentions → `data` cluster_search / query: any time this company has come up on calls or notes from OTHER accounts — partners, customers, prospects mentioning them.
+- Internal history → `search` { action: run } and `search` { action: query } over the interactions + deals surfaces: every deal, call, support ticket, email, CRM note. Surface deal stage, ACV, who we've talked to (with roles), the last 3 meaningful things said on calls (verbatim, speaker + date), open objections, sentiment trajectory.
+- Public signal (last 90 days first, last 12 months if thin) → `enrich` { action: company, domain }: the cached brief comes back instantly; on a miss you get first-party evidence while the full brief rebuilds — funding, hiring patterns, product launches, leadership changes, M&A, public commentary from their execs.
+- Adjacent mentions → `search` { action: query, semantic }: any time this company has come up on calls or notes from OTHER accounts — partners, customers, prospects mentioning them.
+
+If the gathers keep coming back thin or the account is sprawling, escalate: `agents` { action: start_chat } with the whole brief as the input and poll `chat_status` — the Master decomposes it server-side. *Pre-rollout fallback:* a session listing `data` / `context` / `external_search` instead of `search` / `enrich` / `agents` is on the legacy surface — run the same gathers with `data` query + `context` query_substrate, `external_search` { action: enrich_company }, and `data` cluster_search.
 
 **Wave 2 — synthesize into ONE page (under 400 words), every section named:**
 1. **Snapshot** — what they do, where they are in the buying journey with us, deal stage / status (3 lines).
