@@ -159,10 +159,11 @@ Everything above runs on two "ask Amdahl" doors, and you can drive both from you
 - **The mental model** — where Amdahl sits in a GTM agent stack: one layer on your [shared MCP belt](prompts/agent-platform/gtm-brain-architecture.md), and the [four shapes](prompts/agent-platform/four-flows.md) every play takes (your skill asks, Amdahl answers, your skill acts).
 
 - **Fast lane (`search.run`)** — one synchronous call that returns the rows *and* the SQL it ran. For "get me the number." [Recipe](prompts/agent-platform/fast-lane-search.md).
+- **The fast verbs** — synchronous primitives beside the doors: [structured search](prompts/agent-platform/structured-search.md) (typed filters + `group_by`/`metrics` over a discoverable field catalog), [semantic search](prompts/agent-platform/semantic-search.md) (meaning over the call corpus), [tiered enrichment](prompts/agent-platform/tiered-enrichment.md) (cached brief now, full brief backfilling behind you), and [lookalikes](prompts/agent-platform/lookalikes.md) ("more accounts like this one" over your own corpus).
 - **Agentic Chat** — the always-async Master agent: start, get handles, poll or stream for the cited answer, respond to a pause. For "investigate this." [Recipe](prompts/agent-platform/agentic-chat.md).
 - **Routines & saved agents** — put a Chat on a cron, or save a reusable agent and pin it. [Routines](prompts/agent-platform/routines.md) · [Saved agents](prompts/agent-platform/saved-agents.md).
 - **Rendering the answer** — the seven content-block types and the `amdahl:q` / `amdahl:cite` link grammar, for showing a Chat result in your own UI. [Recipe](prompts/agent-platform/answer-envelope.md).
-- **End-to-end use cases** — two full journeys over both surfaces: [voice of customer](prompts/agent-platform/voice-of-customer-end-to-end.md) (teaches the fast -> Chat handoff) and [call prep + objection handling](prompts/agent-platform/call-prep-objection-end-to-end.md) (the flagship).
+- **End-to-end use cases** — full journeys over both surfaces: [voice of customer](prompts/agent-platform/voice-of-customer-end-to-end.md) (teaches the fast -> Chat handoff), [call prep + objection handling](prompts/agent-platform/call-prep-objection-end-to-end.md), and [the expansion motion](prompts/agent-platform/expansion-motion-end-to-end.md) (lookalike -> enrich -> semantic search, the multi-verb flagship).
 
 Requires Agent Platform v2 (the same per-workspace rollout as above): the `search` + `agents` MCP tools, or `POST /search` and `POST /chat` on REST.
 
