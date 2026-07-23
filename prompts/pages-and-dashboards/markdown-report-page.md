@@ -22,7 +22,7 @@ The payoff: the brief becomes a durable, shareable artifact with its own URL. Re
   - `List` (`{ items: [...] }`) for a bulleted talk track, or just write the bullets inside a `Markdown` body.
 - **`declared_queries: []`** — a pure-prose report binds no data, so the query list is empty. (If you want to anchor one live number, add a single declared query and a `Stat` beside the prose; the rest stays markdown.)
 
-You don't write any of this by hand — you ask Claude to, and it runs the platform's **validate → create** loop (the same loop `/amdahl-gtm:create-page` uses) and hands you back a URL. Page authoring is a **console + REST** surface — the `pages` MCP tool was retired — so this play needs a session that can call the REST API (e.g. Claude Code with a platform API key); from a connector-only claude.ai session, have Claude draft the spec and create it in the console yourself.
+You don't write any of this by hand — you ask Claude to draft the spec, then create it yourself in the console's **Pages** surface, where the platform's **validate → create** loop runs. Page authoring is a **console capability** — the `pages` MCP tool was retired, and the endpoints behind the console aren't reachable with an external API key — so the split is: Claude writes the brief and assembles the spec JSON; you paste it into the console, validate, and create.
 
 ## Paste this into Claude
 
@@ -32,7 +32,8 @@ positioning memo for {segment}} grounded in our Amdahl data — fuse our interna
 call/CRM history with public signal, and call out the divergence between the two.
 Keep it tight and readable: a few short sections, each with a clear heading.
 
-Then publish it as an Amdahl Page over the pages REST API, as a long-form document:
+Then draft it as an Amdahl Page spec I can create in the console, as a
+long-form document:
 
 - Set the page layout to "document" so it renders as a centered, readable prose
   column (NOT a dashboard).
@@ -42,11 +43,13 @@ Then publish it as an Amdahl Page over the pages REST API, as a long-form docume
   provenance / sources note at the end.
 - This is pure prose, so declared_queries MUST be []. Do not write any SQL and do
   not invent data bindings — there's nothing to bind.
-- Run POST /pages/validate first. Fix every rejection (a non-catalog node
-  type, a Markdown node missing its `body`, a Callout given a `text` prop instead
-  of a child Text node) and re-validate until it passes clean.
-- Then POST /pages to create it and give me the console URL. Don't try to render
-  or screenshot it from here — I'll open the link.
+- Double-check the spec against the catalog contract before you hand it over
+  (no invented node types, every Markdown node has its `body`, the Callout
+  carries a child Text node rather than a `text` prop).
+- Then give me the finished spec JSON in one block, plus the two-step console
+  instruction: paste it into Pages -> New page, run Validate, fix anything it
+  flags, and Create. Page authoring is console-only, so don't try to call an
+  API from here — I'll create it and open the link.
 
 If anything in the brief is a specific factual claim you can't ground in our data
 or a cited source, mark it clearly rather than stating it as fact.
@@ -56,8 +59,8 @@ or a cited source, mark it clearly rather than stating it as fact.
 
 - The written brief itself, in chat, so you can sanity-check the words before it's published.
 - A short rundown of the spec tree: a `Section` of `Heading` + `Markdown` nodes (plus a `Callout`), `layout: "document"`, and `declared_queries: []`.
-- The `validate` verdict — ideally clean on the first or second pass.
-- A **console URL** for the created Page. Open it and the brief renders as a centered prose column over your workspace.
+- The finished **spec JSON** plus the console steps: paste into Pages, **Validate** (ideally clean on the first pass), **Create**.
+- Once you create it, a Page with its own URL — open it and the brief renders as a centered prose column over your workspace.
 
 ## How to actually use it
 
@@ -65,7 +68,7 @@ or a cited source, mark it clearly rather than stating it as fact.
 2. **Keep sections short and headed.** The `document` layout reads best as a handful of titled sections, not one giant `Markdown` wall. One `Heading` + one `Markdown` block per idea.
 3. **Use a `Callout` for the provenance note.** End the report with a `neutral` Callout listing sources and the date — it's the "how do I trust this" footer, set off from the body.
 4. **Share the URL, don't re-paste the text.** The whole point is a durable link. Drop it in Slack, hand it to the AE, re-open it next quarter.
-5. **If `validate` complains about a binding, you have stray SQL.** A pure document declares no queries; an unbound-query or invalid-SQL rejection means a data node snuck in. Tell Claude "this is prose only, remove any queries and data bindings."
+5. **If the console's Validate complains about a binding, you have stray SQL.** A pure document declares no queries; an unbound-query or invalid-SQL rejection means a data node snuck in. Tell Claude "this is prose only, remove any queries and data bindings" and re-paste the fixed spec.
 
 ## Variations
 
@@ -86,4 +89,4 @@ or a cited source, mark it clearly rather than stating it as fact.
 
 - [Create a page (command)](../../plugins/amdahl-gtm/commands/create-page.md) — the full Pages contract: the catalog, the three layouts, data bindings, and the validate → create loop. The authoritative reference; this recipe is the document-layout slice of it.
 - The rest of the cookbook: [recipe library](../README.md) — paste-ready GTM prompts that produce the briefs worth publishing.
-- Product docs: <https://amdahl.co/mcp>.
+- Product docs: <https://docs.amdahl.co>.

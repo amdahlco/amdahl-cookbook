@@ -8,9 +8,11 @@ Run the Amdahl meeting-prep play for **$ARGUMENTS**. Use the connected **Amdahl*
 Infer the meeting type from the arguments (default: general sales call). If it's a QBR or renewal, weight toward year-long trajectory and an expansion / defend posture.
 
 **Wave 1 — gather in parallel:**
-- Full account history → `data` query + `context` query_substrate: who's been on the calls (names + roles), what's been said, what's open, what's stalled, sentiment over time, the last 3 meaningful moments (verbatim, dated).
-- Public signal → `external_search` { action: enrich_company }: anything in their world that's relevant right now.
-- Open threads → unresolved objections, promised follow-ups, questions we never answered.
+- Full account history → `search` { action: run } + `search` { action: query }: who's been on the calls (names + roles), what's been said, what's open, what's stalled, sentiment over time, the last 3 meaningful moments (verbatim, dated).
+- Public signal → `enrich` { action: company, domain }: anything in their world that's relevant right now.
+- Open threads → `search` { action: query, semantic }: unresolved objections, promised follow-ups, questions we never answered.
+
+For a high-stakes room (a QBR on a big account), consider escalating the whole prep to `agents` { action: start_chat } instead — one server-side investigation, polled to completion. *Pre-rollout fallback:* on a legacy session, use `data` query + `context` query_substrate and `external_search` { action: enrich_company }.
 
 **Wave 2 — 1-page prep doc (under 400 words):**
 1. **Who's in the room** and what each attendee cares about (grounded).

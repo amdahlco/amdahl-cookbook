@@ -9,11 +9,13 @@ Two doors, and the whole trick is knowing which one you're at:
 
 > **The one seam worth learning:** `search.run` returns `escalate_to_chat: true` when your ask outgrows the fast lane. That field is the designed bridge — fire fast, and if it comes back `escalate_to_chat`, re-fire the same question as a Chat. [Fast lane -> Chat](fast-lane-search.md#escalate-to-chat) walks it end to end.
 
+Beside the two doors sit the **endpoints** — synchronous primitives for when you already know the shape of the answer: [structured + semantic search](structured-search.md) (`search.query`, one routed endpoint with a typed-filter lane, an NL lane, and a meaning-based lane), [tiered enrichment](tiered-enrichment.md) (`enrich.company` / `person` / `topic` — cached brief now, full brief backfilling behind you), and [lookalikes](lookalikes.md) (`lookalike.find` / `themes` — "more like this one" over your own corpus). Each is one blocking call, same as the fast lane.
+
 ## Prerequisite — your workspace must be on Agent Platform v2
 
-Everything in this section (`search` + the `agents` tool on MCP; `POST /search`, `POST /chat`, `/routines`, `/agents` on REST) is gated **per workspace** by the `agent_v2` flag.
+Everything in this section (the `search` / `enrich` / `lookalike` + `agents` tools on MCP; `POST /search`, `/search/query`, `/enrich/*`, `/lookalike*`, `POST /chat`, `/routines`, `/agents` on REST) is gated **per workspace** by the `agent_v2` flag.
 
-- **On MCP:** if your connected session lists a `search` tool and an `agents` tool, you're on v2. If it still lists `blueprints` / `pages` and **no** `search` / `agents`, your workspace is on the pre-rollout surface — ask your Amdahl admin to enable Agent Platform v2.
+- **On MCP:** if your connected session lists a `search` tool and an `agents` tool (the newest surface also carries `enrich` + `lookalike`), you're on v2. If it still lists `blueprints` / `pages` and **no** `search` / `agents`, your workspace is on the pre-rollout surface — ask your Amdahl admin to enable Agent Platform v2.
 - **On REST:** a gated call on a flag-off workspace returns `403` with `error.code: "feature_disabled"`.
 
 ## Scopes — what an MCP key / API key needs
@@ -23,13 +25,16 @@ Everything here is covered by the **`mcp_customer_agent`** scope bundle (the def
 | Door / family | Scope |
 |---|---|
 | `search.run` (fast lane) | `data:read` |
+| `search.query` / `search.fields` (structured + semantic search) | `data:read` |
+| `enrich.company` / `enrich.person` / `enrich.topic` | `data:read` (paid tiers — the background refresh + `mode: "full"` — additionally need `external_search:execute`, and degrade without it) |
+| `lookalike.find` / `lookalike.similar_themes` | `data:read` |
 | Start / rename a Chat | `conversations:write` |
 | Read a Chat / poll a run | `conversations:read` |
 | Answer a pause / cancel a run | `workflows:write` |
 | Agent library read / write | `agents:read` / `agents:write` |
 | Routines read / write | `routines:read` / `routines:write` |
 
-A read-only key (`mcp_read_only`) can run `search.run` and read chats, but cannot start one, answer a pause, or write an agent/routine.
+A read-only key (`mcp_read_only`) can run `search.run`, all three endpoints (enrich serves its cache + first-party tiers and reports `refresh_omitted: "missing_scope"` instead of queueing the paid refresh), and read chats — but cannot start a Chat, answer a pause, or write an agent/routine.
 
 ## Start with the mental model
 
@@ -41,6 +46,10 @@ Before the individual calls, the shape of the whole thing — where Amdahl sits 
 ## The recipes
 
 - [Fast lane — `search.run`](fast-lane-search.md) — one synchronous call over REST + MCP: the request, the full response envelope (`internal.status`, the SQL, blended citations), the typed-failure contract (it never throws past validation), and the `escalate_to_chat` handoff into Chat.
+- [Structured search — typed filters](structured-search.md) — the config-DSL lane of `search.query`: declarative `{field, op, value}` filters, `group_by` + `metrics` aggregations, the compiled SQL as the receipt, and the `GET /search/fields` vocabulary catalog.
+- [Semantic search — meaning over the call corpus](semantic-search.md) — the vector lane of the same endpoint: meaning-shaped asks, combining a semantic query with the narrow semantic filter set, and reading `mode_ran` + `freshness` before you trust the results.
+- [Tiered enrichment — company, person, topic](tiered-enrichment.md) — `enrich.*`: cached brief instantly, first-party evidence on a miss with the full brief rebuilding behind the scenes (`refresh_enqueued`), and `mode: "full"` when you'd rather wait.
+- [Lookalikes — nearest accounts, deals, and themes](lookalikes.md) — `lookalike.find` + `themes`: "more like this one" over your own corpus, and the honest `available: false` contract while centroids materialize.
 - [Agentic Chat — start, poll, respond](agentic-chat.md) — the async lane end to end: `start` -> poll `read_url` (or `chat_status`) -> render the answer -> `respond` to an `awaiting_input` pause -> stream a run live. Over REST and over the MCP `agents` tool. Includes the `depth` knob (and why the default is `deep`).
 - [Routines — make a Chat recur](routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now over REST + MCP, the `config` (incl. `actions_allowed` for autonomous sends), and when a Routine beats a Workflow.
 - [Saved agents — reuse a prompt](saved-agents.md) — the agent library: create a named, reusable agent, pin it in a Chat, and schedule it as a Routine. CRUD over REST + MCP.
@@ -52,9 +61,10 @@ The recipes above are the doors in isolation. These two assemble them into a rea
 
 - [Voice of customer, end to end](voice-of-customer-end-to-end.md) — one question across both doors, and the exact `escalate_to_chat` handoff from the fast lane into Chat. The recipe that teaches the seam.
 - [Call prep + objection handling, end to end](call-prep-objection-end-to-end.md) — the flagship: who looks like this prospect, what worked/didn't, and the exact rebuttal — one Chat, grounded in your own corpus, then delivered.
+- [The expansion motion, end to end](expansion-motion-end-to-end.md) — the multi-endpoint flagship: lookalike your best closed-won, fast-enrich each match, then semantic-search the objections they already raised — a briefed expansion list from four synchronous endpoints.
 
 ## Reference
 
-- [Operation reference — the live catalog](reference.md) — read the self-describing operation catalog (`GET /operations` / `operation://list`) for the exact, current input schema and required scope of any operation.
+- [Operation reference](reference.md) — where the authoritative contracts live (the docs tool catalog + the OpenAPI-driven API reference on docs.amdahl.co), and the recipe-to-operation map for the public surface.
 
 New here? Start with the [main README](../../README.md) for the OAuth connect flow, then the [recipe library](../README.md) for the GTM prompts these doors were built to serve.

@@ -6,9 +6,11 @@ argument-hint: <competitor name or domain>
 Run the Amdahl "competitor deep-dive" play for **$ARGUMENTS**. Use the connected **Amdahl** MCP tools (CRM + calls fused with the public web), not generic `web_search`. If the server isn't connected, tell the user to run `/amdahl-gtm:setup`.
 
 **Wave 1 — gather in parallel:**
-- Public posture → `external_search` { action: enrich_company or search }: their positioning, pricing posture, recent launches, funding, messaging, who they say they're for.
-- Call reality → `data` cluster_search + query: every time this competitor comes up on our calls — who raised them, in what context (incumbent, active eval, late entrant), what buyers actually said about them. Pull verbatim quotes with role + date.
-- Trend → are they showing up earlier / later, more / less, in which segments, over time?
+- Public posture → `enrich` { action: company, domain } (or { action: topic } for a category read): their positioning, pricing posture, recent launches, funding, messaging, who they say they're for.
+- Call reality → `search` { action: query, semantic } + `search` { action: run }: every time this competitor comes up on our calls — who raised them, in what context (incumbent, active eval, late entrant), what buyers actually said about them. Pull verbatim quotes with role + date.
+- Trend → `search` { action: query } with `group_by` over time: are they showing up earlier / later, more / less, in which segments?
+
+If the synthesis needs real decomposition (many segments, long history), escalate to `agents` { action: start_chat } with the whole ask. *Pre-rollout fallback:* on a legacy session (`data` / `context` / `external_search` tools), use `external_search` { action: enrich_company or search }, `data` cluster_search + query.
 
 **Wave 2 — synthesize:**
 1. **Public posture** in 3 lines — how they sell themselves.

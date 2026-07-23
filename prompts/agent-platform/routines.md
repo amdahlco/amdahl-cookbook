@@ -69,9 +69,9 @@ agents create_routine
 
 Each fire opens a Chat named after the routine and the date (e.g. `Weekly pipeline recap - 2026-07-20`) that you can open and read like any other Session.
 
-### `actions_allowed` — the key to autonomous sends
+### `actions_allowed` — scoping autonomous sends
 
-A headless run may only take an outbound action (like emailing the team) if that action is on its `actions_allowed` list. The default is empty, so a run that wasn't granted the action surfaces the send as a *proposal* instead of firing it, returning a structured `action_not_allowed`. Put `email_member` on the list (as above) and the weekly recap actually lands in the team's inbox — with the notifications primitive's member-only / capped / idempotent guardrails intact. See [Notify the workspace team](../notifications/notify-the-workspace-team.md) for the send contract.
+A headless run may take an outbound action (like emailing the team) only when that action is allowed by its `actions_allowed` list — and **the default is permissive: leaving `actions_allowed` off means every cataloged action is allowed**, so a routine created without touching the knob can send email autonomously out of the box. Pass a list to narrow the run to exactly the actions you name (as above — good practice for any routine that sends), or pass `[]` to disable outbound actions entirely. A run whose effective list does *not* carry an action surfaces the attempt as a *proposal* instead of firing it, returning a structured `action_not_allowed`. Either way the notifications primitive's member-only / capped / idempotent guardrails apply to every send. See [Notify the workspace team](../notifications/notify-the-workspace-team.md) for the send contract.
 
 ## List, get, update, delete
 
@@ -120,7 +120,8 @@ Every {Monday at 9am ET}, {compile the weekly pipeline recap — what moved,
 what slipped, what went quiet — and email the two-line takeaway to RevOps}.
 
 Use the agents tool's create_routine. Give it a clear name, a cron for that
-schedule, and put email_member on actions_allowed so it can actually send.
+schedule, and set actions_allowed to ["email_member"] so the run is scoped to
+exactly that outbound action.
 Show me the routine you created and when it will first run.
 ```
 
@@ -128,7 +129,7 @@ Show me the routine you created and when it will first run.
 
 - **Pause instead of delete**: `PATCH { "enabled": false }`. The routine stays; it just stops firing. Re-enable later.
 - **Pin a saved agent**: create with `agent: "<slug>"` so every fire runs that [saved agent](saved-agents.md)'s prompt.
-- **Investigate-only (no send)**: omit `actions_allowed` (or pass `[]`). The run does the work and leaves the result in its Session; nothing is emailed.
+- **Investigate-only (no send)**: pass `actions_allowed: []` — the empty list disables outbound actions. (Omitting the field does the opposite: absent means ALL actions are allowed.) The run does the work and leaves the result in its Session; nothing is emailed.
 - **Land a living doc**: `config.write_outputs: true` so a recurring report commits a new document version each run (a human promotes it).
 
 ## Routine vs. Workflow
@@ -137,7 +138,7 @@ A **Routine** is a scheduled *Chat* — a prompt and a cron, created from any co
 
 ## Tips
 
-- **`actions_allowed` is the send gate.** No list = no autonomous send, just a proposal. Name every action the routine should be allowed to take.
+- **`actions_allowed` is the send gate — and absent means all.** Leaving it off allows every cataloged action; `[]` disables them; a list narrows to exactly what you name. If a routine should only investigate, say so explicitly with `[]` — don't rely on omission.
 - **A fire is a headless Chat.** It runs with `on_question: "none"`, so it never blocks on a human question — write the prompt so it can finish without one.
 - **Read a fire like any Session.** Each occurrence is its own Chat; open it to see exactly what the run did (the tool trace + the answer).
 

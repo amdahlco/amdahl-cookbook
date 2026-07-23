@@ -8,9 +8,11 @@ Run the Amdahl positioning audit. Use the connected **Amdahl** MCP tools. If the
 The copy to pressure-test is: **$ARGUMENTS**
 (If that's empty, ask the user to paste their homepage hero / one-pager / draft message, or fetch the URL they name.)
 
-**Wave 1 — gather in parallel:**
-- Customer voice → `data` cluster_search + `context` query_substrate: how our actual customers describe us, this category, and the problem — on calls, verbatim, with roles. Pull the recurring phrases.
-- Our voice on file → `context` summary: our stated positioning and brand voice.
+**Wave 1 — gather:**
+- Customer voice → `search` { action: query, semantic } (plus `lookalike` { action: themes } for the recurring theme clusters): how our actual customers describe us, this category, and the problem — on calls, verbatim, with roles. Pull the recurring phrases.
+- Our stated positioning and brand voice live server-side — if the audit should be checked against the workspace's positioning canon (not just the pasted copy), run the whole audit as `agents` { action: start_chat } instead: the Master pulls the workspace context itself. Otherwise audit the pasted copy against the customer voice you gathered.
+
+*Pre-rollout fallback:* on a legacy session (`data` / `context` tools), use `data` cluster_search + `context` query_substrate for customer voice and `context` summary for the voice on file.
 
 **Wave 2 — audit, line by line:**
 1. Where the copy **matches** customer language (quote both sides).

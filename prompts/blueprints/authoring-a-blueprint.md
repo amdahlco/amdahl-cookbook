@@ -1,6 +1,6 @@
 # How to write an Amdahl blueprint
 
-**What this is**: A practical guide to authoring an Amdahl *agent blueprint* — a structured, typed recipe the console calls a **Workflow**: declared inputs, outputs, and a validated step graph the platform can run headlessly or an agent can read and walk step-by-step. You author, validate, and fork blueprints in the console or over the REST API (`/api/platform/v1/agent-blueprints*`); the MCP `blueprints` tool was retired, so none of this is driven from an MCP-connected chat anymore. By the end you'll have written a one-step blueprint from scratch and forked a shipped starter into your own customized copy.
+**What this is**: A practical guide to authoring an Amdahl *agent blueprint* — a structured, typed recipe the console calls a **Workflow**: declared inputs, outputs, and a validated step graph the platform can run headlessly or an agent can read and walk step-by-step. You author, validate, and fork blueprints in the **console** (the Workflows surface). This is a console capability: the MCP `blueprints` tool was retired, and the endpoints behind the console are not on the public API — an external API key calling them gets a `403` (`not_on_public_api`). By the end you'll have written a one-step blueprint from scratch and forked a shipped starter into your own customized copy.
 
 **When to use it**: "I keep running the same multi-step GTM workflow by hand and I want to save it as a reusable recipe my team (or an agent) can run the same way every time" — and a plain-language **Routine** (a scheduled Chat created with the `agents` MCP tool: a name, a prompt, a cron) isn't structured enough. Reach for a blueprint when you need the typed contract; reach for a Routine when a prompt on a cadence is enough.
 
@@ -11,7 +11,7 @@
 This cookbook has two different things people call "recipes," and they are NOT the same:
 
 - **Cookbook recipes / prompts** (everything else in [`prompts/`](../README.md)) are *Claude prompts* — text you paste into Claude that calls the Amdahl MCP tools. They live in this repo as markdown. Claude reads them as instructions for the current conversation.
-- **Amdahl blueprints** (this guide) are a *typed DSL artifact* that lives inside your Amdahl workspace as an `agent_blueprint`. A blueprint is data — a strict JSON document with declared inputs, outputs, steps, and policy — that the platform can run headlessly and an agent (in the console, or your own code over the REST API) can read and walk later. You author it once and it persists in your workspace.
+- **Amdahl blueprints** (this guide) are a *typed DSL artifact* that lives inside your Amdahl workspace as an `agent_blueprint`. A blueprint is data — a strict JSON document with declared inputs, outputs, steps, and policy — that the platform can run headlessly and an agent in the console can read and walk later. You author it once and it persists in your workspace.
 
 A cookbook prompt is "do this now, in this chat." A blueprint is "here is a reusable, structured procedure saved in Amdahl that anyone (or any agent) can pull up and run." This guide is about the second one.
 
@@ -19,13 +19,13 @@ A cookbook prompt is "do this now, in this chat." A blueprint is "here is a reus
 
 A blueprint is **a typed recipe with two ways to run.**
 
-- **Headless — the platform runs it.** Fire a run from the console or the REST API (`POST /agent-blueprints/:id/run`) and the platform walks the recipe server-side on an agent runtime, no chat session required. Workflow schedules fire the same way on their cron.
-- **Interactive — an agent walks it.** An agent reading the recipe (in the console, or your own code over the REST API) *performs the steps itself*, calling the same primitive tools it always has (`data.query`, `external_search.execute`, `artifacts.create`, and so on). The blueprint is the script; the agent is the actor reading it.
+- **Headless — the platform runs it.** Fire a run from the console's Workflows surface and the platform walks the recipe server-side on an agent runtime, no chat session required. Workflow schedules fire the same way on their cron.
+- **Interactive — an agent walks it.** An agent reading the recipe in the console *performs the steps itself*, calling the same primitive tools it always has (`data.query`, `external_search.execute`, `artifacts.create`, and so on). The blueprint is the script; the agent is the actor reading it.
 
 Three consequences fall out of this, and they're worth internalizing before you write anything:
 
-1. **None of this happens over MCP anymore.** The `blueprints` MCP tool was retired: an MCP-connected Claude session can't author, read, or run a blueprint. From MCP, the automation surfaces are **Chat** (the `agents` tool's `start_chat` — one server-side Master agent turn, for one-shot deep work — polled via `chat_status`) and **Routines** (the `agents` tool — a cron that fires a Chat each occurrence in a fresh Session, the scheduled-work noun); for a fast synchronous lookup there's also the `search` tool. Blueprints are the console + REST path for when you need the fully-typed contract. (Rollout note: the v2 surface is enabled per workspace — if your connected session still lists a `blueprints` tool and no `search`/`agents`, your workspace is on the pre-rollout surface and the old tool still works; ask your Amdahl admin about Agent Platform v2.)
-2. **`policy.tool_allowlist` is load-bearing on headless runs.** A headless run derives its scopes from the allowlist (least-privilege), so keep it honest; on the interactive path it's guidance for the reading agent. Either way, the **scope grammar of the API key** remains the outer safety boundary — the key's scopes decide what any tool call is actually allowed to do.
+1. **None of this happens over MCP or the public API.** The `blueprints` MCP tool was retired: an MCP-connected Claude session can't author, read, or run a blueprint — and neither can an external API key (the endpoints behind the console 403 with `not_on_public_api`). From MCP, the automation surfaces are **Chat** (the `agents` tool's `start_chat` — one server-side Master agent turn, for one-shot deep work — polled via `chat_status`) and **Routines** (the `agents` tool — a cron that fires a Chat each occurrence in a fresh Session, the scheduled-work noun); for a fast synchronous lookup there's also the `search` tool. Blueprints are the console path for when you need the fully-typed contract. (Rollout note: the v2 surface is enabled per workspace — if your connected session still lists a `blueprints` tool and no `search`/`agents`, your workspace is on the pre-rollout surface and the old tool still works; ask your Amdahl admin about Agent Platform v2.)
+2. **`policy.tool_allowlist` is load-bearing on headless runs.** A headless run derives its scopes from the allowlist (least-privilege), so keep it honest; on the interactive path it's guidance for the reading agent. The platform's scope grammar remains the outer safety boundary — the run's scopes decide what any tool call is actually allowed to do.
 3. **`estimated_cost_cents` and `timeout_seconds` are authoring metadata.** They set expectations and document intent. Treat them as labels and hints for the human and the reading agent, not as runtime controls the platform enforces.
 
 The easiest way to get a real blueprint in front of you is to **fork a starter** — an Amdahl-shipped recipe that's already valid. We'll do that in worked example 2. First, the anatomy.
@@ -178,7 +178,7 @@ Reference the *alias* you bound (`output_alias`) rather than the step id where y
 
 `llm` steps can pull in shared, Amdahl-maintained prompt snippets via `prompt_resources` using the `prompt://<scheme>/<id>` URI. The renderer inlines the fragment body into the step prompt. This lets your recipe reuse battle-tested instructions (grounding discipline, audience scoping, synthesis rules) instead of re-writing them.
 
-The two schemes you will compose from most are **`content_writer/*`** (16 fragments — including `grounding_rules`, `audience_scoping`, `channel_budget`, `cta_synthesis`, `hook_patterns`, `pillar_selection`, `cadence_rhythm`, `variant_drafting`) and **`researcher/*`** (9 fragments — including `topic_decomposition`, `evidence_synthesis`, `cross_pattern_synthesis`, `confidence_scoring`, `metric_grounding`, `document_render`, `eval_rubric`, `intent_routing`); a few smaller schemes also exist. Don't guess fragment ids — list them live with `GET /prompt-fragments` (optionally `?scheme=content_writer`; the list is lean, so fetch `GET /prompt-fragments/:id` for a fragment's text). A typo'd `prompt://` id is one of the most common validation errors.
+The two schemes you will compose from most are **`content_writer/*`** (16 fragments — including `grounding_rules`, `audience_scoping`, `channel_budget`, `cta_synthesis`, `hook_patterns`, `pillar_selection`, `cadence_rhythm`, `variant_drafting`) and **`researcher/*`** (9 fragments — including `topic_decomposition`, `evidence_synthesis`, `cross_pattern_synthesis`, `confidence_scoring`, `metric_grounding`, `document_render`, `eval_rubric`, `intent_routing`); a few smaller schemes also exist. Don't guess fragment ids — browse the fragment list in the console's Workflows editor before you reference one. A typo'd `prompt://` id is one of the most common validation errors.
 
 `prompt_resources` also accepts `artifact://<id>` and `knowledge_base://<id>` URIs; those stay as "read this resource first" hints rather than being inlined.
 
@@ -215,25 +215,22 @@ When `outputs` is non-empty, map each declared output name to the step result th
 "outputs_mapping": { "note": "$note" }
 ```
 
-## How to discover the grammar live
+## How to discover the grammar
 
-You don't have to hold all of this in your head. The REST API is self-documenting — ask it before you author (all paths under `/api/platform/v1`):
+You don't have to hold all of this in your head. The console's Workflows surface is self-documenting:
 
-- `GET /step-kinds` — the 8 step kinds with field tables and complete example bodies.
-- `GET /prompt-fragments` — every registered `prompt://` fragment, lean projection (add `?scheme=` to filter; `GET /prompt-fragments/:id` returns the full text).
-- `GET /agent-blueprints` — every blueprint your workspace can see (Amdahl starters + your own).
-- `GET /agent-blueprints/research-report` — the full validated DSL of a shipped starter, to copy from.
+- The **step-kind reference** — the 8 step kinds with field tables and complete example bodies.
+- The **fragment browser** — every registered `prompt://` fragment (filter by scheme; open one to read its full text).
+- The **Workflows list** — every blueprint your workspace can see (Amdahl starters + your own).
+- Any shipped starter (e.g. `research-report`) opens to its full validated DSL, to copy from.
+
+The generated **blueprint DSL reference** on <https://docs.amdahl.co> covers the same grammar in document form.
 
 ## How to validate
 
-Before you save anything, dry-run the body through the moat:
+Before you save anything, dry-run the body through the moat — the console's Workflows editor has a **Validate** action that runs the full check without writing anything.
 
-```
-POST /agent-blueprints/validate
-{ "content": <the full DSL body> }
-```
-
-It returns `{ valid: boolean, errors: [...] }`. Each error carries a stable `code`. The ones you'll hit most:
+It returns a verdict of `{ valid, errors: [...] }`. Each error carries a stable `code`. The ones you'll hit most:
 
 - `schema_error` — the body failed the strict v1 schema (wrong field name, missing required field, bad enum). Re-read the anatomy above.
 - `unknown_reference` — a `$alias.field` points at something that doesn't exist (usually a typo, e.g. `$singal` for `$signal`).
@@ -241,7 +238,7 @@ It returns `{ valid: boolean, errors: [...] }`. Each error carries a stable `cod
 - `duplicate_step_id` — two steps share an `id` (easy to hit when you copy-paste a step block).
 - `invalid_tool_id` — a `tool_allowlist` entry isn't a real operation id.
 
-The moat catches these *before* the write, and returns the full list in one shot. `create` and `update` run the same checks, but validate-first gives you everything to fix at once.
+The moat catches these *before* the write, and returns the full list in one shot. Saving runs the same checks, but validate-first gives you everything to fix at once.
 
 ---
 
@@ -289,73 +286,44 @@ Goal: the smallest useful, valid recipe — one tool step that enriches a topic 
 }
 ```
 
-Author it in three calls:
+Author it in three console steps (Workflows → New workflow):
 
-```
-POST /agent-blueprints/validate   { "content": <the body above> }
-POST /agent-blueprints            { "content": <the body above>, "status": "draft" }
-# returns { success: true, blueprint: { header: { id, slug, ... }, content: {...} } }
-# save header.id
-```
+1. Paste the body above into the editor and **Validate** — fix anything the verdict flags.
+2. **Save as draft** — it persists in your workspace with its slug.
+3. **Publish** when you're happy (with a change summary like "Promote topic-pulse").
 
-Then flip it live once you're happy:
-
-```
-PATCH /agent-blueprints/<the id>  { "status": "published", "change_summary": "Promote topic-pulse" }
-```
-
-That's a complete, valid, persisted blueprint. To run it, fire a headless run (`POST /agent-blueprints/topic-pulse/run`) — or have an agent read it (`GET /agent-blueprints/topic-pulse`) and make the `external_search.execute` call itself.
+That's a complete, valid, persisted blueprint. To run it, fire a headless run from its Workflows page — or have an agent in the console read it and make the `external_search.execute` call itself.
 
 ## Worked example 2 — fork a starter and customize it
 
-Most real work starts from a starter. Amdahl ships roughly two dozen — content recipes like `bootstrap-workspace`, `draft-piece`, `plan-and-draft-window`, `multi-persona-social-launch`, `research-report`, a Substack newsletter recipe, plus a large family of Living GTM Docs generators (VoC, pipeline health, win/loss, ICP, and more). List them live with `GET /agent-blueprints`. Forking copies one into your workspace as a fresh, editable draft.
+Most real work starts from a starter. Amdahl ships roughly two dozen — content recipes like `bootstrap-workspace`, `draft-piece`, `plan-and-draft-window`, `multi-persona-social-launch`, `research-report`, a Substack newsletter recipe, plus a large family of Living GTM Docs generators (VoC, pipeline health, win/loss, ICP, and more). They all show in the console's Workflows list alongside your own. Forking copies one into your workspace as a fresh, editable draft.
 
 Say your team only ever writes LinkedIn posts and you want a LinkedIn-locked drafter. Start from `draft-piece`.
 
-**1. Read what you're starting from.**
+**1. Read what you're starting from.** Open `draft-piece` in the console's Workflows list. You'll see its inputs (`piece_id`, `variant_key`), its steps (`load_piece`, `load_author`, `load_voice`, `gather_evidence`, `assert_evidence`, `write_draft`, `attach_citations`, `update_piece`), and which `prompt://content_writer/*` fragments it composes.
 
-```
-GET /agent-blueprints/draft-piece
-```
+**2. Fork it.** Use the **Fork** action (give it a new slug like `linkedin-drafter` and a name). The fork lands as a brand-new tenant blueprint: a fresh id, `version` reset to `1.0.0`, `authored_by: "tenant"`, `status: "draft"`, `visibility: "private"`. The original starter is untouched, and the fork records where it came from (`metadata.forked_from`) so its lineage stays traceable.
 
-You'll see its inputs (`piece_id`, `variant_key`), its steps (`load_piece`, `load_author`, `load_voice`, `gather_evidence`, `assert_evidence`, `write_draft`, `attach_citations`, `update_piece`), and which `prompt://content_writer/*` fragments it composes.
+**3. Customize via update (replace-semantic).** Open the fork's body in the editor and edit it. A saved edit is replace-semantic: the body you save becomes the entire new `content_json`, so omitted keys are dropped — always work from the full body, not a fragment. For the LinkedIn lock, the typical edits are: tighten the `write_draft` prompt to LinkedIn norms (under ~150 words, no hashtags), and optionally add `prompt://content_writer/channel_budget` if it isn't already there. Validate, then save with a change summary ("Lock to LinkedIn; tighten hook + budget").
 
-**2. Fork it.**
+**4. Iterate.** Bump `identity.version` to `1.1.0` when you change the recipe meaningfully. Re-validate, re-save. When it's right, publish the fork.
 
-```
-POST /agent-blueprints/fork
-{ "source": "draft-piece", "new_slug": "linkedin-drafter", "new_name": "LinkedIn drafter" }
-```
-
-The fork lands as a brand-new tenant blueprint: a fresh id, `version` reset to `1.0.0`, `authored_by: "tenant"`, `status: "draft"`, `visibility: "private"`. The original starter is untouched, and the fork records where it came from (`metadata.forked_from`) so its lineage stays traceable.
-
-**3. Customize via update (replace-semantic).**
-
-Read the fork (`GET /agent-blueprints/<fork-id>`), edit the body in your reasoning loop, then write the **whole** body back. The `PATCH`'s `content` is replace-semantic: the `content` you send becomes the entire new `content_json`, so omitted keys are dropped — always send the full body, not a partial patch. For the LinkedIn lock, the typical edits are: tighten the `write_draft` prompt to LinkedIn norms (under ~150 words, no hashtags), and optionally add `prompt://content_writer/channel_budget` if it isn't already there.
-
-```
-POST  /agent-blueprints/validate    { "content": <the full edited body> }
-PATCH /agent-blueprints/<fork-id>   { "content": <the full edited body>, "change_summary": "Lock to LinkedIn; tighten hook + budget" }
-```
-
-**4. Iterate.** Bump `identity.version` to `1.1.0` when you change the recipe meaningfully. Re-validate, re-update. When it's right, `PATCH /agent-blueprints/<fork-id>` with `{ "status": "published" }`.
-
-That's the whole loop: **fork -> read -> edit -> validate -> update -> publish.** You never start from a blank file unless you want to (worked example 1); for anything close to an existing pipeline, fork and trim.
+That's the whole loop: **fork -> read -> edit -> validate -> save -> publish.** You never start from a blank file unless you want to (worked example 1); for anything close to an existing pipeline, fork and trim.
 
 ---
 
 ## Common mistakes (and the rule that prevents each)
 
-- **Trying to author or run a blueprint over MCP.** The `blueprints` MCP tool was retired — this whole loop is console + REST. From an MCP-connected session, use a Routine (`agents create_routine`) for recurring work or a Chat (`agents start_chat`) for one-shot deep work.
+- **Trying to author or run a blueprint over MCP or with an API key.** The `blueprints` MCP tool was retired and the endpoints behind the console aren't on the public API — this whole loop lives in the console. From an MCP-connected session, use a Routine (`agents create_routine`) for recurring work or a Chat (`agents start_chat`) for one-shot deep work.
 - **Authoring a Workflow when a Routine would do.** If the ask is "run this plain-language prompt every Monday," that's a Routine, not a blueprint. Reach for the DSL when the typed inputs/outputs/step contract earns its keep.
-- **Skipping `validate`.** `create` / `update` will reject a bad body anyway, but `validate` hands you the *full* error list in one round-trip. Always dry-run first.
-- **Guessing `prompt://` fragment ids or operation ids.** List them (`GET /prompt-fragments`, and consult the tool catalog for op ids). A typo is an `unknown_fragment` / `invalid_tool_id` reject.
-- **Sending a partial body on update.** The `PATCH`'s `content` is replace-semantic — omitted top-level keys are dropped. Send the whole body.
+- **Skipping `validate`.** Saving will reject a bad body anyway, but the Validate action hands you the *full* error list in one shot. Always dry-run first.
+- **Guessing `prompt://` fragment ids or operation ids.** Browse the console's fragment list and the docs tool catalog for op ids. A typo is an `unknown_fragment` / `invalid_tool_id` reject.
+- **Saving a partial body on update.** An edit is replace-semantic — omitted top-level keys are dropped. Work from the whole body.
 - **Putting a literal secret in the body.** Reference it as `$secret.NAME`. A literal key in the body is stored in plain text on the artifact and visible to every agent in the workspace.
-- **Treating the `tool_allowlist` as decoration.** Headless runs derive their scopes from it (least-privilege), so keep it honest; the API key's scopes remain the outer boundary.
+- **Treating the `tool_allowlist` as decoration.** Headless runs derive their scopes from it (least-privilege), so keep it honest; the platform's scope grammar remains the outer boundary.
 
 ## See also
 
-- [Blueprint authoring skill](../../plugins/amdahl-gtm/skills/blueprint-authoring/SKILL.md) — drives this whole loop over the Amdahl REST API (and routes "make this recur" asks to Routines), with `/amdahl-gtm:*` plays.
+- [Blueprint authoring skill](../../plugins/amdahl-gtm/skills/blueprint-authoring/SKILL.md) — composes and checks the DSL body with you, hands you the finished JSON for the console (and routes "make this recur" asks to Routines).
 - The rest of the cookbook: [recipe library](../README.md) — paste-ready GTM prompts (the *other* meaning of "recipe").
-- Product docs: <https://amdahl.co/mcp>.
+- Product docs: <https://docs.amdahl.co>.

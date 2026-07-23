@@ -61,9 +61,9 @@ The outbound agent is a skill plus a trigger, calling the shared belt:
 
 ## How each flow maps to the tools
 
-- **Score / "worth it" / "what's blocking it"** — the deal close-likelihood + binding-constraint read (`data.query` / [fast lane](fast-lane-search.md) over the deal-qualification surface).
-- **Ground / "closest conversations" / "exact words"** — theme + verbatim retrieval (`data.cluster_search`, `data.query` on who-said-what).
-- **"What changed"** — new/growing themes + accounts that moved band + positioning drift (a [Routine](routines.md) over the trend + divergence reads).
+- **Score / "worth it" / "what's blocking it"** — the deal close-likelihood + binding-constraint read: ask the [fast lane](fast-lane-search.md) (`search.run` writes and runs the deal-qualification query for you — the warehouse reads are internal machinery behind the door, not tools you call).
+- **Ground / "closest conversations" / "exact words"** — theme + verbatim retrieval: [lookalikes](lookalikes.md) for the nearest accounts, [semantic search](semantic-search.md) for the exact words, or a [Chat](agentic-chat.md) when it needs synthesis (the Master runs the clustering + who-said-what reads internally).
+- **"What changed"** — new/growing themes + accounts that moved band + positioning drift (a [Routine](routines.md) whose fired Chat runs the trend + divergence reads).
 - **"Won vs lost, over every closed deal, not a sample"** — an aggregate over the full corpus, not top-k retrieval. This is the join that makes the answer trustworthy; see [why hand-rolled context breaks](gtm-brain-architecture.md#why-the-hand-rolled-version-breaks).
 
 ## See also

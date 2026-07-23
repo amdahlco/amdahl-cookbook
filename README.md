@@ -120,7 +120,7 @@ The cookbook is organized around the seven GTM jobs people actually run — not 
 
 ## Browse the cookbook
 
-25 recipes, organized by the seven jobs.
+26 recipes, organized by the seven jobs.
 
 | Category | What's in it | Recipes |
 |---|---|---|
@@ -141,14 +141,14 @@ The full index lives at [prompts/README.md](prompts/README.md).
 The recipes above are paste-ready prompts. When you want work to repeat *inside Amdahl* — without you pasting anything — there are two paths in:
 
 - **Routines** — the MCP-native way to schedule work. A Routine is a cron that fires a **Chat** (one server-side Master agent turn, in a fresh Session) each occurrence. From any connected Claude session, ask for a standing refresh ("every Monday, refresh the pipeline health report") and Claude creates it with the `agents` tool's `create_routine` action — a name, a prompt, and a cron. No DSL required, and each fire shows up as its own Session you can open and read.
-- **Workflows (blueprints)** — the fully-typed path: a **blueprint** is a typed recipe with declared inputs, outputs, and a validated step graph that the platform can version, fork, schedule, and run headlessly. Authoring and running Workflows lives in the **console and the REST API** (the `blueprints` MCP tool was retired, so this path isn't driven from a Claude chat anymore). It's a different thing from a cookbook prompt; the guide opens by untangling the two.
+- **Workflows (blueprints)** — the fully-typed path: a **blueprint** is a typed recipe with declared inputs, outputs, and a validated step graph that the platform can version, fork, schedule, and run headlessly. Authoring and running Workflows is a **console capability** (the Workflows surface; the `blueprints` MCP tool was retired, and the endpoints behind the console aren't reachable with an external API key). It's a different thing from a cookbook prompt; the guide opens by untangling the two.
 
 > **Rollout note:** the v2 agent platform (the `search` + `agents` MCP tools, with the `blueprints` and `pages` tools retired) is enabled **per workspace**. If your connected session still lists a `blueprints` or `pages` tool and no `search`/`agents`, your workspace is on the pre-rollout surface — keep using those tools as before, and ask your Amdahl admin about Agent Platform v2.
 
 
-- [How to write an Amdahl blueprint](prompts/blueprints/authoring-a-blueprint.md) — the mental model, the DSL anatomy, validating over the REST API, and two worked examples (one from scratch, one fork-and-customize).
+- [How to write an Amdahl blueprint](prompts/blueprints/authoring-a-blueprint.md) — the mental model, the DSL anatomy, validating in the console, and two worked examples (one from scratch, one fork-and-customize).
 
-If you've installed the plugin, the `blueprint-authoring` skill routes "make this recur" asks to Routines and drives the Workflow create -> validate -> fork -> iterate loop over the REST API.
+If you've installed the plugin, the `blueprint-authoring` skill routes "make this recur" asks to Routines and composes the Workflow DSL with you, handing off to the console's Workflows surface for the create -> validate -> fork -> iterate loop.
 
 ---
 
@@ -159,10 +159,11 @@ Everything above runs on two "ask Amdahl" doors, and you can drive both from you
 - **The mental model** — where Amdahl sits in a GTM agent stack: one layer on your [shared MCP belt](prompts/agent-platform/gtm-brain-architecture.md), and the [four shapes](prompts/agent-platform/four-flows.md) every play takes (your skill asks, Amdahl answers, your skill acts).
 
 - **Fast lane (`search.run`)** — one synchronous call that returns the rows *and* the SQL it ran. For "get me the number." [Recipe](prompts/agent-platform/fast-lane-search.md).
+- **The endpoints** — synchronous primitives beside the doors: [structured search](prompts/agent-platform/structured-search.md) (typed filters + `group_by`/`metrics` over a discoverable field catalog), [semantic search](prompts/agent-platform/semantic-search.md) (meaning over the call corpus), [tiered enrichment](prompts/agent-platform/tiered-enrichment.md) (cached brief now, full brief backfilling behind you), and [lookalikes](prompts/agent-platform/lookalikes.md) ("more accounts like this one" over your own corpus).
 - **Agentic Chat** — the always-async Master agent: start, get handles, poll or stream for the cited answer, respond to a pause. For "investigate this." [Recipe](prompts/agent-platform/agentic-chat.md).
 - **Routines & saved agents** — put a Chat on a cron, or save a reusable agent and pin it. [Routines](prompts/agent-platform/routines.md) · [Saved agents](prompts/agent-platform/saved-agents.md).
 - **Rendering the answer** — the seven content-block types and the `amdahl:q` / `amdahl:cite` link grammar, for showing a Chat result in your own UI. [Recipe](prompts/agent-platform/answer-envelope.md).
-- **End-to-end use cases** — two full journeys over both surfaces: [voice of customer](prompts/agent-platform/voice-of-customer-end-to-end.md) (teaches the fast -> Chat handoff) and [call prep + objection handling](prompts/agent-platform/call-prep-objection-end-to-end.md) (the flagship).
+- **End-to-end use cases** — full journeys over both surfaces: [voice of customer](prompts/agent-platform/voice-of-customer-end-to-end.md) (teaches the fast -> Chat handoff), [call prep + objection handling](prompts/agent-platform/call-prep-objection-end-to-end.md), and [the expansion motion](prompts/agent-platform/expansion-motion-end-to-end.md) (lookalike -> enrich -> semantic search, the multi-endpoint flagship).
 
 Requires Agent Platform v2 (the same per-workspace rollout as above): the `search` + `agents` MCP tools, or `POST /search` and `POST /chat` on REST.
 
@@ -170,9 +171,9 @@ Requires Agent Platform v2 (the same per-workspace rollout as above): the `searc
 
 ## Push results to your team (notifications)
 
-The recipes above end in the chat. When the output should reach a teammate who isn't watching the session — the deal owner, your manager, RevOps — email it to them. Amdahl's notifications primitive is members-only (a non-member rejects the whole send), rate-capped, and idempotent, so an agent can deliver autonomously without becoming a spam cannon. Works the same over MCP and the REST API.
+The recipes above end in the chat. When the output should reach a teammate who isn't watching the session — the deal owner, your manager, RevOps — email it to them. Amdahl's notifications primitive is members-only (a non-member rejects the whole send), rate-capped, and idempotent, so an agent can deliver autonomously without becoming a spam cannon. You drive it through the agent: put the send in a Chat's input, or grant it on a Routine via `actions_allowed`.
 
-- [Notify the workspace team](prompts/notifications/notify-the-workspace-team.md) — the full **list_recipients -> email_member -> list_sends** loop (discover who you can email, send, then confirm delivery + check the cap), with copy-paste MCP and REST shapes and the blueprint `tool`-step variant.
+- [Notify the workspace team](prompts/notifications/notify-the-workspace-team.md) — the **discover -> send -> verify** discipline (resolve recipients from the member list, send with an idempotency key, then confirm delivery), the guardrail contract, and the unattended Routine + Workflow paths.
 
 ---
 
@@ -180,7 +181,7 @@ The recipes above end in the chat. When the output should reach a teammate who i
 
 Your team lives in Notion but your canonical reference library — competitive briefs, positioning memos, the research your agents keep producing — lives in Amdahl. Mirror it: connect Notion once, pick a parent page, and every document you promote in Amdahl shows up (and stays current) in a Notion database your whole team can read. One-way, current-version-only, self-healing on an hourly reconcile — it runs server-side with no open session required.
 
-- [Mirror your knowledge base to Notion](prompts/knowledge-sync/mirror-knowledge-base-to-notion.md) — the **connect -> configure -> it-syncs-itself -> monitor** loop, with copy-paste REST and MCP shapes. Setup (connect + configure) is console/REST; the config / status / activity-ledger reads are on MCP, so an agent can tell you the sync is healthy and what just mirrored.
+- [Mirror your knowledge base to Notion](prompts/knowledge-sync/mirror-knowledge-base-to-notion.md) — the **connect -> configure -> it-syncs-itself -> monitor** loop. Setup and monitoring live in the console (Connections); agents feed it — a doc a Chat or Routine lands in the knowledge base (`write_outputs`) mirrors to Notion the moment you promote it.
 
 ---
 
@@ -210,7 +211,7 @@ Your team lives in Notion but your canonical reference library — competitive b
 
 ## Help & docs
 
-- Product docs: <https://amdahl.co/mcp>
+- Product docs: <https://docs.amdahl.co>
 - Home: <https://amdahl.co>
 - Support: hello@amdahl.co
 

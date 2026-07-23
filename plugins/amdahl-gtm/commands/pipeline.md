@@ -7,7 +7,7 @@ Run the Amdahl pipeline-pulse play. Use the connected **Amdahl** MCP tools. If t
 
 Scope: **$ARGUMENTS** (default: deals at risk.)
 
-**Gather** over `data` query + cluster_search + `context` query_substrate: open pipeline with stage / ACV / last-touch, plus the call-content signals on each (sentiment, unanswered objections, attendee drop-off, go-quiet gaps).
+**Gather** over `search`: the structured lane (`query` with typed filters + `group_by`) for open pipeline with stage / ACV / last-touch, the semantic lane for the call-content signals on each (sentiment, unanswered objections, attendee drop-off, go-quiet gaps), and `run` for anything easier to ask in plain language. If the triage needs real decomposition across the whole book, escalate to `agents` { action: start_chat }. *Pre-rollout fallback:* on a legacy session, gather over `data` query + cluster_search + `context` query_substrate.
 
 **Produce:**
 - **at-risk** (default): deals that look healthy on paper but are at risk in the call content. For each: deal name, stage, last meaningful touch, the specific signal that worries you, what the rep should do this week. Sort by ACV × severity.

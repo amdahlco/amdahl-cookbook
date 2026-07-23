@@ -14,75 +14,32 @@ Three things make it safe to leave running unattended:
 - **Current version only.** Amdahl documents are version families with a human promotion gate; the sync mirrors the **current (promoted)** version, never proposed drafts. What lands in Notion is your canonical reference library, not work-in-progress.
 - **It respects human edits and never duplicates.** Each KB document maps to exactly one Notion page (stable across re-syncs, so links and bookmarks survive). If someone edits the mirrored page in Notion, a `preserve` drift policy keeps their edit; an unchanged document is skipped without even touching Notion (a content hash is compared).
 
-The split that matters: **setup is a write** (connect + configure — done once, from the console or REST, *not* over MCP, because configuring where a workspace exports its KB is workspace configuration). **Monitoring is a read** (config / status / activity ledger — available over MCP *and* REST). So an agent can tell you whether the sync is healthy and what just mirrored, but it can't silently re-point where your knowledge base exports to.
+The split that matters: **setup is workspace configuration** (connect + configure — done once, in the console, because re-pointing where a workspace exports its KB is a trust decision). **Monitoring lives beside it** (the connection's status + activity ledger, on the same Connections page). And **agents feed it without touching either**: anything a run lands in the knowledge base mirrors once promoted — so an agent fills the library, but can't silently re-point where it exports to.
 
-## The operations
+## The lifecycle, and where each piece lives
 
-| Job | Operation | MCP | REST | Scope |
-|---|---|---|---|---|
-| Connect Notion (OAuth) | `connections.connect` | — (console / REST only) | `POST /connections` | `connections:write` |
-| Configure (pick parent page, provision DB, backfill) | `notion_sync.configure` | — (console / REST only) | `POST /notion-sync/:id/configure` | `notion_sync:write` |
-| Read the sync config | `notion_sync.get` | resource `notion_sync://<id>` | `GET /notion-sync/:id` | `notion_sync:read` |
-| Poll the live status | `notion_sync.status` | resource `notion_sync://<id>/status` | `GET /notion-sync/:id/status` | `notion_sync:read` |
-| See the activity ledger | `notion_sync.list_sends` | resource `notion_sync://<id>/sends` | `GET /notion-sync/:id/sends` | `notion_sync:read` |
-| Force a full re-mirror | `notion_sync.backfill` | — (console / REST only) | `POST /notion-sync/:id/backfill` | `notion_sync:write` |
-| Stop mirroring (keep Notion pages) | `notion_sync.unsync` | — (console / REST only) | `POST /notion-sync/:id/unsync` | `notion_sync:delete` |
+| Job | Where |
+|---|---|
+| Connect Notion (OAuth) | Console → Connections → "Notion Knowledge Sync" → Connect |
+| Configure (pick parent page, provision DB, backfill) | Console → the connection's settings panel |
+| Read config / poll live status / see the activity ledger | Console → the connection's detail page |
+| Force a full re-mirror (backfill) | Console → the connection's detail page |
+| Stop mirroring (keep Notion pages) | Console → the connection's settings panel |
+| Feed it (add documents that mirror) | Any agent run that writes the KB — a Chat or Routine with `write_outputs: true`, promoted by you |
 
-The three reads are on MCP as `notion_sync://` resources; the four writes are console + REST only by design.
+The whole sync lifecycle is a **console capability** — there's no notifications-style agent door for it, by design: an agent can fill the knowledge base, not reconfigure the export.
 
 ---
 
 ## Step 1 — connect Notion (one time)
 
-Connect the `notion_knowledge_sync` connector. It's an OAuth flow: easiest from the console **Connections** page (pick "Notion Knowledge Sync", click Connect), or via REST:
-
-```
-POST /connections
-Authorization: Bearer <api-key with connections:write>
-Content-Type: application/json
-
-{ "connector_type": "notion_knowledge_sync", "name": "Acme KB -> Notion" }
-```
-
-**What comes back** — an authorize URL to send the user to:
-
-```json
-{
-  "mode": "oauth_redirect",
-  "authorize_url": "https://api.notion.com/v1/oauth/authorize?...",
-  "connection": { "id": "11111111-1111-1111-1111-111111111111", "status": "pending" }
-}
-```
-
-Open `authorize_url`, approve the integration in Notion, and **grant it access to the page you want the synced database created under** (Notion only lets an integration write where you've given it access). The connection lands in `pending` until you configure it. Hold onto the `connection.id` — it's the `:id` in every call below.
+In the console, open **Connections**, pick **Notion Knowledge Sync**, and click **Connect**. It's an OAuth flow: approve the integration in Notion, and **grant it access to the page you want the synced database created under** (Notion only lets an integration write where you've given it access). The connection lands in `pending` until you configure it.
 
 ## Step 2 — configure (pick a parent page; one time)
 
-Designate the parent Notion page. This provisions an "Amdahl Knowledge Base" database under it (with `Name`, `Amdahl Doc ID`, `Version`, and `Last Synced` properties) and kicks off a full backfill of your current KB.
+In the connection's settings panel, designate the parent Notion page. This provisions an "Amdahl Knowledge Base" database under it (with `Name`, `Amdahl Doc ID`, `Version`, and `Last Synced` properties) and kicks off a full backfill of your current KB.
 
-```
-POST /notion-sync/:id/configure
-Authorization: Bearer <api-key with notion_sync:write>
-Content-Type: application/json
-
-{
-  "parent_page_id": "<notion-page-id>",
-  "version_policy": "current_only",
-  "on_kb_delete": "archive",
-  "drift_policy": "overwrite",
-  "include": { "starred_only": false }
-}
-```
-
-Only `parent_page_id` is required; the values above are the defaults, so you can omit any of them (see [Configure knobs](#configure-knobs)). One worth knowing: `drift_policy` defaults to `overwrite` (Amdahl is the source of truth and re-writes the Notion page each sync); set it to `preserve` instead if you want human edits made directly in Notion to be kept. The response tells you how many documents were queued for the initial mirror:
-
-```json
-{
-  "connection_id": "11111111-1111-1111-1111-111111111111",
-  "config": { "enabled": true, "database_id": "<db>", "data_source_id": "<ds>", "version_policy": "current_only", "provisioned_at": "2026-06-27T12:00:00.000Z" },
-  "backfill_enqueued": 42
-}
-```
+Only the parent page is required; everything else has sane defaults (see [Configure knobs](#configure-knobs)). One worth knowing up front: `drift_policy` defaults to `overwrite` (Amdahl is the source of truth and re-writes the Notion page each sync); set it to `preserve` instead if you want human edits made directly in Notion to be kept. The panel confirms how many documents were queued for the initial mirror.
 
 That's the whole setup. From here it's automatic.
 
@@ -90,68 +47,27 @@ That's the whole setup. From here it's automatic.
 
 You don't call anything to keep it running. Two paths keep Notion current:
 
-- **Instantly, off your KB writes.** Upload or append a knowledge-base document, or promote a version to current, and the change is queued for Notion right away. This includes writes an **agent** makes — the `knowledge_base` MCP tool's `upload` and `promote` actions are how a Claude session adds a doc that then mirrors. (Promotion is the human gate: a proposed version doesn't mirror until someone promotes it.)
+- **Instantly, off your KB writes.** Upload or append a knowledge-base document, or promote a version to current, and the change is queued for Notion right away. This includes documents an **agent** produces — a Chat or Routine with `write_outputs: true` commits a *proposed* KB version, and promotion is the human gate: it doesn't mirror until you promote it in the console.
 - **Hourly, via the reconcile sweep.** A background sweep compares your current KB against what's mirrored and queues anything out of sync — unmapped, version-drifted, errored, or needing archival. This is the unattended safety net: it backfills first-connect, and self-heals a page you deleted in Notion or a sync that hit a transient error.
 
-So the loop for an agent is: **add knowledge to Amdahl, and it appears in Notion.** For example, after a [competitor deep-dive](../competitive-intel/competitor-deep-dive.md) or a [win-loss postmortem](../win-loss-deal-postmortem/why-we-lost-this-deal.md), save the brief to the KB (`knowledge_base upload`) — and if the Notion sync is configured, it mirrors on the next tick with no extra step.
+So the loop for an agent is: **land knowledge in Amdahl, and it appears in Notion once promoted.** For example, run a [competitor deep-dive](../competitive-intel/competitor-deep-dive.md) or a [win-loss postmortem](../win-loss-deal-postmortem/why-we-lost-this-deal.md) as a Chat with `write_outputs: true`, promote the resulting doc — and if the Notion sync is configured, it mirrors on the next tick with no extra step.
 
-## Step 4 — check it's healthy (over MCP or REST)
+## Step 4 — check it's healthy (in the console)
 
-These three reads are the monitoring surface — available to an agent over MCP or to your code over REST.
+The connection's detail page on **Connections** is the monitoring surface. Two reads live there:
 
-**Live status** (the polling badge): enabled, provisioned, how many docs are mirrored, and a recent-activity summary.
+**Live status** (the badge): enabled, provisioned, how many docs are mirrored, and a recent-activity summary — synced / failed / skipped counts for the last hour.
 
-**MCP** (read it as a resource):
-
-```
-# resource notion_sync://<id>/status
-```
-
-**REST:**
-
-```
-GET /notion-sync/:id/status
-Authorization: Bearer <api-key with notion_sync:read>
-```
-
-```json
-{
-  "connection_id": "1111…",
-  "status": "connected",
-  "enabled": true,
-  "provisioned": true,
-  "mapped_count": 42,
-  "recent": { "syncedLastHour": 7, "failedLastHour": 0, "skippedLastHour": 3 }
-}
-```
-
-**Activity ledger** (what mirrored, and why something didn't). Outbound connectors have no upstream sync-run history, so this per-document ledger is the activity log. Optional `?limit=` (1–200, default 50):
-
-```
-GET /notion-sync/:id/sends?limit=10
-# MCP: resource notion_sync://<id>/sends
-```
-
-```json
-{
-  "rows": [
-    { "documentGroupId": "<doc>", "event": "promote", "status": "synced", "notionPageId": "<page>", "createdAt": "2026-06-27T12:01:00Z" },
-    { "documentGroupId": "<doc>", "event": "upload", "status": "skipped", "skipReason": "unchanged_hash", "createdAt": "2026-06-27T11:55:00Z" }
-  ],
-  "summary": { "syncedLastHour": 7, "failedLastHour": 0, "skippedLastHour": 3 }
-}
-```
-
-Each row's `status` is `synced` / `skipped` / `failed`. A skip's `skipReason` tells you why it was a no-op (`unchanged_hash`, `proposed_only`, `out_of_scope`, `disabled`, `not_configured`, `drift_preserved`); a failure's `error` carries the message. A high `failedLastHour` is your signal to check whether Notion access was revoked (the connection flips to a needs-reauthorization state — reconnect to resume).
+**Activity ledger** (what mirrored, and why something didn't). Outbound connectors have no upstream sync-run history, so this per-document ledger is the activity log. Each row's `status` is `synced` / `skipped` / `failed`. A skip's `skipReason` tells you why it was a no-op (`unchanged_hash`, `proposed_only`, `out_of_scope`, `disabled`, `not_configured`, `drift_preserved`); a failure carries the error. A spike in failures is your signal to check whether Notion access was revoked (the connection flips to a needs-reauthorization state — reconnect to resume).
 
 ## Backfill and unsync
 
-- **Force a full re-mirror** — `POST /notion-sync/:id/backfill` queues every current document. Unchanged docs are skipped cheaply, so it's safe to run repeatedly; use it after a big KB import or if you ever suspect drift. Returns `{ "enqueued": <n> }`.
-- **Stop mirroring but keep the Notion pages** — `POST /notion-sync/:id/unsync` disables the sync and clears the page-mapping ledger so a later reconfigure starts clean. **Your existing Notion pages stay in place** — their data is preserved; this only stops future syncing. To remove the connection entirely, use `DELETE /connections/:id`.
+- **Force a full re-mirror** — the connection's **Backfill** action queues every current document. Unchanged docs are skipped cheaply, so it's safe to run repeatedly; use it after a big KB import or if you ever suspect drift.
+- **Stop mirroring but keep the Notion pages** — **Unsync** disables the sync and clears the page-mapping ledger so a later reconfigure starts clean. **Your existing Notion pages stay in place** — their data is preserved; this only stops future syncing. To remove the connection entirely, disconnect it from the Connections page.
 
 ## Configure knobs
 
-Set these at configure time (or in the console settings panel). They're stored on the connection and applied to every sync.
+Set these in the connection's console settings panel. They're stored on the connection and applied to every sync.
 
 | Knob | Values | Default | What it controls |
 |---|---|---|---|
@@ -166,53 +82,48 @@ Set these at configure time (or in the console settings panel). They're stored o
 
 ## Paste this into Claude
 
-Setup (connect + configure) happens in the console or via REST — not over MCP — but once it's running, Claude can **monitor** the sync and **feed** it (anything it saves to the KB mirrors automatically). Paste this to get a health read:
+Setup and monitoring live in the console — but Claude **feeds** the sync: any document a run lands in the knowledge base mirrors automatically once you promote it. Paste this after a research recipe to produce a doc that flows to Notion:
 
 ```
-Check my Amdahl -> Notion knowledge sync and tell me if it's healthy.
+Run this as a deep investigation and save the result.
 
-1. Read the Notion sync status (resource notion_sync://<connection-id>/status).
-   Tell me: is it enabled and provisioned, how many documents are mirrored,
-   and the recent synced/failed/skipped counts.
+{the research ask — e.g. "a competitive brief on {competitor}: their public
+posture vs. how buyers actually describe them on our calls, with the
+divergences and attack angles"}
 
-2. Read the activity ledger (resource notion_sync://<connection-id>/sends,
-   limit 10). Summarize the last few outcomes. If anything shows status
-   "failed", quote the error and tell me whether it looks like a revoked
-   Notion access (needs-reauthorization) vs a transient error the hourly
-   reconcile will retry.
-
-3. If failedLastHour is 0 and the doc count matches what I expect, just say
-   "sync is healthy, N docs mirrored, last sync <when>." Don't invent a
-   problem that isn't there.
+Commit the finished brief to our knowledge base as a document version
+(write_outputs on). Tell me the document's title and remind me that it lands
+as a PROPOSED version — I'll promote it in the console, and once promoted our
+Notion sync mirrors it automatically. No Notion-specific step needed.
 ```
 
-To get a freshly-produced brief into Notion, just have Claude save it to the KB after a research recipe — `knowledge_base upload` (then promote when you're ready) — and the configured sync mirrors it on the next tick. No Notion-specific step.
+Then promote the doc when it's right, and check the mirror on the connection's console page.
 
 ## What you'll see back
 
-- A one-line health verdict (enabled + provisioned + mirrored-doc count + last-sync recency).
-- A short read of the recent ledger, with any `failed` rows quoted and triaged (reauth vs transient).
-- If you fed the KB: a confirmation the doc was saved (and, once promoted, that it's queued to mirror).
+- The research deliverable itself, plus confirmation a proposed KB version was committed.
+- A reminder of the promotion gate: proposed versions don't mirror; promoting in the console is what publishes it to Notion.
+- On the console's Connections page: the sync status, the mirrored-doc count, and the per-document ledger row once the mirror ticks.
 
 ## Variations
 
 - **Scope it to your canon only:** configure with `include: { starred_only: true }` so only starred ("canon") KB documents mirror — keep the Notion database to your vetted reference set, not every draft.
 - **By document type:** `include: { document_types: ["competitive_brief", "positioning"] }` mirrors only those types.
 - **Protect hand-edited Notion pages:** set `drift_policy: "preserve"` so a teammate's edits in Notion are never overwritten by a re-sync (the sync logs `drift_preserved` and moves on).
-- **Keep Notion pages after a teardown:** `unsync` (not `DELETE /connections/:id`) stops syncing but leaves every mirrored page intact — the safe "pause it" move.
-- **From code, not chat:** the whole lifecycle is REST — `POST /connections` -> `POST /notion-sync/:id/configure` -> poll `GET /notion-sync/:id/status` -> `GET /notion-sync/:id/sends`. Same contracts as the MCP reads.
+- **Keep Notion pages after a teardown:** Unsync (not a full disconnect) stops syncing but leaves every mirrored page intact — the safe "pause it" move.
+- **From code, not chat:** feed the pipeline over the public Chat API — `POST /chat` with `write_outputs` enabled in the config, or a Routine that does the same on a cadence. The docs land as proposed KB versions; promotion (console) is what mirrors them.
 
 ## Tips
 
 - **Promote, don't just upload, to publish.** With the default `version_policy: current_only`, a proposed version doesn't mirror until a human promotes it. That's the gate that keeps drafts out of Notion — use it on purpose.
-- **Check `notion_sync://<id>/sends` before assuming a doc didn't sync.** A "missing" doc is usually a deliberate skip — `unchanged_hash` (nothing changed), `proposed_only` (not promoted yet), or `out_of_scope` (your include filters). The ledger names the reason.
-- **A spike in `failedLastHour` almost always means revoked Notion access.** Reconnect the connector to re-grant; the hourly reconcile sweep backfills everything that failed while it was down.
-- **Backfill is cheap and idempotent** — unchanged docs are skipped without a Notion round-trip, so `POST /notion-sync/:id/backfill` is a safe "make sure everything's current" button.
+- **Check the activity ledger before assuming a doc didn't sync.** A "missing" doc is usually a deliberate skip — `unchanged_hash` (nothing changed), `proposed_only` (not promoted yet), or `out_of_scope` (your include filters). The ledger names the reason.
+- **A spike in failures almost always means revoked Notion access.** Reconnect the connector to re-grant; the hourly reconcile sweep backfills everything that failed while it was down.
+- **Backfill is cheap and idempotent** — unchanged docs are skipped without a Notion round-trip, so the Backfill action is a safe "make sure everything's current" button.
 - **Pair it with the research recipes.** The recipes that produce a saved brief — [competitor deep-dive](../competitive-intel/competitor-deep-dive.md), [deep-dive on account](../customer-research/deep-dive-on-account.md), [rebuild your value narrative](../positioning-messaging/rebuild-value-narrative-by-segment.md) — become Notion pages the moment they hit the KB. This sync is the delivery; those are the payload.
 
 ## See also
 
 - [Notify the workspace team](../notifications/notify-the-workspace-team.md) — the other last-mile primitive: email a teammate a readout instead of (or as well as) mirroring it to Notion.
-- Put "research -> save to KB" on a cadence with a **Routine** — a scheduled Chat created with the `agents` MCP tool (a name, a prompt, a cron) — so the doc that mirrors to Notion is refreshed the same way every time. For a fully-typed recipe instead, author a Workflow (console + REST): [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md).
+- Put "research -> save to KB" on a cadence with a **Routine** — a scheduled Chat created with the `agents` MCP tool (a name, a prompt with `write_outputs` on, a cron) — so the doc that mirrors to Notion is refreshed the same way every time. For a fully-typed recipe instead, author a Workflow in the console: [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md).
 - The rest of the cookbook: [recipe library](../README.md) — the GTM prompts whose outputs are worth keeping in your KB.
-- Product docs: <https://amdahl.co/mcp>.
+- Product docs: <https://docs.amdahl.co>.

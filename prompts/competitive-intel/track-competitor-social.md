@@ -12,10 +12,12 @@ This is the public-signal half of competitive intel. The [competitor deep-dive](
 
 ## Set it up first (one time)
 
-Social tracking reads accounts you point it at. Track the competitor before you analyze them:
+Social tracking reads accounts you point it at. Track the competitor before you analyze them — in the **console**: Connections -> **People** -> track them as an **external subject**, then link their X and LinkedIn handles so both roll up under one identity.
 
-- **In the console** (recommended for grouping): Connections -> **People** -> track them as an **external subject**, then link their X and LinkedIn handles so both roll up under one identity. External tracking is **on by default** for every workspace and bounded by a per-tenant cap (the cost guard) — the People view shows your usage. Internal (your own / your team's) accounts are never gated or capped.
-- **Or just ask Claude** to connect a handle via the `social` tool (`connect_account`), then read it back.
+Two things to know before you start:
+
+- **External tracking is OFF by default.** Tracking an account your workspace doesn't own (a competitor, a prospect's execs) is gated behind a per-workspace feature flag — if the People view won't let you add an external subject, ask your workspace admin (or Amdahl) to enable external tracking. Once on, it's bounded by a per-tenant cap (the cost guard) — the People view shows your usage. Internal (your own / your team's) accounts are never gated or capped.
+- **Tracking is console setup, not a chat action.** Connecting and linking handles is workspace configuration — it happens in the console, not through a tool in a Claude session. Once tracked, the analysis below runs from chat as usual.
 
 A freshly tracked account reads as **empty until its first sync lands** — give it a sync cycle before expecting numbers. This is the public-signal layer; it does not replace your CRM + call corpus, it complements it.
 
@@ -44,7 +46,7 @@ Cite post dates on the social side and call dates on the corpus side. If the soc
 
 ## How to actually use it
 
-1. **Track them before you run it.** No tracked account = empty social half. Set the external subject up once; the read stays current after that.
+1. **Track them before you run it.** No tracked account = empty social half. Get external tracking enabled, set the external subject up once in the console, and the read stays current after that.
 2. **Read the divergence section first** — sections 1 and 2 exist to feed section 3.
 3. **Turn a divergence into content the same week.** The strongest divergences (their loud claim + your buyers' lived contradiction) are the posts that write themselves — pair with [draft a grounded LinkedIn post](../content-and-outbound/draft-linkedin-post-grounded.md).
 4. **Re-run monthly per top competitor.** Social posture shifts fast; the divergences shift with it.
@@ -59,4 +61,4 @@ Cite post dates on the social side and call dates on the corpus side. If the soc
 
 - **The social half is signal, not proof.** A spike in their hiring posts is a hypothesis ("are they moving upmarket?"); your call corpus is where you confirm or kill it.
 - **Empty is information.** A competitor who's gone quiet on social, or whose following is sliding, is a real read — don't discard the null result.
-- **Keep the cap for who matters.** External tracking is capped on purpose; track your few real competitors + active target accounts, not everyone.
+- **Keep the cap for who matters.** External tracking is gated and capped on purpose; track your few real competitors + active target accounts, not everyone.
