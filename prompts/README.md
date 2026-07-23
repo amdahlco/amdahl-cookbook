@@ -1,6 +1,6 @@
 # Recipe library
 
-46 recipes for go-to-market work. Most are self-contained markdown files with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips; the [agent-platform](agent-platform/README.md) section adds the developer-facing REST + MCP shapes for the same engine. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
+47 recipes for go-to-market work. Most are self-contained markdown files with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips; the [agent-platform](agent-platform/README.md) section adds the developer-facing REST + MCP shapes for the same engine. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
 
 New here? Start with the [main README](../README.md) for setup and the six headliner prompts.
 
@@ -111,6 +111,7 @@ The developer-facing view of the engine the prompts above run on: how to drive A
 - [Agentic Chat — start, poll, respond](agent-platform/agentic-chat.md) — the always-async lane end to end: start -> poll (or stream) -> render -> answer a pause. REST + the MCP `agents` tool, plus the `depth` knob.
 - [Routines — make a Chat recur](agent-platform/routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now, and `actions_allowed` for autonomous sends.
 - [Saved agents — reuse a prompt](agent-platform/saved-agents.md) — the agent library: create a named agent, pin it in a Chat, schedule it as a Routine.
+- [Evals — a graded report-card](agent-platform/evals.md) — `evals.run`: fire a code-defined eval (default `gtm-default`), poll the run for the verdict, and read the `pass` / `partial` / `fail` bucket + per-grader breakdown (deterministic / `sor_anchored` / judge).
 - [The answer envelope](agent-platform/answer-envelope.md) — render a Chat answer in your own UI: the seven `content_block` types, `follow_ups`, and the `amdahl:q` / `amdahl:cite` link grammar.
 
 **End-to-end use cases + reference:**
