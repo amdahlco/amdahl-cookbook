@@ -102,7 +102,7 @@ Read `status`; when it is `complete`, `verdict` carries the report card. A missi
 
 The load-bearing fields:
 
-- **`verdict`** — the bucket: `pass` = every case passed, `fail` = none passed, `partial` = some. Derived from the per-case pass count, not from `overall_score`.
+- **`verdict`** — the bucket: `pass` = every case passed, `fail` = none passed, `partial` = at least one but not all passed. Derived from the per-case pass count, not from `overall_score`.
 - **`overall_score`** — the mean case score in `[0, 1]`; each case score is the mean of its graders' scores.
 - **`cases[].passed`** — whether *every* grader on the case passed; **`answered`** is whether the target produced a usable answer at all; **`error`** is set only when the target op did not produce an answer (the graders still run over the empty answer).
 - **`graders[].evidence`** — the receipt. Store it with the score: a score without its evidence can't be audited later. For `sor_anchored` it is the SoR value vs the answer value; for `judge` it is the per-dimension scores.
