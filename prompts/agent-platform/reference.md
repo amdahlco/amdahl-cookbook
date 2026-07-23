@@ -27,8 +27,9 @@ The agent-platform recipes map to these operation ids — look any of them up in
 | [Agentic Chat](agentic-chat.md) | `chat.start`, `chat.get_run`, `chat.get`, `chat.list`, `chat.rename`, `agents.resume`, `agents.cancel` |
 | [Routines](routines.md) | `routines.create`, `routines.list`, `routines.get`, `routines.update`, `routines.delete`, `routines.run_now` |
 | [Saved agents](saved-agents.md) | `agents.create_agent`, `agents.list_agents`, `agents.get_agent`, `agents.update_agent`, `agents.delete_agent` |
+| [Evals](evals.md) | `evals.run`, `eval.list`, `eval.get`, `eval_run.list`, `eval_run.get`, `grader_kind.list`, `grader_kind.get` |
 
-These families — `search`, `enrich`, `lookalike`, and the `chat` / `routines` / agent-library surface — are the whole public API. An external key calling anything outside it gets a `403` with `error.code: "not_on_public_api"`; those operations serve the console only.
+These families — `search`, `enrich`, `lookalike`, the `chat` / `routines` / agent-library surface, and `evals` — are the whole public API. An external key calling anything outside it gets a `403` with `error.code: "not_on_public_api"`; those operations serve the console only.
 
 ## Tips
 
