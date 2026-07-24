@@ -1,6 +1,6 @@
 # Evals — grade a drafted message against customer voice
 
-**What this does**: Takes a prompt and/or a drafted outbound message, retrieves the real customer-voice (VoC) evidence from your workspace, and hands back a **before → after report**. Your prompt and your message are graded **separately**, each on its own rubric with its own score, reasoning, cited quotes and worked examples. It then produces an improved **reusable prompt** plus an illustrative message, and reports the lift. The shipped default, `outreach-eval`, needs no setup — it is what runs when you pass no `eval`.
+**What this does**: Takes a prompt and/or a drafted message, retrieves the real customer-voice (VoC) evidence from your workspace, and hands back a **before → after report**. Your prompt and your message are graded **separately**, each on its own rubric with its own score, reasoning, cited quotes and worked examples. It then produces an improved **reusable prompt** plus an illustrative message, and reports the lift. The shipped default, `prompt-and-message-eval`, needs no setup — it is what runs when you pass no `eval`.
 
 **When to use it**: You have a drafted message — a cold email, a LinkedIn opener, a nurture line — and you want a grounded second opinion *before it goes out*: is this claim something your buyers actually say, or something the rep wishes they'd say? It's the developer view (REST + MCP payloads) of the [stress-test a message](../positioning-messaging/stress-test-a-message.md) prompt, wired so you can drop it into an outbound flow and gate a send on the verdict.
 
@@ -32,18 +32,20 @@ A run is **read-only by construction** — it only ever dispatches read ops (the
 
 ## Grade a message
 
-You pass in the eval's declared inputs under `inputs`. For `outreach-eval`, `prompt` and `outbound_message` are each **optional** — but you must send **at least one**:
+You pass in the eval's declared inputs under `inputs`. For `prompt-and-message-eval`, `prompt` and `message` are each **optional** — but you must send **at least one**:
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `eval` | string | no (default `outreach-eval`) | slug or id of the eval to run. Discover options via `eval://list`. |
+| `eval` | string | no (default `prompt-and-message-eval`) | slug or id of the eval to run. Discover options via `eval://list`. |
 | `inputs.prompt` | string | at least one of these two | the prompt / brief / rules document behind the message. Send it **alone** and the grader writes a specimen draft so there is something to grade. Long documents are sectioned, not truncated. |
-| `inputs.outbound_message` | string | at least one of these two | the drafted message to grade. Send it **alone** and the report also suggests a reusable prompt. |
+| `inputs.message` | string | at least one of these two | the drafted message to grade. Send it **alone** and the report also suggests a reusable prompt. |
 | `inputs.audience` | string | no | who it's for (e.g. "VP of Sales, mid-market SaaS") — sharpens the VoC retrieval |
 | `inputs.mode` | `rewrite` \| `advisory` | no (default `rewrite`) | `rewrite` produces a full improved prompt + message. **`advisory`** produces *anchored suggestions against the prompt you already have* and no wholesale rewrite — the mode for a large living rules doc you are not going to replace. |
 | `reuse` | `cached` \| `force` | no (default `cached`) | `cached` returns the last run for the **same eval + same inputs**; `force` always re-grades (see [Reuse](#reuse)) |
 
-Sending neither `prompt` nor `outbound_message` is the one input error worth planning for: it comes back `invalid_argument` with the failing field named in `details.input_errors`.
+Sending neither `prompt` nor `message` is the one input error worth planning for: it comes back `invalid_argument` with the failing field named in `details.input_errors`.
+
+> **Renamed.** This eval shipped earlier as `message-grader` and then `outreach-eval`, with the message input keyed `outbound_message`. Both retired slugs still resolve and `outbound_message` is still accepted as an alias for `message`, so existing code keeps working -- but write new code against `prompt-and-message-eval` + `message`.
 
 **REST:**
 
@@ -53,10 +55,10 @@ Authorization: Bearer <api-key with evals:execute>
 Content-Type: application/json
 
 {
-  "eval": "outreach-eval",
+  "eval": "prompt-and-message-eval",
   "inputs": {
     "prompt": "Write a 3-sentence cold email to a VP of Sales at a mid-market SaaS company, open on a pain we hear a lot, end with a soft CTA.",
-    "outbound_message": "Hi Dana — most VPs of Sales we talk to are drowning in dashboards but still can't tell which deals are quietly dying. Amdahl reads your actual call transcripts and flags the at-risk deals your CRM says are healthy. Worth a 15-min look next week?",
+    "message": "Hi Dana — most VPs of Sales we talk to are drowning in dashboards but still can't tell which deals are quietly dying. Amdahl reads your actual call transcripts and flags the at-risk deals your CRM says are healthy. Worth a 15-min look next week?",
     "audience": "VP of Sales, mid-market SaaS"
   },
   "reuse": "cached"
@@ -67,8 +69,8 @@ Content-Type: application/json
 
 ```
 evals run
-  eval   = "outreach-eval"
-  inputs = { prompt: "...", outbound_message: "Hi Dana — most VPs of Sales ...", audience: "VP of Sales, mid-market SaaS" }
+  eval   = "prompt-and-message-eval"
+  inputs = { prompt: "...", message: "Hi Dana — most VPs of Sales ...", audience: "VP of Sales, mid-market SaaS" }
   reuse  = "cached"
 ```
 
@@ -82,7 +84,7 @@ evals run
   "run_id": "b1c2d3e4-...",
   "reused": false,
   "status": "queued",
-  "eval_slug": "outreach-eval",
+  "eval_slug": "prompt-and-message-eval",
   "eval_version": "1.0.0",
   "resource": "eval_run://b1c2d3e4-..."
 }
@@ -107,7 +109,7 @@ The report lives on the `improvement_loop` grader's result, under `verdict.cases
 
 ```json
 {
-  "eval_slug": "outreach-eval",
+  "eval_slug": "prompt-and-message-eval",
   "eval_version": "2.0.0",
   "status": "complete",
   "verdict": "pass",
@@ -189,7 +191,7 @@ If the workspace has no customer-voice evidence yet (a brand-new tenant whose ca
 
 ```json
 {
-  "eval_slug": "outreach-eval",
+  "eval_slug": "prompt-and-message-eval",
   "status": "complete",
   "verdict": "not_applicable",
   "overall_score": null,
@@ -215,7 +217,7 @@ If the workspace has no customer-voice evidence yet (a brand-new tenant whose ca
 The end-to-end loop, from a drafted email to the thing you actually keep:
 
 1. **You have a draft.** Your outbound tool (or a [Chat](agentic-chat.md)) produced the Dana email above.
-2. **Grade it.** `POST /evals/run` with `eval: "outreach-eval"` and the prompt + message under `inputs`. You get a `run_id` back immediately.
+2. **Grade it.** `POST /evals/run` with `eval: "prompt-and-message-eval"` and the prompt + message under `inputs`. You get a `run_id` back immediately.
 3. **Poll the run.** `GET /eval-runs/<run_id>` until `status` is `complete`.
 4. **Read the transition first.** `input_verdict: "fail"` → `improved_verdict: "pass"`. That is the run working, not failing: your draft missed the 4.2 bar and the improvement clears it.
 5. **Read the message facet.** `relevant_positioning` is a 2 — and the `quotes` say why: a RevOps lead literally said *"the dashboards are fine, it's that nobody reads the calls"* (`contradicts`). Your opener led with the pain the buyer waved off.
@@ -236,7 +238,7 @@ A run is **content-addressed** by a fingerprint over `(workspace, eval slug, eva
 
 > **Closed during the beta.** `create` / `update` / `delete` refuse on every protocol today (see the note under [The operations](#the-operations)); `validate` still works and writes nothing. This section documents the shape so you can design against it — and dry-run it — before the gate opens.
 
-`outreach-eval` is the one code-defined default, but the design target is that you author your own — a subject-line grader, a call-summary checker, a persona-fit scorer — listing alongside the default via `eval://list`. An eval declares three things: its **input schema** (the fields callers pass under `inputs`), its **graders**, and its **outputs**.
+`prompt-and-message-eval` is the one code-defined default, but the design target is that you author your own — a subject-line grader, a call-summary checker, a persona-fit scorer — listing alongside the default via `eval://list`. An eval declares three things: its **input schema** (the fields callers pass under `inputs`), its **graders**, and its **outputs**.
 
 The grader kinds you compose from — browse them via `grader_kind://list`:
 
@@ -245,7 +247,7 @@ The grader kinds you compose from — browse them via `grader_kind://list`:
 - **`sor_anchored`** — a system-of-record anchor: runs a `data.query` for a ground-truth scalar and compares a figure in the message against it within a relative tolerance. Catches a claim that contradicts your own numbers.
 - **`judge`** — a plain LLM rubric score 1–5 over an answer, no retrieval.
 - **`evidence_judge`** — an LLM scores 1–5 on each rubric dimension **against retrieved VoC evidence** and returns supporting/contradicting quotes. Grade-only: no before/after.
-- **`improvement_loop`** — the richest kind, and what `outreach-eval` is built from: retrieve → grade → improve → **blind-judge both** → report the lift, with per-facet detail and anchored suggestions.
+- **`improvement_loop`** — the richest kind, and what `prompt-and-message-eval` is built from: retrieve → grade → improve → **blind-judge both** → report the lift, with per-facet detail and anchored suggestions.
 
 **Create** (`POST /evals`), **update** (`PATCH /evals/:slug`), and dry-run **validate** (`POST /evals/validate`) — the same actions are on the MCP `evals` tool:
 
@@ -291,7 +293,7 @@ Draft message:
 """
 Audience: {e.g. "VP of Sales, mid-market SaaS"}
 
-Use the outreach-eval eval, start it, then poll the run resource until it completes. When it's done,
+Use the prompt-and-message-eval eval, start it, then poll the run resource until it completes. When it's done,
 give me, in this order: (1) the TRANSITION — what my draft scored vs what the improved version scored,
 and whether that moved it past the bar; (2) the anchored suggestions, "keep" ones first; (3) the
 per-facet breakdown for the prompt and the message SEPARATELY, with the customer quotes it pulled
