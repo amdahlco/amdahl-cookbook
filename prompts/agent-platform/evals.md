@@ -1,6 +1,6 @@
 # Evals — grade a drafted message against customer voice
 
-**What this does**: Takes a prompt and/or a drafted message, retrieves the real customer-voice (VoC) evidence from your workspace, and hands back a **before → after report**. Your prompt and your message are graded **separately**, each on its own rubric with its own score, reasoning, cited quotes and worked examples. It then produces an improved **reusable prompt** plus an illustrative message, and reports the lift. The shipped default, `prompt-and-message-eval`, needs no setup — it is what runs when you pass no `eval`.
+**What this does**: Takes a prompt and/or a drafted message, retrieves the real customer-voice (VoC) evidence from your workspace, and hands back a **before → after report**. Your prompt and your message are graded **separately**, each on its own rubric with its own score, reasoning, cited quotes and worked examples. It then produces an improved **reusable prompt** plus an illustrative message, and reports the lift. The shipped default, `prompt-and-message-eval`, needs no setup — it is what runs when you pass no `eval`. (It was previously `outreach-eval`; the old slug still resolves — see [Renamed](#renamed).)
 
 **When to use it**: You have a drafted message — a cold email, a LinkedIn opener, a nurture line — and you want a grounded second opinion *before it goes out*: is this claim something your buyers actually say, or something the rep wishes they'd say? It's the developer view (REST + MCP payloads) of the [stress-test a message](../positioning-messaging/stress-test-a-message.md) prompt, wired so you can drop it into an outbound flow and gate a send on the verdict.
 
@@ -45,7 +45,13 @@ You pass in the eval's declared inputs under `inputs`. For `prompt-and-message-e
 
 Sending neither `prompt` nor `message` is the one input error worth planning for: it comes back `invalid_argument` with the failing field named in `details.input_errors`.
 
-> **Renamed.** This eval shipped earlier as `message-grader` and then `outreach-eval`, with the message input keyed `outbound_message`. Both retired slugs still resolve and `outbound_message` is still accepted as an alias for `message`, so existing code keeps working -- but write new code against `prompt-and-message-eval` + `message`.
+<a id="renamed"></a>
+> **Renamed.** Write new code against the canonical names on the left; the retired names on the right still resolve, so nothing already integrated breaks.
+>
+> | canonical (use this) | retired (still accepted) |
+> |---|---|
+> | slug `prompt-and-message-eval` | `outreach-eval`, `message-grader` |
+> | input `message` | `outbound_message` |
 
 **REST:**
 
