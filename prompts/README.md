@@ -111,7 +111,7 @@ The developer-facing view of the engine the prompts above run on: how to drive A
 - [Agentic Chat — start, poll, respond](agent-platform/agentic-chat.md) — the always-async lane end to end: start -> poll (or stream) -> render -> answer a pause. REST + the MCP `agents` tool, plus the `depth` knob.
 - [Routines — make a Chat recur](agent-platform/routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now, and `actions_allowed` for autonomous sends.
 - [Saved agents — reuse a prompt](agent-platform/saved-agents.md) — the agent library: create a named agent, pin it in a Chat, schedule it as a Routine.
-- [Evals — a graded report-card](agent-platform/evals.md) — `evals.run`: fire a code-defined eval (default `gtm-default`), poll the run for the verdict, and read the `pass` / `partial` / `fail` bucket + per-grader breakdown (deterministic / `sor_anchored` / judge).
+- [Evals — grade a message against customer voice](agent-platform/evals.md) — `evals.run` (MCP `grade`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown, the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval.
 - [The answer envelope](agent-platform/answer-envelope.md) — render a Chat answer in your own UI: the seven `content_block` types, `follow_ups`, and the `amdahl:q` / `amdahl:cite` link grammar.
 
 **End-to-end use cases + reference:**

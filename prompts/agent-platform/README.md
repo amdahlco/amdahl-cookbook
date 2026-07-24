@@ -33,7 +33,8 @@ Everything here is covered by the **`mcp_customer_agent`** scope bundle (the def
 | Answer a pause / cancel a run | `workflows:write` |
 | Agent library read / write | `agents:read` / `agents:write` |
 | Routines read / write | `routines:read` / `routines:write` |
-| Run an eval / report-card (`evals.run`) | `evals:execute` |
+| Grade a message / run an eval (`evals.run`, MCP `grade`) | `evals:execute` |
+| Author or validate an eval (`evals.create` / `evals.update` / `evals.validate`) | `evals:write` |
 | Browse evals, poll runs, grader kinds | `evals:read` |
 
 A read-only key (`mcp_read_only`) can run `search.run`, all three endpoints (enrich serves its cache + first-party tiers and reports `refresh_omitted: "missing_scope"` instead of queueing the paid refresh), and read chats — but cannot start a Chat, answer a pause, or write an agent/routine.
@@ -55,7 +56,7 @@ Before the individual calls, the shape of the whole thing — where Amdahl sits 
 - [Agentic Chat — start, poll, respond](agentic-chat.md) — the async lane end to end: `start` -> poll `read_url` (or `chat_status`) -> render the answer -> `respond` to an `awaiting_input` pause -> stream a run live. Over REST and over the MCP `agents` tool. Includes the `depth` knob (and why the default is `deep`).
 - [Routines — make a Chat recur](routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now over REST + MCP, the `config` (incl. `actions_allowed` for autonomous sends), and when a Routine beats a Workflow.
 - [Saved agents — reuse a prompt](saved-agents.md) — the agent library: create a named, reusable agent, pin it in a Chat, and schedule it as a Routine. CRUD over REST + MCP.
-- [Evals — a graded report-card](evals.md) — `evals.run`: fire a code-defined eval (default `gtm-default`), poll the run for the verdict, and read the `pass` / `partial` / `fail` bucket + per-grader breakdown (deterministic / `sor_anchored` / judge). The async report-card lane — "how good are our answers right now?" as a number.
+- [Evals — grade a message against customer voice](evals.md) — `evals.run` (MCP `grade`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown (grounding / specificity / differentiation / cta_clarity / tone_fit), the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval (`rule` / `sor_anchored` / `evidence_judge` graders).
 - [The answer envelope](answer-envelope.md) — how to render a Chat answer in your own UI: the seven `content_block` types (`text` / `callout` / `citation` / `table` / `chart_spec` / `metric` / `cluster_finding`), `follow_ups`, and the `amdahl:q` / `amdahl:cite` link grammar (figures explore, claims prove).
 
 ## End-to-end use cases
