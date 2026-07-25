@@ -39,7 +39,7 @@ You pass in the eval's declared inputs under `inputs`. For `prompt-and-message-e
 | `eval` | string | no (default `prompt-and-message-eval`) | slug or id of the eval to run. Discover options via `eval://list`. |
 | `inputs.prompt` | string | at least one of these two | the prompt / brief / rules document behind the message. Send it **alone** and the grader writes a specimen draft so there is something to grade. Long documents are sectioned, not truncated. |
 | `inputs.message` | string | at least one of these two | the drafted message to grade. Send it **alone** and the report also suggests a reusable prompt. |
-| `inputs.audience` | string | no | who it's for (e.g. "VP of Sales, mid-market SaaS") — sharpens the VoC retrieval |
+| `inputs.audience` | string | no | who it's for (e.g. "VP of Sales, mid-market SaaS"). Resolved to a seniority cohort and **checked against your corpus** before the report claims that framing — see [Audience scoping](#audience) |
 | `inputs.mode` | `rewrite` \| `advisory` | no (default `rewrite`) | `rewrite` produces a full improved prompt + message. **`advisory`** produces *anchored suggestions against the prompt you already have* and no wholesale rewrite — the mode for a large living rules doc you are not going to replace. |
 | `reuse` | `cached` \| `force` | no (default `cached`) | `cached` returns the last run for the **same eval + same inputs**; `force` always re-grades (see [Reuse](#reuse)) |
 
@@ -187,6 +187,8 @@ The load-bearing fields:
 - **`quotes[]`** — the receipts, per facet: real customer utterances `{ text, source, stance }`, `stance` ∈ `supports` | `contradicts`. **Never fabricated** — the model may only cite ids from the retrieved set and the server hydrates them back to verbatim text. A `contradicts` quote is the sharpest edit note in the report.
 - **`suggestions[]`** — surgical, anchored edits: `kind` ∈ `keep` | `add` | `strengthen` | `remove` | `reorder`. `anchor_quote` is **verified server-side to be a literal substring** of your text before it ships, so a suggestion can never quote back something you did not write; `anchor_offset` is that verified position (which is what makes it usable inside a 50k-char document where a phrase repeats). Always present in `advisory` mode. **`keep` matters** — a report that is only criticism tells you nothing about what to protect on the next edit.
 - **`coverage`** — how much of a long prompt was graded: `{ total_chars, graded_chars, truncated, strategy, sections[] }`. When `truncated` is true, **say so in your UI** — the sections the grader could not see are listed, and nothing in the report makes a claim about them.
+- **`audience`** — what cohort the report was graded against, or why it wasn't. A **discriminated union on `status`** (`resolved` | `abstained`), so branch on `status` before reading `dimensions` — it is present on some abstains too. Full contract in [Audience scoping](#audience).
+- **`tool_kit`** — `{ callable, out_of_scope }`: how much of the read surface your API key covers. `research_steps` are drawn only from the callable set, so every suggested call runs as written for the key that produced the report.
 - **`grader_meta`** — provenance: `blinded` (both candidates scored unlabelled in one pass), `evidence_frozen` (same quote set across every round), `evidence_quotes`, `model_calls`.
 
 Every field below `before` / `after` / `lift` / `what_changed` is **optional on the wire**, so a report from an older run still parses — branch on presence rather than assuming.
@@ -217,6 +219,59 @@ If the workspace has no customer-voice evidence yet (a brand-new tenant whose ca
 ```
 
 `not_applicable` is the abstain-rather-than-guess discipline: a message is never marked `fail` just because the workspace is empty. It is first-class at **two** levels — a whole case, and a single grader — and both use the same rule: **`applicable` is absent or `true` when it counts; only an explicit `false` excludes it.** Never treat a missing `applicable` as not-applicable. A grader abstaining on its own (the `rule` grader on a prompt-only run, which has no message text to check) drops just that grader, not the case.
+
+## <a id="audience"></a>Audience scoping — the report says what it was graded against
+
+`inputs.audience` is free text you write, but it does not stay free text. It is resolved to a seniority cohort and then **checked against your own corpus** before the report is allowed to claim that framing.
+
+That check is the point. Without it, a run graded "positioning for VPs of Engineering" on a workspace that has never spoken to one still produced a confident report — the grade was real, the audience printed on top of it was fiction.
+
+The outcome lands on `improvement.audience`, a **discriminated union on `status`**:
+
+```json
+"audience": {
+  "status": "resolved",
+  "dimensions": { "role_level": "executive", "raw": "VPs of Engineering" },
+  "evidence": { "distinct_speakers": 7, "utterances": 210, "distinct_companies": 4 },
+  "predicate": "role_level = 'executive'"
+}
+```
+
+```json
+"audience": {
+  "status": "abstained",
+  "reason": "thin_evidence",
+  "message": "There are some conversations with that audience, but too few to grade positioning against without over-reading them, so the report was graded against your whole customer corpus.",
+  "dimensions": { "role_level": "manager", "raw": "eng managers" },
+  "evidence": { "distinct_speakers": 2, "utterances": 9, "distinct_companies": 1 }
+}
+```
+
+**Branch on `status` before reading `dimensions`.** It is a union rather than a nullable cohort specifically so a renderer cannot show an audience header for a run that was graded unscoped. `dimensions` appears on an abstain too — when we understood you and only the evidence fell short — so its presence is *not* the signal.
+
+**Three floors, all required** to resolve: at least **3 distinct speakers**, **25 utterances**, and **2 distinct companies**. The company floor is the load-bearing one: without it a single talkative account clears the other two by itself, and its vocabulary gets reported back to you as an audience-wide finding.
+
+**Five abstain reasons, and they are not interchangeable** — each asks something different of you:
+
+| `reason` | what it means | what to do |
+|---|---|---|
+| `not_provided` | you didn't name an audience | nothing — the whole-corpus grade is valid |
+| `unresolvable` | the text didn't map to a seniority level | restate naming a level (executive / manager / individual contributor) |
+| `no_evidence` | understood, but this workspace has no such conversations | connect more data, or grade a cohort you actually sell to |
+| `thin_evidence` | some conversations, too few to read safely | same, or accept the whole-corpus grade |
+| `lookup_failed` | **our check broke** | retry. This is **not** a statement about your data |
+
+`lookup_failed` deserves the emphasis: **never render it as "you have no conversations with that audience".** Telling someone their corpus is empty when it isn't is a worse failure than showing nothing. Only `no_evidence` and `thin_evidence` are statements about the workspace.
+
+The report **still grades** on an abstain — it just grades against your whole customer corpus and says so, rather than silently pretending it scoped.
+
+### Suggested calls are bounded by your key
+
+`improvement.tool_kit` is `{ callable, out_of_scope }`: how many public read operations your API key covers, and how many it doesn't. `research_steps` are proposed **only** from the callable set, so a step in the report always runs as written for the key that produced it — a safe-but-uncallable suggestion 403s when you paste it, which discredits every other step alongside it.
+
+Counts only, deliberately: listing the ops would duplicate `research_steps` and turn the report into a permissions catalog. If `out_of_scope` is 0, there is nothing to say and nothing is withheld.
+
+Both `audience` and `tool_kit` are **optional on the wire**. Absent means the run predates audience scoping — which is *not* the same as `not_provided`, so don't collapse them.
 
 ## Worked example — grade a cold outbound email
 
@@ -319,6 +374,7 @@ not_applicable, tell me we don't have customer data to grade against yet — don
 - **The `contradicts` quote is the whole point.** A `rule` check only says "well-formed." The cited quotes are what tell you a buyer says the *opposite* of your copy — read those first.
 - **Big prompt? Use `advisory` and check `coverage`.** Anchored suggestions apply to a doc nobody is going to replace, and `coverage.truncated` tells you when the grade covers only part of it. Surface that caveat rather than swallowing it.
 - **`not_applicable` is not a fail.** It means no customer voice has landed yet — branch on it, don't render it as a zero.
+- **Name an audience, then read whether it stuck.** An `audience` you pass is only used as the framing if your corpus clears three evidence floors. Check `audience.status` — a report that says "graded against executives" and one that fell back to the whole corpus look identical if you skip it. And if the reason is `lookup_failed`, that is our check breaking: **never** relay it as "you have no conversations with that audience".
 - **`cached` keys on the exact inputs.** A new message always re-grades; an identical message returns the prior run. Re-grade the *same* draft against fresh data with `reuse: force`.
 - **Scopes:** grading needs `evals:execute`; a read-only key (`evals:read`) can browse evals, poll runs and `validate`. Authoring (`evals:write`) is gated off during the beta regardless of scope.
 
