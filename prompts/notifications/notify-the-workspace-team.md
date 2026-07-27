@@ -139,4 +139,4 @@ Add `notifications.email_member` to the blueprint's `policy.tool_allowlist` so t
 - [Routines](../agent-platform/routines.md) — the scheduled Chat that carries the unattended send, and the `actions_allowed` contract in full.
 - [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md) — the `tool`-step model the Workflow variant above builds on, and when a Routine is the better fit.
 - The rest of the cookbook: [recipe library](../README.md) — paste-ready GTM prompts that produce the readouts worth emailing.
-- Product docs: <https://docs.amdahl.co>.
+- Product docs: <https://docs.amdahl.ai>.

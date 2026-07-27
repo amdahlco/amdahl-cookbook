@@ -2,7 +2,7 @@
   "mcpServers": {
     "amdahl": {
       "type": "http",
-      "url": "https://app.amdahl.co/mcp"
+      "url": "https://app.amdahl.ai/mcp"
     }
   }
 }

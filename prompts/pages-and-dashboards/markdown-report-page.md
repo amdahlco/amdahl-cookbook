@@ -89,4 +89,4 @@ or a cited source, mark it clearly rather than stating it as fact.
 
 - [Create a page (command)](../../plugins/amdahl-gtm/commands/create-page.md) — the full Pages contract: the catalog, the three layouts, data bindings, and the validate → create loop. The authoritative reference; this recipe is the document-layout slice of it.
 - The rest of the cookbook: [recipe library](../README.md) — paste-ready GTM prompts that produce the briefs worth publishing.
-- Product docs: <https://docs.amdahl.co>.
+- Product docs: <https://docs.amdahl.ai>.

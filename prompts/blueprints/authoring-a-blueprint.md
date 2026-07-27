@@ -224,7 +224,7 @@ You don't have to hold all of this in your head. The console's Workflows surface
 - The **Workflows list** — every blueprint your workspace can see (Amdahl starters + your own).
 - Any shipped starter (e.g. `research-report`) opens to its full validated DSL, to copy from.
 
-The generated **blueprint DSL reference** on <https://docs.amdahl.co> covers the same grammar in document form.
+The generated **blueprint DSL reference** on <https://docs.amdahl.ai> covers the same grammar in document form.
 
 ## How to validate
 
@@ -326,4 +326,4 @@ That's the whole loop: **fork -> read -> edit -> validate -> save -> publish.** 
 
 - [Blueprint authoring skill](../../plugins/amdahl-gtm/skills/blueprint-authoring/SKILL.md) — composes and checks the DSL body with you, hands you the finished JSON for the console (and routes "make this recur" asks to Routines).
 - The rest of the cookbook: [recipe library](../README.md) — paste-ready GTM prompts (the *other* meaning of "recipe").
-- Product docs: <https://docs.amdahl.co>.
+- Product docs: <https://docs.amdahl.ai>.

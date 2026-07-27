@@ -126,4 +126,4 @@ Then promote the doc when it's right, and check the mirror on the connection's c
 - [Notify the workspace team](../notifications/notify-the-workspace-team.md) — the other last-mile primitive: email a teammate a readout instead of (or as well as) mirroring it to Notion.
 - Put "research -> save to KB" on a cadence with a **Routine** — a scheduled Chat created with the `agents` MCP tool (a name, a prompt with `write_outputs` on, a cron) — so the doc that mirrors to Notion is refreshed the same way every time. For a fully-typed recipe instead, author a Workflow in the console: [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md).
 - The rest of the cookbook: [recipe library](../README.md) — the GTM prompts whose outputs are worth keeping in your KB.
-- Product docs: <https://docs.amdahl.co>.
+- Product docs: <https://docs.amdahl.ai>.
