@@ -25,21 +25,21 @@ Claude signs in to your workspace over OAuth. Works in the Claude web app and Cl
 
 1. Open Claude and go to **Settings → Connectors** (direct link: <https://claude.ai/customize/connectors>).
 2. Click **Add custom connector**.
-3. Name it **Amdahl** and set the URL to `https://app.amdahl.co/mcp`.
+3. Name it **Amdahl** and set the URL to `https://app.amdahl.ai/mcp`.
 4. Click **Connect**, then **Configure**.
 5. Sign in to Amdahl when prompted, then choose this workspace.
 
 <!-- TODO: screenshot of the connector-add UI here -->
 <!-- TODO: screenshot of the OAuth approval -->
 
-If you don't have an Amdahl account yet, start at <https://amdahl.co>.
+If you don't have an Amdahl account yet, start at <https://amdahl.ai>.
 
 ## Setup — Claude Code (1 line)
 
 For the technical folks. Same OAuth flow, but from your terminal:
 
 ```
-claude mcp add --transport http amdahl "https://app.amdahl.co/mcp"
+claude mcp add --transport http amdahl "https://app.amdahl.ai/mcp"
 ```
 
 The first time you call an Amdahl tool, the OAuth approval opens in your browser. After that it stays connected.
@@ -212,9 +212,9 @@ Your team lives in Notion but your canonical reference library — competitive b
 
 ## Help & docs
 
-- Product docs: <https://docs.amdahl.co>
-- Home: <https://amdahl.co>
-- Support: hello@amdahl.co
+- Product docs: <https://docs.amdahl.ai>
+- Home: <https://amdahl.ai>
+- Support: hello@amdahl.ai
 
 <details>
 <summary>What's actually happening under the hood?</summary>

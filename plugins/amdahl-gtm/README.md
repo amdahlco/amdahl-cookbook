@@ -25,9 +25,9 @@ Either way, that single install gives you the MCP connection **and** the slash c
 
 ## Connect (automatic, OAuth, no key)
 
-The plugin ships the `amdahl` MCP server (`https://app.amdahl.co/mcp`) and starts it when the plugin is enabled. The first time a command calls an Amdahl tool, the standard MCP OAuth approval opens in your browser; after that it stays connected and scoped to your workspace. No token paste, no JSON to edit.
+The plugin ships the `amdahl` MCP server (`https://app.amdahl.ai/mcp`) and starts it when the plugin is enabled. The first time a command calls an Amdahl tool, the standard MCP OAuth approval opens in your browser; after that it stays connected and scoped to your workspace. No token paste, no JSON to edit.
 
-Run `/amdahl-gtm:setup` to confirm the connection and see what's on file. If you don't have an Amdahl account yet, start at <https://amdahl.co>.
+Run `/amdahl-gtm:setup` to confirm the connection and see what's on file. If you don't have an Amdahl account yet, start at <https://amdahl.ai>.
 
 ## Commands
 
@@ -57,14 +57,14 @@ Each command runs a **wave structure**: an explicit parallel gather (internal co
 
 ## Troubleshooting
 
-- **A command says it can't reach Amdahl** → run `/amdahl-gtm:setup`; approve the OAuth login. Manual fallback: `claude mcp add --transport http amdahl "https://app.amdahl.co/mcp"`.
+- **A command says it can't reach Amdahl** → run `/amdahl-gtm:setup`; approve the OAuth login. Manual fallback: `claude mcp add --transport http amdahl "https://app.amdahl.ai/mcp"`.
 - **Output is thin** → usually thin grounding. Follow up with "pull 5 more verbatim quotes on <theme>" — the brief sharpens.
 - **The divergence section is empty** → either the public or internal side had no signal for this entity. `/amdahl-gtm:setup` shows whether your CRM + calls have synced.
 
 ## Docs & support
 
-- Product docs: <https://docs.amdahl.co>
-- Home: <https://amdahl.co>
-- Support: hello@amdahl.co
+- Product docs: <https://docs.amdahl.ai>
+- Home: <https://amdahl.ai>
+- Support: hello@amdahl.ai
 
 MIT licensed.

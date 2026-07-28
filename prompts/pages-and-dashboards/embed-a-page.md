@@ -78,4 +78,4 @@ workspace, an admin has to mint that tier.
 
 - [Create a page (command)](../../plugins/amdahl-gtm/commands/create-page.md) — the full Pages contract: the catalog, the three layouts, data bindings, the validate → create loop, and the **Embedding a live page** section (the authoritative reference for the mint flow, the audience gate, and secret rotation).
 - [Build a markdown report page](markdown-report-page.md) — publish a written deliverable as a `document`-layout Page; embed it the same way.
-- Product docs: <https://docs.amdahl.co>.
+- Product docs: <https://docs.amdahl.ai>.

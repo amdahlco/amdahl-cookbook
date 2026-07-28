@@ -69,6 +69,6 @@ The recipes above are the doors in isolation. These two assemble them into a rea
 
 ## Reference
 
-- [Operation reference](reference.md) — where the authoritative contracts live (the docs tool catalog + the OpenAPI-driven API reference on docs.amdahl.co), and the recipe-to-operation map for the public surface.
+- [Operation reference](reference.md) — where the authoritative contracts live (the docs tool catalog + the OpenAPI-driven API reference on docs.amdahl.ai), and the recipe-to-operation map for the public surface.
 
 New here? Start with the [main README](../../README.md) for the OAuth connect flow, then the [recipe library](../README.md) for the GTM prompts these doors were built to serve.

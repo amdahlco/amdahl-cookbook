@@ -30,7 +30,7 @@ Hold this mental model and keep the user on it:
 |---|---|
 | Browse every blueprint the workspace sees (Amdahl starters + tenant rows) | The Workflows list |
 | Read one blueprint's full v1 DSL body | Open it from the list (starters resolve by slug) |
-| The 8 step kinds with fields + example bodies | The step-kind reference in the editor (also the DSL reference on docs.amdahl.co) |
+| The 8 step kinds with fields + example bodies | The step-kind reference in the editor (also the DSL reference on docs.amdahl.ai) |
 | Registered `prompt://` fragments | The fragment browser (filter by scheme; open one for its text) |
 | Dry-run a draft body through the moat | The editor's **Validate** action — returns `{ valid, errors[] }` |
 | Persist a new tenant blueprint | **Save as draft** in the editor |

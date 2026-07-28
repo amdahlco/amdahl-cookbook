@@ -1,13 +1,13 @@
 # Operation reference — where the contracts live
 
-**What this does**: Points you at the authoritative reference for the public operations — the **tool catalog** and the **OpenAPI-driven API reference** on <https://docs.amdahl.co> — and maps every recipe in this section to its operation ids so you know exactly which contract to look up.
+**What this does**: Points you at the authoritative reference for the public operations — the **tool catalog** and the **OpenAPI-driven API reference** on <https://docs.amdahl.ai> — and maps every recipe in this section to its operation ids so you know exactly which contract to look up.
 
 **When to use it**: You want the exact input schema, response shape, or required scope for an operation, or you're checking why a call was refused. Read the published reference rather than trusting a doc that can drift.
 
 ## The reference surfaces
 
-- **The API reference** — <https://docs.amdahl.co/api-reference> — the interactive, OpenAPI-driven console: every public REST operation with its full request/response schema, required scopes, and a browser-side "Try it" runner against `https://app.amdahl.co`.
-- **The tool catalog** — on <https://docs.amdahl.co> — the generated per-operation catalog (the same descriptions the agent sees), grouped by family.
+- **The API reference** — <https://docs.amdahl.ai/api-reference> — the interactive, OpenAPI-driven console: every public REST operation with its full request/response schema, required scopes, and a browser-side "Try it" runner against `https://app.amdahl.ai`.
+- **The tool catalog** — on <https://docs.amdahl.ai> — the generated per-operation catalog (the same descriptions the agent sees), grouped by family.
 
 Both are generated from the platform's operation registry, so they track the deployed contract.
 
@@ -40,4 +40,4 @@ These families — `search`, `enrich`, `lookalike`, the `chat` / `routines` / ag
 ## See also
 
 - [Agent platform overview](README.md) — the two doors, the flag prerequisite, and the scope table.
-- Product docs: <https://docs.amdahl.co>.
+- Product docs: <https://docs.amdahl.ai>.
