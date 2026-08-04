@@ -49,7 +49,8 @@ renders, so the two cannot disagree.
 
 3. **Show the card.** `report.md`, verbatim, in the section order below.
 
-4. **Read the two things worth reading.**
+4. **Read the two things worth reading — and skip the three that look
+   readable.**
    - **The fraction, not the score.** `submitted.checks` — "2 of 5" — is the
      measurement; `score_15` is `1 + 4·(passed/total)`, a rendering of it. With
      five binary checks the dial has six positions, so an edit that does not
@@ -58,6 +59,19 @@ renders, so the two cannot disagree.
    - **The quotes, especially a `contradicts`.** A customer arguing against a
      claim you hold is the highest-value output of the whole run. Escalate it;
      do not average it away.
+   - **Not the Improved row, not `lift`, not `transition`.** The improved side
+     is a rewrite the eval writes for itself, and its own field says so:
+     `improved.usage` is `illustration_only`. Read it for the _wording_ it
+     reaches for; do not read its number. Measured over 89 live runs: the
+     improved side clears the 4.2 bar on **92%** of them, so it is close to a
+     constant — and because `lift` is `improved − submitted`, that makes `lift`
+     **−0.90 correlated with your own draft's score**. A big lift means your
+     draft scored low, not that the rewrite added much. The noise-floor filter
+     does not fix this: restricted to the runs where `lift_reportable` is
+     `true`, the correlation is still **−0.88**. `transition` inherits the same
+     problem — its first half is the submitted verdict by definition, and its
+     second half is a 92% constant. **Use the submitted fraction. It is the
+     only number on the card that is about your writing.**
 
 5. **Fix.** Apply the suggestions to the draft _and_ to the prompt, then re-run
    as a **new** run folder. Runs are immutable.
@@ -113,7 +127,8 @@ and it does not go away at temperature 0 (measured: identical noise floor across
 a 600-call two-arm test).
 
 Take the median before you act on a change, and before you tell anyone a draft
-got better.
+got better. Take it on the **submitted fraction** — medianing `transition` buys
+you a stable reading of a number that is 92% constant anyway (step 4).
 
 ## Gotchas
 
