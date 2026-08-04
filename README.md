@@ -152,6 +152,24 @@ If you've installed the plugin, the `blueprint-authoring` skill routes "make thi
 
 ---
 
+## Grade what you write (agent skills)
+
+Two ready-to-drop agent skills for the grading loop — write, ground, draft,
+grade, fix, rerun. Copy a directory into your harness's skills path
+(`.claude/skills/` for Claude Code), set `AMDAHL_API_KEY`, and it works as-is.
+
+| Skill                                                    | Does                                                   | Hands back                  |
+| -------------------------------------------------------- | ------------------------------------------------------ | --------------------------- |
+| [`ground-and-draft`](skills/ground-and-draft/SKILL.md)   | Pulls customer evidence, freezes it, drafts against it | A draft for a human to read |
+| [`grade-and-report`](skills/grade-and-report/SKILL.md)   | Submits to Eval, polls, renders the report card        | The scorecard               |
+
+They are deliberately two skills, not one: the gap between them is where a
+person looks at a draft before it is graded. The full walkthrough is
+[the grading loop](https://docs.amdahl.ai/guides/the-grading-loop); the
+directory index is [skills/](skills/).
+
+---
+
 ## Build it into your own product (API + MCP)
 
 Everything above runs on two "ask Amdahl" doors, and you can drive both from your own code — over the REST API and over MCP — not just by pasting prompts. The [agent-platform section](prompts/agent-platform/README.md) is the developer-facing walkthrough, with copy-paste REST + MCP request/response shapes for each door.
