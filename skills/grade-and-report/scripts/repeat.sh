@@ -18,6 +18,10 @@
 # noise floor identical - because the variance lives in rubric lines that are
 # vacuously true or false of the same draft, not in sampling.
 #
+# Vintage: these figures were measured on the superseded 4.x-series judge and
+# before #2291 made evidence draws deterministic, so they describe the historical
+# instrument, not the current one.
+#
 # So: take the median of N, drop degenerate runs, and read the pass RATE rather
 # than a pass/fail. Anything you would act on should survive that.
 set -euo pipefail
@@ -60,7 +64,8 @@ for i in $(seq 1 "$N"); do
   # abstain, or a grader mix with no improvement report). `jsonpath` prints
   # nothing for a null, so the fallback keeps the one-line-per-sample invariant.
   HEADLINE=$(api_get "eval-runs/$RID/report" | jsonpath data.report.headline)
-  echo "${HEADLINE:-{\"_drop\":\"no_comparison\"\}}" >> "$SAMPLES"
+  if [ -z "$HEADLINE" ]; then HEADLINE='{"_drop":"no_comparison"}'; fi
+  echo "$HEADLINE" >> "$SAMPLES"
 done
 
 echo
