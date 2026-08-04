@@ -126,6 +126,10 @@ possible scores, the bar at 4.2, so one dimension flipping flips the verdict —
 and it does not go away at temperature 0 (measured: identical noise floor across
 a 600-call two-arm test).
 
+Vintage: these figures were measured on the superseded 4.x-series judge and
+before #2291 made evidence draws deterministic, so they describe the historical
+instrument, not the current one.
+
 Take the median before you act on a change, and before you tell anyone a draft
 got better. Take it on the **submitted fraction** — medianing `transition` buys
 you a stable reading of a number that is 92% constant anyway (step 4).

@@ -95,7 +95,7 @@ try: d=json.load(sys.stdin)
 except Exception: sys.exit(0)
 print(((d.get('data') or d).get('error') or d.get('error') or {}).get('code',''))
 " 2>/dev/null || echo "")
-  if [ "$CODE" = "invalid_argument" ] || [ "$CODE" = "forbidden" ] || [ "$CODE" = "unauthorized" ]; then
+  if [ "$CODE" = "invalid_argument" ] || [ "$CODE" = "forbidden" ] || [ "$CODE" = "unauthorized" ] || [ "$CODE" = "feature_disabled" ]; then
     echo "ERROR: search refused ($CODE): $RESP" >&2
     exit 1
   fi
