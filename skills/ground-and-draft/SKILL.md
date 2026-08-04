@@ -32,12 +32,6 @@ actually said rather than in what the model assumes they would say.
      evidence/$(date +%F)-launch.json 25 \
      '[{"field":"speaker_type","op":"eq","value":"external"}]'
    ```
-   - **Scope the pull to match the run.** `grade-and-report` passes `audience`
-     and `account` to `evals.run` (`_lib.sh: inputs_from_file`), and those scope
-     what the judge retrieves. Ground corpus-wide and then grade with an
-     `audience` and you drafted against one population and are measured against
-     another — the difference lands on you as a grounding failure with no
-     obvious cause.
    - **`speaker_type: external` belongs on nearly every pull.** It is step 3
      below, enforced at retrieval instead of eyeballed after.
    - **Account scoping is `company_id` (`eq` / `in`)**, and only when the account
