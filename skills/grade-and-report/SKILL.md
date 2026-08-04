@@ -62,16 +62,26 @@ renders, so the two cannot disagree.
    - **Not the Improved row, not `lift`, not `transition`.** The improved side
      is a rewrite the eval writes for itself, and its own field says so:
      `improved.usage` is `illustration_only`. Read it for the _wording_ it
-     reaches for; do not read its number. Measured over 89 live runs: the
-     improved side clears the 4.2 bar on **92%** of them, so it is close to a
-     constant — and because `lift` is `improved − submitted`, that makes `lift`
-     **−0.90 correlated with your own draft's score**. A big lift means your
+     reaches for; do not read its number. Measured at eval_version 2.9.0 (n =
+     89 runs / 40 distinct messages, one tenant): the improved side clears the
+     4.2 bar on **92%** of them, so it is close to a constant — and because
+     `lift` is `improved − submitted`, that makes `lift` **−0.90 correlated
+     with your own draft's score** on that same run set. A big lift means your
      draft scored low, not that the rewrite added much. The noise-floor filter
      does not fix this: restricted to the runs where `lift_reportable` is
-     `true`, the correlation is still **−0.88**. `transition` inherits the same
-     problem — its first half is the submitted verdict by definition, and its
-     second half is a 92% constant. **Use the submitted fraction. It is the
-     only number on the card that is about your writing.**
+     `true`, the correlation is still **−0.88**. `transition` inherits the
+     same problem — its first half is the submitted verdict by definition,
+     and its second half is a 92% constant. **Use the submitted fraction. It
+     is the only number on the card that is about your writing.**
+
+     Bounds on the 92%: the same statistic read 71.0% at eval_version 2.7.0,
+     on a message population that overlaps with but is not identical to the
+     89-run 2.9.0 population above. The two readings are separate
+     measurements taken at different versions on partly different message
+     populations — not a controlled before/after of the same experiment — so
+     do not read the difference between them as caused by the version bump.
+     Live is now eval_version 2.12.0; neither reading has been re-taken
+     there.
 
 5. **Fix.** Apply the suggestions to the draft _and_ to the prompt, then re-run
    as a **new** run folder. Runs are immutable.
@@ -132,7 +142,9 @@ instrument, not the current one.
 
 Take the median before you act on a change, and before you tell anyone a draft
 got better. Take it on the **submitted fraction** — medianing `transition` buys
-you a stable reading of a number that is 92% constant anyway (step 4).
+you a stable reading of a number that read 92% at eval_version 2.9.0 anyway
+(see step 4 for the bounds on that figure, including the 71.0% reading at
+2.7.0 and why the two are not a before/after).
 
 ## Gotchas
 
