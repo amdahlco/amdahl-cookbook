@@ -86,8 +86,16 @@ renders, so the two cannot disagree.
      measurements taken at different versions on partly different message
      populations — not a controlled before/after of the same experiment — so
      do not read the difference between them as caused by the version bump.
-     Live is now eval_version 2.12.0; neither reading has been re-taken
-     there.
+
+     Re-taken at eval_version 2.15.0, and the property holds: over a 90-day
+     window of 410 scored runs (one tenant, all message populations that
+     workspace ran), `improved_mean_15` is **4.24** against the same 4.2 bar
+     while `submitted_mean_15` is **2.38**. Read that as corroboration, not
+     as a third value of the 92%: a mean is not a pass rate, and this is a
+     different and larger population. What it establishes is the thing the
+     92% was evidence for — the improved side still sits on the bar, three
+     versions on — so the guidance above stands rather than needing a fresh
+     correlation. The pass rate itself has not been re-taken at 2.15.0.
 
 5. **Fix.** Apply the suggestions to the draft _and_ to the prompt, then re-run
    as a **new** run folder. Runs are immutable.
