@@ -8,7 +8,7 @@
 #
 # One run is not a measurement. A single fingerprinted draft graded 15 times on
 # BYTE-IDENTICAL input spanned `overall_score` 0.0 to 1.0 (sd 0.244) and produced
-# all four transitions. That was measured BEFORE 2.13.0, so the field it spans is
+# all four transitions. That was measured BEFORE 2.14.0, so the field it spans is
 # the pre-repoint blend rather than the submitted side - the noise is real and is
 # why this script exists, but it is not a spread on your own draft's grade.
 # Across 18 repeat groups the submitted draft's pass/fail flipped 22% of the time
