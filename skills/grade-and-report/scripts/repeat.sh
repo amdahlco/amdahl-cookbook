@@ -7,9 +7,12 @@
 # ## Why this exists
 #
 # One run is not a measurement. A single fingerprinted draft graded 15 times on
-# BYTE-IDENTICAL input spanned an overall_score of 0.0 to 1.0 (sd 0.244) and
-# produced all four transitions. Across 18 repeat groups the submitted draft's
-# pass/fail flipped 22% of the time and the transition changed 33% of the time.
+# BYTE-IDENTICAL input spanned `overall_score` 0.0 to 1.0 (sd 0.244) and produced
+# all four transitions. That was measured BEFORE 2.13.0, so the field it spans is
+# the pre-repoint blend rather than the submitted side - the noise is real and is
+# why this script exists, but it is not a spread on your own draft's grade.
+# Across 18 repeat groups the submitted draft's pass/fail flipped 22% of the time
+# and the transition changed 33% of the time.
 #
 # The mechanism is not sloppiness, it is quantization: five binary rubric lines
 # put `score_15` on six positions {1.0, 1.8, 2.6, 3.4, 4.2, 5.0} with the bar at

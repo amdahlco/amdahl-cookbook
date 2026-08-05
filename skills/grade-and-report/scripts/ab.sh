@@ -9,10 +9,14 @@
 # ## Read this before changing which number it prints
 #
 # The obvious number to A/B on is `compare.score_delta`, and it is the wrong
-# one. `overall_score` is a mean over graders judging TWO DIFFERENT artifacts -
-# a hygiene check on your text, and the blinded judge's read of the REWRITE - so
-# a delta between two of them is mostly rewrite-versus-rewrite. On a live pinned
-# pair whose true draft delta was -0.8 (2.6 -> 1.8), that field reported -0.167.
+# one. It differences `overall_score`, whose meaning changed at `eval_version`
+# 2.13.0. Before that it was a mean over graders judging TWO DIFFERENT artifacts
+# - a hygiene check on your text, and the blinded judge's read of the REWRITE -
+# so a delta between two of them was mostly rewrite-versus-rewrite: on a live
+# pinned pair whose true draft delta was -0.8 (2.6 -> 1.8), it reported -0.167.
+# From 2.13.0 the field reports the submitted side, so a delta between two NEW
+# runs is right - but a pair that SPANS the version differences two different
+# quantities, and the compare endpoint does not check versions.
 #
 # The submitted draft's own grade is `report.headline.submitted.score_15`, which
 # is what this compares. `evidence_overlap` from the compare endpoint is still
