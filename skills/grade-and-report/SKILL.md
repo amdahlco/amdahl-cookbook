@@ -18,13 +18,19 @@ rewrite's score, the bar, the transition, the customer quotes, and any caveat.
 Show that block as written.
 
 This is not a style preference. The eval reports two different artifacts — your
-draft and a rewrite Amdahl generated — and the headline `overall_score` mostly
-follows the _rewrite_. Summarising a run in your own words is precisely where
-those get merged, and the result is a confident sentence about the user's copy
-built on a number that was never about their copy. Live example: run
-`783c94c1` carries `overall_score: 1.0` for a draft that passed **2 of 5**
-checks. The card says 2.6/5, 2 of 5. Your summary would have said "scored
-perfectly".
+draft and a rewrite Amdahl generated — and the run's `pass` / `fail` bucket
+follows the _rewrite_ while the score follows your draft. Summarising a run in
+your own words is precisely where the two get merged, and the result is a
+confident sentence about the user's copy built on a number that was never about
+their copy. Live example: run `783c94c1` carries `overall_score: 1.0` for a
+draft that passed **2 of 5** checks. The card says 2.6/5, 2 of 5. Your summary
+would have said "scored perfectly".
+
+`overall_score` was re-pointed at the submitted draft at `eval_version` 2.13.0,
+so on a run at that version or later it IS your draft's grade — but on anything
+older it is still the blend above, and the field gives you no way to tell which
+you are holding except `eval_version`. The card and `report.headline.*` are
+labelled on every run, which is why they stay the thing to read.
 
 If you need a number in your own prose — to compare runs, to decide whether to
 iterate — read `report.headline.*`, which is the same derivation the card
@@ -62,26 +68,16 @@ renders, so the two cannot disagree.
    - **Not the Improved row, not `lift`, not `transition`.** The improved side
      is a rewrite the eval writes for itself, and its own field says so:
      `improved.usage` is `illustration_only`. Read it for the _wording_ it
-     reaches for; do not read its number. Measured at eval_version 2.9.0 (n =
-     89 runs / 40 distinct messages, one tenant): the improved side clears the
-     4.2 bar on **92%** of them, so it is close to a constant — and because
-     `lift` is `improved − submitted`, that makes `lift` **−0.90 correlated
-     with your own draft's score** on that same run set. A big lift means your
+     reaches for; do not read its number. Measured over 89 live runs: the
+     improved side clears the 4.2 bar on **92%** of them, so it is close to a
+     constant — and because `lift` is `improved − submitted`, that makes `lift`
+     **−0.90 correlated with your own draft's score**. A big lift means your
      draft scored low, not that the rewrite added much. The noise-floor filter
      does not fix this: restricted to the runs where `lift_reportable` is
-     `true`, the correlation is still **−0.88**. `transition` inherits the
-     same problem — its first half is the submitted verdict by definition,
-     and its second half is a 92% constant. **Use the submitted fraction. It
-     is the only number on the card that is about your writing.**
-
-     Bounds on the 92%: the same statistic read 71.0% at eval_version 2.7.0,
-     on a message population that overlaps with but is not identical to the
-     89-run 2.9.0 population above. The two readings are separate
-     measurements taken at different versions on partly different message
-     populations — not a controlled before/after of the same experiment — so
-     do not read the difference between them as caused by the version bump.
-     Live is now eval_version 2.12.0; neither reading has been re-taken
-     there.
+     `true`, the correlation is still **−0.88**. `transition` inherits the same
+     problem — its first half is the submitted verdict by definition, and its
+     second half is a 92% constant. **Use the submitted fraction. It is the
+     only number on the card that is about your writing.**
 
 5. **Fix.** Apply the suggestions to the draft _and_ to the prompt, then re-run
    as a **new** run folder. Runs are immutable.
@@ -109,12 +105,14 @@ bash scripts/ab.sh v1.md v2.md runs/ab-hook "VP of Marketing"
 Grades v1 fresh, grades v2 **pinned to v1's evidence**, and reports the delta
 between the two **submitted** drafts.
 
-> **Do not A/B on `compare.score_delta` or on `overall_score`.** Those are
-> rewrite-versus-rewrite. On a live pinned pair whose true draft delta was
-> **−0.8** (2.6 → 1.8), `score_delta` reported **−0.167**. `ab.sh` reads
-> `report.headline.submitted.score_15` on each side instead. `evidence_overlap`
-> from the compare endpoint _is_ correct and worth reading — it tells you the
-> pin held.
+> **Do not A/B on `compare.score_delta`.** It differences `overall_score`, and
+> that field's meaning changed at `eval_version` 2.13.0: before it, the delta was
+> mostly rewrite-versus-rewrite — on a live pinned pair whose true draft delta
+> was **−0.8** (2.6 → 1.8), it reported **−0.167** — and a pair that SPANS that
+> version differences two different quantities, which the endpoint does not
+> check. `ab.sh` reads `report.headline.submitted.score_15` on each side instead,
+> which means one thing on both sides of the line. `evidence_overlap` from the
+> compare endpoint _is_ correct and worth reading — it tells you the pin held.
 
 Pinning matters because a second search returns different quotes, so an
 unpinned difference could be your edit or could be retrieval.
@@ -129,7 +127,10 @@ Grades the same draft N times, drops degenerate runs, reports the **median** and
 the range plus a pass **rate**.
 
 A single fingerprinted draft graded 15 times on byte-identical input spanned
-`overall_score` 0.0 → 1.0 (sd 0.244) and produced all four transitions. Across
+`overall_score` 0.0 → 1.0 (sd 0.244) and produced all four transitions. That was
+measured **before** 2.13.0, so the field it spans is the pre-repoint blend, not
+the submitted side — the noise it demonstrates is real and is why this script
+exists, but do not read it as a spread on your own draft's grade. Across
 18 repeat groups the submitted pass/fail flipped 22% of the time and the
 transition changed 33%. The cause is quantization — five binary lines, six
 possible scores, the bar at 4.2, so one dimension flipping flips the verdict —
@@ -142,9 +143,7 @@ instrument, not the current one.
 
 Take the median before you act on a change, and before you tell anyone a draft
 got better. Take it on the **submitted fraction** — medianing `transition` buys
-you a stable reading of a number that read 92% at eval_version 2.9.0 anyway
-(see step 4 for the bounds on that figure, including the 71.0% reading at
-2.7.0 and why the two are not a before/after).
+you a stable reading of a number that is 92% constant anyway (step 4).
 
 ## Gotchas
 
