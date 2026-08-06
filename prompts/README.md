@@ -113,7 +113,6 @@ The developer-facing view of the engine the prompts above run on: how to drive A
 - [Saved agents — reuse a prompt](agent-platform/saved-agents.md) — the agent library: create a named agent, pin it in a Chat, schedule it as a Routine.
 - [Evals — grade a message against customer voice](agent-platform/evals.md) — `evals.run` (MCP `grade`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown, the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval.
 - [Amdahl evals in LangSmith](agent-platform/evals-in-langsmith.md) — wire the eval as a pipeline gate: `evals.run` with `mode: "gate"` (grade-only, no rewrite), the `/gate` read, a copy-paste LangSmith custom evaluator, and the trap list for anyone gating a pipeline on eval numbers.
-- [Grade cold outbound with web evidence](agent-platform/evals-external-evidence.md) — the external tier: `include_external` on `evals.run` searches the public web and grades market claims against `external`-tier quotes — the answer to the LangSmith trap list's cold-prospect gap. Scope gate, pin conflict, licence, cap clamp.
 - [The answer envelope](agent-platform/answer-envelope.md) — render a Chat answer in your own UI: the seven `content_block` types, `follow_ups`, and the `amdahl:q` / `amdahl:cite` link grammar.
 
 **End-to-end use cases + reference:**
