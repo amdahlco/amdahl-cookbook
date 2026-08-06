@@ -20,13 +20,17 @@ A run is **read-only by construction** — it only ever dispatches read ops (the
 
 | | |
 |---|---|
-| Grade a message | `evals.run` — `POST /evals/run` — MCP `evals` tool, action `run` — scope `evals:execute` |
-| Browse evals | `GET /evals` (`eval://list`), `GET /evals/:slug` (`eval://<slug>`) — scope `evals:read` |
-| Poll runs | `GET /eval-runs` (`eval_run://list`), `GET /eval-runs/:id` (`eval_run://<id>`) — scope `evals:read` |
+| Grade a message | `evals.run` — `POST /evals/run` — MCP `evals` action `run` — scope `evals:execute` |
+| **Read the report card** | **`GET /eval-runs/:id/report`** (`eval_run://<id>/report`) — scope `evals:read`. Server-rendered markdown to paste, plus the same numbers machine-readable. **Prefer this when a human will read the result** — see [The report card](#report-card) |
+| Poll a run | `GET /eval-runs/:id` (`eval_run://<id>`) — MCP `evals` action `status` (pass `wait_ms` up to 30000 to block instead of tight-looping) — scope `evals:read` |
+| List runs | `GET /eval-runs` (`eval_run://list`) — MCP `evals` action `list_runs` — scope `evals:read` |
+| Browse evals | `GET /evals` (`eval://list`), `GET /evals/:slug` (`eval://<slug>`) — MCP `evals` actions `list` / `get` — scope `evals:read` |
 | Grader kinds | `GET /grader-kinds` (`grader_kind://list`) — scope `evals:read` |
 | Dry-run a definition | `POST /evals/validate` — MCP `evals` action `validate` — scope `evals:read`, writes nothing |
 
-> **Prerequisite — Agent Platform v2.** Like the rest of this section, the whole eval surface is gated per workspace by the `agent_v2` flag. On a flag-off workspace the MCP `evals` tool + the `eval://` / `eval_run://` / `grader_kind://` schemes are not registered, and a REST call returns `403` with `error.code: "feature_disabled"`.
+> **On MCP, the reads are tool ACTIONS, not just resource URIs.** `evals.run` is async-handle, so a run id is useless without a read — and the MCP spec does not require a client to implement `resources/*`, so a tools-only client could once start a graded run and then have no way to reach the verdict. `status` / `list_runs` / `list` / `get` are thin adapters over the same reads the URIs serve, added so that dead end is closed. If your client speaks `resources/*`, either channel works and they cannot disagree. (The tool carries a few more actions than this table — call it with no action, or read its schema, for the current list.)
+
+> **No prerequisite — evals ships to every workspace.** This surface is **not** gated. It grades pasted content against your own customer quotes and reaches only read operations that predate the Agent Platform program, so it was deliberately exempted from that program's flag, and the flag itself is now retired. Earlier versions of this page named an `agent_v2` prerequisite and a `403 feature_disabled`; **neither exists** — if you built a capability check around that error, delete it. Authoring is a separate matter and is still closed (next note).
 
 > **Authoring is closed during the beta.** `evals.create` / `evals.update` / `evals.delete` currently refuse on **every** protocol — REST, MCP and the agent tool surface all dispatch into the same handlers, so one guard covers them all. Running, reading and the write-free `validate` dry-run are unaffected. Contact the Amdahl team if you need a custom eval; [Author your own eval](#author) below describes the shape it will take when the gate opens.
 
@@ -102,6 +106,23 @@ evals run
 
 The only `success: false` shape is input validation (`invalid_argument` — an unknown `eval` slug, or a missing required input field).
 
+## <a id="report-card"></a>The report card — read this first
+
+If a **person** is going to read the result, do not assemble the numbers yourself:
+
+```
+GET /eval-runs/b1c2d3e4-.../report
+Authorization: Bearer <api-key with evals:read>
+
+->  { "markdown": "...", "headline": { ... }, "run_id": "...", "eval_slug": "...", "status": "complete" }
+```
+
+`markdown` is server-rendered and meant to be **pasted as written**; `headline` carries the same numbers machine-readable, so a script and the pasted block cannot disagree.
+
+This is the one read on this API that ships prose, deliberately. The eval grades **two** artifacts — your draft and a rewrite it produced — and `overall_score` mostly follows the rewrite, so an LLM handed a raw verdict narrates its own conclusion and the before/after (the thing the run exists to show) is the first casualty. **An LLM pasting numbers it did not compute cannot reshape them.** The card also applies the rendering rules below for you: it prints a lift only when it is reportable, labels a simulated "before" as simulated, renders an ungraded side as `not graded` rather than a zero, and shows the pass fraction beside the score. It renders on **every** run state, so you never branch on an empty body.
+
+Assemble from the raw verdict when a *program* consumes it — a gate, a dashboard, a store.
+
 ## Poll for the scorecard
 
 ```
@@ -110,6 +131,8 @@ Authorization: Bearer <api-key with evals:read>
 ```
 
 Read `status`; when it is `complete`, the run resource carries the report. A missing / cross-tenant id returns null.
+
+**Don't tight-loop.** On MCP, `evals status` takes a `wait_ms` (capped at 30000) and blocks until the run settles, returning the live status if it hasn't. A budget past the cap is clamped, never rejected, and the wait is an upper bound on added latency rather than that bound plus one poll interval.
 
 The report lives on the `improvement_loop` grader's result, under `verdict.cases[].graders[].improvement`. Trimmed to the load-bearing fields:
 
@@ -150,14 +173,15 @@ The report lives on the `improvement_loop` grader's result, under `verdict.cases
                   ],
                   "good_examples": []
                 },
+                "before_paired": { "usage": "as_provided", "score_15": 2.6, "text": "Hi Dana — most VPs of Sales ...", "dimensions": [], "quotes": [], "good_examples": [] },
                 "after": { "usage": "illustration_only", "score_15": 4.5, "text": "Hi Dana — the VPs of Sales we work with ...", "dimensions": [], "quotes": [], "good_examples": [] },
-                "lift": 0.22
+                "lift": 0.475
               },
               {
                 "facet": "prompt",
                 "before": { "usage": "as_provided", "score_15": 2.8, "text": "Write a 3-sentence cold email ...", "dimensions": [], "quotes": [], "good_examples": [] },
-                "after": { "usage": "reusable_prompt", "score_15": 4.4, "text": "Before drafting, look up what this account said ...", "dimensions": [], "quotes": [], "good_examples": [] },
-                "lift": 0.32
+                "after": { "usage": "reusable_prompt", "score_15": 4.8, "text": "Before drafting, look up what this account said ...", "dimensions": [], "quotes": [], "good_examples": [] },
+                "lift": 0.5
               }
             ],
             "suggestions": [
@@ -169,6 +193,7 @@ The report lives on the `improvement_loop` grader's result, under `verdict.cases
                 "detail": "Replace with the CRM-says-on-track framing.", "why": "A RevOps lead said the dashboards are fine.",
                 "quotes": [{ "text": "honestly the dashboards are fine, it's that nobody reads the calls", "stance": "contradicts" }] }
             ],
+            "lift_reportable": true,
             "coverage": { "total_chars": 148, "graded_chars": 148, "truncated": false, "strategy": "verbatim", "sections": [] },
             "grader_meta": { "blinded": true, "evidence_frozen": true, "evidence_quotes": 14, "model_calls": 4 }
           }
@@ -186,10 +211,14 @@ The load-bearing fields:
 - **`usage`** — what each artifact **is**, and the field to render your framing from: `as_provided` (what you sent), `simulated_specimen` (written so a prompt-only run had something to grade — nobody sent it), `reusable_prompt` (**the takeaway** — keep and re-run it), `illustration_only` (an example produced so the score difference could be measured — *evidence the prompt is better, not a message to send*). Treat an unknown value as `as_provided`.
 - **`quotes[]`** — the receipts, per facet: real customer utterances `{ text, source, stance }`, `stance` ∈ `supports` | `contradicts`. **Never fabricated** — the model may only cite ids from the retrieved set and the server hydrates them back to verbatim text. A `contradicts` quote is the sharpest edit note in the report.
 - **`suggestions[]`** — surgical, anchored edits: `kind` ∈ `keep` | `add` | `strengthen` | `remove` | `reorder`. `anchor_quote` is **verified server-side to be a literal substring** of your text before it ships, so a suggestion can never quote back something you did not write; `anchor_offset` is that verified position (which is what makes it usable inside a 50k-char document where a phrase repeats). Always present in `advisory` mode. **`keep` matters** — a report that is only criticism tells you nothing about what to protect on the next edit.
+- **`lift` — do NOT recompute it as `after − before`.** The lift is a difference of two blocks from **one** judge call. When a facet carries **`before_paired`**, the absolute score on `before` came from a *separate, unpaired* call, and the lift is `after.score − before_paired.score`. Differencing the two you can see compares two different judge calls and reports cross-call noise as improvement — the exact noise the pairing exists to remove. Render `before` as the level ("your draft scored 3.4") and `lift` as reported; if you must show the arithmetic, show the basis. Anything that walks a facet's quotes must include `before_paired` too, or a quote only that call cited goes missing. Absent on most runs, in which case `before` *is* the paired block and the subtraction is honest.
+- **`lift_reportable`** — a boolean gate, and the field that decides whether a lift is a **figure** or a **sentence**. A lift below the instrument's measured run-to-run spread is indistinguishable from noise, so when this is not `true`, render "no measurable change" rather than a small confident number. A UI that prints `lift` unconditionally will report noise as a win on the runs where the copy barely moved.
 - **`coverage`** — how much of a long prompt was graded: `{ total_chars, graded_chars, truncated, strategy, sections[] }`. When `truncated` is true, **say so in your UI** — the sections the grader could not see are listed, and nothing in the report makes a claim about them.
 - **`audience`** — what cohort the report was graded against, or why it wasn't. A **discriminated union on `status`** (`resolved` | `abstained`), so branch on `status` before reading `dimensions` — it is present on some abstains too. Full contract in [Audience scoping](#audience).
 - **`tool_kit`** — `{ callable, out_of_scope }`: how much of the read surface your API key covers. `research_steps` are drawn only from the callable set, so every suggested call runs as written for the key that produced the report.
 - **`grader_meta`** — provenance: `blinded` (both candidates scored unlabelled in one pass), `evidence_frozen` (same quote set across every round), `evidence_quotes`, `model_calls`.
+
+> **Read the message facet's numbers above carefully — they are the trap.** `before.score_15` is **3.4** and `after.score_15` is **4.5**, but the reported `lift` is **0.475**, not the `(4.5 − 3.4) / 4 = 0.275` you get by subtracting what you can see. Both are right: `before` is the *absolute* read of your draft, and the lift is measured against `before_paired` (**2.6**), the block the paired judge call produced alongside the improvement. `lift` is on the normalized [0, 1] axis where one rubric line of five is `0.2`; `score_15` is `1 + 4 × score`. Recomputing the lift from the two visible scores would here have produced a number that is both wrong *and* below the reportability floor — a real improvement rendered as "no measurable change".
 
 Every field below `before` / `after` / `lift` / `what_changed` is **optional on the wire**, so a report from an older run still parses — branch on presence rather than assuming.
 
@@ -354,11 +383,14 @@ Draft message:
 """
 Audience: {e.g. "VP of Sales, mid-market SaaS"}
 
-Use the prompt-and-message-eval eval, start it, then poll the run resource until it completes. When it's done,
-give me, in this order: (1) the TRANSITION — what my draft scored vs what the improved version scored,
-and whether that moved it past the bar; (2) the anchored suggestions, "keep" ones first; (3) the
-per-facet breakdown for the prompt and the message SEPARATELY, with the customer quotes it pulled
-(call out any that CONTRADICT the message).
+Use the prompt-and-message-eval eval, start it, then poll with the status action (pass wait_ms rather
+than looping). When it completes, FETCH THE REPORT CARD (eval_run://<id>/report) and paste its markdown
+verbatim — do not re-derive the numbers or rewrite the headline. Then add, in this order: (1) the anchored
+suggestions, "keep" ones first; (2) the per-facet breakdown for the prompt and the message SEPARATELY,
+with the customer quotes it pulled (call out any that CONTRADICT the message).
+
+Do not compute a lift yourself by subtracting the two scores you can see — when the facet carries
+before_paired those are different judge calls, and the reported lift is already the right one.
 
 Be explicit about which produced artifact I should keep: the improved PROMPT is the reusable takeaway,
 and the improved MESSAGE is an illustration of what that prompt produces — not an email to send as-is.
@@ -370,6 +402,8 @@ not_applicable, tell me we don't have customer data to grade against yet — don
 
 - **Both halves are graded — send both.** The prompt and the message get their own rubric, score and quotes. Sending only one still works (the grader simulates the missing half), but you learn less: a prompt-only run cannot tell you how *your* copy landed, and a message-only run cannot tell you whether the instruction behind it generalizes.
 - **Read the transition before the score.** `input_verdict: fail → improved_verdict: pass` is the run succeeding. Rendering one collapsed pass/fail bit is what makes a working run look broken to whoever reads your UI.
+- **Never recompute the lift.** `after − before` is the wrong subtraction whenever `before_paired` is present: it differences two separate judge calls and reports their disagreement as improvement. Show `lift` as reported, and gate it on `lift_reportable` — below the measured noise floor, "no measurable change" is the honest render, and a small confident number is not.
+- **A person reads the report card; a program reads the verdict.** `GET /eval-runs/:id/report` hands back markdown to paste plus the same numbers machine-readable. Summarising a raw verdict for a human is where the before/after gets lost, because `overall_score` mostly follows the *rewrite*.
 - **`reusable_prompt` is the takeaway; `illustration_only` is not.** Branch your UI on `usage`, not on position in the payload. The improved message exists so the lift could be measured — shipping it verbatim as an email is the one misread this field exists to prevent.
 - **The `contradicts` quote is the whole point.** A `rule` check only says "well-formed." The cited quotes are what tell you a buyer says the *opposite* of your copy — read those first.
 - **Big prompt? Use `advisory` and check `coverage`.** Anchored suggestions apply to a doc nobody is going to replace, and `coverage.truncated` tells you when the grade covers only part of it. Surface that caveat rather than swallowing it.
@@ -381,6 +415,6 @@ not_applicable, tell me we don't have customer data to grade against yet — don
 ## See also
 
 - [Stress-test a message](../positioning-messaging/stress-test-a-message.md) — the paste-ready prompt version of this grader, for when you're working in chat rather than code.
-- [Fast lane — `search.run`](fast-lane-search.md) — the synchronous door the `sor_anchored` grader's anchor query runs through.
+- [Fast lane](fast-lane-search.md) — the synchronous read lane. (The `sor_anchored` grader's anchor is a `data.query`, not this lane; the previous wording said otherwise.)
 - [The answer envelope](answer-envelope.md) — how to render the quotes and rewrite in your own UI.
 - [Agent platform overview](README.md) — the two doors, the flag prerequisite, the scope table.
