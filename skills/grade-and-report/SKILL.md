@@ -172,6 +172,62 @@ you a stable reading of a number that read 92% at eval_version 2.9.0 anyway
 (see step 4 for the bounds on that figure, including the 71.0% reading at
 2.7.0 and why the two are not a before/after).
 
+## Grading a batch
+
+```bash
+bash scripts/batch.sh launch-q3.tsv runs/q3 3
+```
+
+Grades a manifest of drafts at bounded concurrency, writing each item to
+`runs/q3/<id>/{report.md,scorecard.json,grade.log}`.
+
+**The manifest is TSV** - one item per line, blank lines and lines starting with
+`#` ignored so you can comment an item out without deleting it:
+
+```
+id <TAB> file [<TAB> audience] [<TAB> account]
+```
+
+`id` is the directory name under the run-dir and the handle you re-run with, so
+keep it filesystem-safe. A `.json` file is sent as the inputs object **verbatim**;
+anything else is wrapped as `{"message": <contents>}`, the same rule `grade.sh`
+uses. TSV rather than CSV because audience and account are prose that contains
+commas far more often than tabs.
+
+**Concurrency defaults to 3**, and the number to think about is requests per
+minute, not workers. With the blocking read in `_lib.sh` a single run costs
+roughly 1 submit + ~5 blocking reads + 2 fetches over its 2-3 minutes, so 3
+workers sit around 10 req/min - an order of magnitude under the 100/min per-IP
+limit, with headroom for the retries a bad minute needs. Every worker you add
+also adds its share of the retry traffic when things go wrong.
+
+The transport honors 429 `Retry-After` and circuit-breaks a dead endpoint rather
+than grinding against it: once the breaker opens the batch stops **launching**
+new items and says so, leaving in-flight items alone (they may be one poll from
+finishing).
+
+**Re-running only does the casualties.** An item whose `report.md` already exists
+is skipped, so after a partial batch you fix whatever broke and run the exact
+same command - it backfills the failures without re-grading (or re-paying for)
+what already landed. Failed ids are printed at the end as a space-separated list,
+ready to paste into a `grep` for a smaller manifest. Delete an item's directory
+to force a re-grade.
+
+## Config
+
+| Env var | Default | What it does |
+| --- | --- | --- |
+| `AMDAHL_API_KEY` | - | Workspace API key. `AMDAHL_MCP_API_KEY` is accepted too. |
+| `AMDAHL_API_BASE` | production | Point at a non-production workspace. |
+| `AMDAHL_EVAL_SLUG` | `prompt-and-message-eval` | Which eval to run. |
+| `AMDAHL_WAIT_MS` | `30000` | How long the server holds each read open (`?wait_ms=`). `0` falls back to tight polling, only useful against a server that does not support it. |
+| `AMDAHL_POLL_ATTEMPTS` | `12` | Poll ceiling, now counted in **blocking reads**, not tight polls: 12 x 30s ≈ 6 minutes. The name is unchanged so an existing override still means "the ceiling". |
+| `AMDAHL_POLL_INTERVAL` | `15` | Gap between reads, only used when `AMDAHL_WAIT_MS=0`. |
+| `AMDAHL_MAX_RETRIES` | `6` | Attempts per call before it gives up. |
+| `AMDAHL_BACKOFF_CAP` | `60` | Ceiling on our own backoff, in seconds. A server-sent `Retry-After` is honored past it - the cap governs guesswork, not an explicit instruction. |
+| `AMDAHL_CIRCUIT_THRESHOLD` | `5` | Consecutive hard failures (per call, not per attempt) before the breaker opens. |
+| `AMDAHL_BREAKER_FILE` | keyed to `$PPID` | Breaker state file. Workers under one `batch.sh` share one by default; set it explicitly to share across separate invocations. |
+
 ## Gotchas
 
 - **A run is queued.** Budget 1–3 minutes; the scripts poll for you.

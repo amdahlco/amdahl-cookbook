@@ -63,10 +63,18 @@ for i in $(seq 1 "$N"); do
     echo "{\"_drop\":\"finished_$STATUS\"}" >> "$SAMPLES"
     continue
   fi
+  # Fetched separately from the parse because `api_get` now RETURNS NON-ZERO on a
+  # hard failure (circuit open, or retries exhausted), and under `set -e` an
+  # inline `api_get | jsonpath` would abort the whole N-sample loop instead of
+  # costing this one sample.
+  if ! REPORT=$(api_get "eval-runs/$RID/report"); then
+    echo '{"_drop":"report_fetch_failed"}' >> "$SAMPLES"
+    continue
+  fi
   # A null headline means the run completed but produced no before/after (an
   # abstain, or a grader mix with no improvement report). `jsonpath` prints
   # nothing for a null, so the fallback keeps the one-line-per-sample invariant.
-  HEADLINE=$(api_get "eval-runs/$RID/report" | jsonpath data.report.headline)
+  HEADLINE=$(printf '%s' "$REPORT" | jsonpath data.report.headline)
   if [ -z "$HEADLINE" ]; then HEADLINE='{"_drop":"no_comparison"}'; fi
   echo "$HEADLINE" >> "$SAMPLES"
 done
