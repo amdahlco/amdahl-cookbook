@@ -43,6 +43,13 @@ renders, so the two cannot disagree.
    Add `audience` (e.g. `"VP of Marketing"`) and, when the account is in your
    corpus, `account`, to scope the evidence. Homepage/hero copy runs unscoped.
 
+   You do not have to guess whether an account is in your corpus. Run without
+   one and the verdict comes back with `requires_input` when scoping would have
+   helped — naming the field and, when a company in your draft resolves against
+   your own data, the exact value to re-run with and how many utterances sit
+   behind it. Nothing is retrieved using that suggestion; it only takes effect
+   when you send it.
+
 2. **Grade.**
 
    ```bash
