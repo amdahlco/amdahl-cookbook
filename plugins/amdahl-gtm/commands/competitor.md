@@ -7,7 +7,7 @@ Run the Amdahl "competitor deep-dive" play for **$ARGUMENTS**. Use the connected
 
 **Wave 1 — gather in parallel:**
 - Public posture → `agents` { action: start_chat }: their positioning, pricing posture, recent launches, funding, messaging, who they say they're for — and the divergence against what your buyers say about them.
-- Call reality → `search` { action: query, semantic } + `search` { action: run }: every time this competitor comes up on our calls — who raised them, in what context (incumbent, active eval, late entrant), what buyers actually said about them. Pull verbatim quotes with role + date.
+- Call reality → `search` { action: query, mode: "semantic" } and `search` { action: query, mode: "fuzzy" }: every time this competitor comes up on our calls — who raised them, in what context (incumbent, active eval, late entrant), what buyers actually said about them. Pull verbatim quotes with role + date.
 - Trend → `search` { action: query } with `group_by` over time: are they showing up earlier / later, more / less, in which segments?
 
 If the synthesis needs real decomposition (many segments, long history), escalate to `agents` { action: start_chat } with the whole ask. *Pre-rollout fallback:* on a legacy session (`data` / `context` / `external_search` tools), use `external_search` { action: enrich_company or search }, `data` cluster_search + query.

@@ -6,7 +6,7 @@
 
 ## Why this matters
 
-Most VoC questions have two halves. The first half is a **count** — "how many calls raised pricing objections in the last 90 days?" — and that's a fast-lane lookup: one synchronous call, rows plus SQL, done. The second half is a **why** — "…and which themes are growing, and what's driving it?" — and no single SQL query answers that; it needs theme clustering, trend, and synthesis. The mistake is forcing the whole thing through one door. The right shape is: **fire the fast lane, and when it tells you the ask outgrew a lookup (`escalate_to_chat: true`), re-fire the same question as a Chat.** The fast lane is built to hand off — it returns `internal.status: "unsupported"` and `escalate_to_chat: true` rather than guessing at bad SQL.
+Most VoC questions have two halves. The first half is a **count** — "how many calls raised pricing objections in the last 90 days?" — and that's a fast-lane lookup: one synchronous call, rows plus SQL, done. The second half is a **why** — "…and which themes are growing, and what's driving it?" — and no single SQL query answers that; it needs theme clustering, trend, and synthesis. The mistake is forcing the whole thing through one door. The right shape is: **fire the fast lane, and when it tells you the ask outgrew a lookup (`escalate_to_chat: true`), re-fire the same question as a Chat.** The fast lane is built to hand off — it returns `detail.internal.status: "unsupported"` and `detail.escalate_to_chat: true` rather than guessing at bad SQL.
 
 ## Step 1 — the countable half (fast lane)
 
@@ -15,32 +15,36 @@ Ask the concrete version first. It's a lookup, so it comes back in one blocking 
 **REST:**
 
 ```
-POST /search
+POST /search/query
 Authorization: Bearer <api-key with data:read>
 Content-Type: application/json
 
-{ "query": "How many calls in the last 90 days raised a pricing objection? Break it down by month.", "mode": "internal" }
+{ "query": "How many calls in the last 90 days raised a pricing objection? Break it down by month.", "mode": "fuzzy" }
 ```
 
 **MCP:**
 
 ```
-search run
+search query
   query = "How many calls in the last 90 days raised a pricing objection? Break it down by month."
+  mode  = "fuzzy"
 ```
 
-**What comes back** — `internal.status: "ok"`, the rows, and the query:
+**What comes back** — the rows at the top level, and the fast lane's own envelope on `detail`:
 
 ```json
 {
   "success": true,
-  "internal": {
-    "status": "ok",
-    "sql": "SELECT FORMAT_DATE('%Y-%m', occurred_at) AS month, COUNT(DISTINCT interaction_id) ... WHERE sentiment_primary = 'objection' ...",
-    "rows": [ { "month": "2026-05", "calls": 41 }, { "month": "2026-06", "calls": 58 } ],
-    "row_count": 3
+  "mode_ran": "fuzzy",
+  "results": [ { "month": "2026-05", "calls": 41 }, { "month": "2026-06", "calls": 58 } ],
+  "compiled": {
+    "sql": "SELECT FORMAT_DATE('%Y-%m', occurred_at) AS month, COUNT(DISTINCT interaction_id) ... WHERE buyer_pushback = TRUE ..."
   },
-  "escalate_to_chat": false
+  "detail": {
+    "internal": { "status": "ok", "row_count": 3 },
+    "uncovered": [],
+    "escalate_to_chat": false
+  }
 }
 ```
 
@@ -53,22 +57,26 @@ Now ask the hard version. The fast lane recognizes this isn't a single-query loo
 **REST:**
 
 ```
-POST /search
-{ "query": "Which customer objection themes are growing over the last two quarters, and what's driving each one?" }
+POST /search/query
+{ "query": "Which customer objection themes are growing over the last two quarters, and what's driving each one?", "mode": "fuzzy" }
 ```
 
-**What comes back** — the escalation signal:
+**What comes back** — the escalation signal, on `detail`:
 
 ```json
 {
   "success": true,
-  "internal": { "status": "unsupported", "sql": null, "note": "This needs theme clustering and trend synthesis, not a single query." },
-  "escalate_to_chat": true,
-  "message": "This is a multi-step investigation — ask it as a Chat."
+  "mode_ran": "fuzzy",
+  "results": [],
+  "detail": {
+    "internal": { "status": "unsupported", "sql": null },
+    "escalate_to_chat": true,
+    "message": "This is a multi-step investigation — ask it as a Chat."
+  }
 }
 ```
 
-`escalate_to_chat: true` is your branch. Don't retry the fast lane — switch doors.
+`detail.escalate_to_chat: true` is your branch. Don't retry the fast lane — switch doors.
 
 ## Step 3 — re-fire the same question as a Chat
 
@@ -99,16 +107,18 @@ GET /chats/{chat_id}/runs/{run_id}?wait_ms=30000   ->   { "run": { "status": "co
 ## The whole journey, in pseudocode
 
 ```
-r = POST /search { query }
-if r.escalate_to_chat or r.internal.status != "ok":
+r = POST /search/query { query, mode: "fuzzy" }
+if r.detail.escalate_to_chat or r.detail.internal.status != "ok":
     start = POST /chat { input: query, config: { depth: "standard" } }
     poll  start.read_url + "?wait_ms=30000"  until complete
     render run.answer     # cluster_finding cards + follow_ups
 else:
-    render r.internal.rows + r.internal.sql   # the lookup answered it
+    render r.results + r.compiled.sql   # the lookup answered it
 ```
 
-That branch — one `if` on `escalate_to_chat` — is the entire fast-lane-plus-Chat integration.
+That branch — one `if` on `detail.escalate_to_chat` — is the entire fast-lane-plus-Chat integration.
+
+⚠️ **Check `detail.uncovered` before you present the lookup as complete.** A non-empty array means part of a multi-part ask produced no answer; the numbers you did get are real, but they are not the whole question. See the [fast lane recipe](fast-lane-search.md).
 
 ## Step 4 (optional) — make it a standing digest
 
@@ -148,7 +158,7 @@ growing themes with a verbatim quote each, plus 3 follow-ups.
 
 ## See also
 
-- [Fast lane — `search.run`](fast-lane-search.md) — the door step 1 uses and the `escalate_to_chat` contract.
+- [Fast lane — `search.query`, mode `fuzzy`](fast-lane-search.md) — the door step 1 uses and the `escalate_to_chat` contract.
 - [Agentic Chat](agentic-chat.md) — the door step 3 uses.
 - [Call prep + objection handling](call-prep-objection-end-to-end.md) — the other flagship end-to-end journey.
 - The GTM prompt version: [Where they show up in our calls](../competitive-intel/where-they-show-up-in-our-calls.md).
