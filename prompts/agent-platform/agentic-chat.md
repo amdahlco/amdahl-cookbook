@@ -223,7 +223,7 @@ Use our CRM + call corpus (the divergence map), not generic web knowledge. When 
 
 ## See also
 
-- [Fast lane — `search.run`](fast-lane-search.md) — the synchronous door, and the `escalate_to_chat` handoff into this one.
+- [Fast lane — `search.query`, mode `fuzzy`](fast-lane-search.md) — the synchronous door, and the `escalate_to_chat` handoff into this one.
 - [The answer envelope](answer-envelope.md) — how to render `content_blocks` + `follow_ups`.
 - [Routines](routines.md) — put a Chat like this on a cron.
 - [Saved agents](saved-agents.md) — pin a reusable prompt into a Chat.

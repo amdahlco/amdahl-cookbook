@@ -143,7 +143,7 @@ The recipes above are paste-ready prompts. When you want work to repeat *inside 
 - **Routines** — the MCP-native way to schedule work. A Routine is a cron that fires a **Chat** (one server-side Master agent turn, in a fresh Session) each occurrence. From any connected Claude session, ask for a standing refresh ("every Monday, refresh the pipeline health report") and Claude creates it with the `agents` tool's `create_routine` action — a name, a prompt, and a cron. No DSL required, and each fire shows up as its own Session you can open and read.
 - **Workflows (blueprints)** — the fully-typed path: a **blueprint** is a typed recipe with declared inputs, outputs, and a validated step graph that the platform can version, fork, schedule, and run headlessly. Authoring and running Workflows is a **console capability** (the Workflows surface; the `blueprints` MCP tool was retired, and the endpoints behind the console aren't reachable with an external API key). It's a different thing from a cookbook prompt; the guide opens by untangling the two.
 
-> **Rollout note:** the v2 agent platform (the `search` + `agents` MCP tools, with the `blueprints` and `pages` tools retired) is enabled **per workspace**. If your connected session still lists a `blueprints` or `pages` tool and no `search`/`agents`, your workspace is on the pre-rollout surface — keep using those tools as before, and ask your Amdahl admin about Agent Platform v2.
+> **Surface note:** the agent platform (the `search` + `agents` MCP tools) is on **every** workspace — the per-workspace rollout flag it once sat behind is retired, so there is no capability check to make and no `feature_disabled` error to handle. The `blueprints` and `pages` MCP tools were retired with it; Workflows and Pages are console surfaces now.
 
 
 - [How to write an Amdahl blueprint](prompts/blueprints/authoring-a-blueprint.md) — the mental model, the DSL anatomy, validating in the console, and two worked examples (one from scratch, one fork-and-customize).
@@ -176,7 +176,7 @@ Everything above runs on two "ask Amdahl" doors, and you can drive both from you
 
 - **The mental model** — where Amdahl sits in a GTM agent stack: one layer on your [shared MCP belt](prompts/agent-platform/gtm-brain-architecture.md), and the [four shapes](prompts/agent-platform/four-flows.md) every play takes (your skill asks, Amdahl answers, your skill acts).
 
-- **Fast lane (`search.run`)** — one synchronous call that returns the rows *and* the SQL it ran. For "get me the number." [Recipe](prompts/agent-platform/fast-lane-search.md).
+- **Fast lane (`search.query`, mode `fuzzy`)** — one synchronous call that returns the rows *and* the SQL it ran. For "get me the number." [Recipe](prompts/agent-platform/fast-lane-search.md).
 - **The endpoints** — synchronous primitives beside the doors: [structured search](prompts/agent-platform/structured-search.md) (typed filters + `group_by`/`metrics` over a discoverable field catalog), and [semantic search](prompts/agent-platform/semantic-search.md) (meaning over the call corpus — also how you find "more accounts like this one").
 - **Agentic Chat** — the always-async Master agent: start, get handles, poll or stream for the cited answer, respond to a pause. For "investigate this." [Recipe](prompts/agent-platform/agentic-chat.md).
 - **Routines & saved agents** — put a Chat on a cron, or save a reusable agent and pin it. [Routines](prompts/agent-platform/routines.md) · [Saved agents](prompts/agent-platform/saved-agents.md).
@@ -184,7 +184,7 @@ Everything above runs on two "ask Amdahl" doors, and you can drive both from you
 - **Rendering the answer** — the seven content-block types and the `amdahl:q` / `amdahl:cite` link grammar, for showing a Chat result in your own UI. [Recipe](prompts/agent-platform/answer-envelope.md).
 - **End-to-end use cases** — full journeys over both surfaces: [voice of customer](prompts/agent-platform/voice-of-customer-end-to-end.md) (teaches the fast -> Chat handoff), [call prep + objection handling](prompts/agent-platform/call-prep-objection-end-to-end.md), and [the expansion motion](prompts/agent-platform/expansion-motion-end-to-end.md) (read your best win's own language, then semantic-search the corpus for the accounts that sound like it).
 
-Requires Agent Platform v2 (the same per-workspace rollout as above): the `search` + `agents` MCP tools, or `POST /search` and `POST /chat` on REST.
+Available on every workspace: the `search` + `agents` MCP tools, or `POST /search/query` and `POST /chat` on REST.
 
 ---
 
