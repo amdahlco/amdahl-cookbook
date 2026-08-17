@@ -106,8 +106,6 @@ The developer-facing view of the engine the prompts above run on: how to drive A
 - [Fast lane — `search.run`](agent-platform/fast-lane-search.md) — one synchronous call: the request, the full response envelope (`internal.status`, the SQL, blended citations), the typed-failure contract, and the `escalate_to_chat` handoff.
 - [Structured search — typed filters](agent-platform/structured-search.md) — the config-DSL lane of `search.query`: declarative `{field, op, value}` filters, `group_by` + `metrics` aggregations, and the `search.fields` vocabulary catalog (the compiled SQL comes back as the receipt).
 - [Semantic search — meaning over the call corpus](agent-platform/semantic-search.md) — the vector lane of the same endpoint: meaning-shaped asks, semantic query + filters, and reading `mode_ran` + `freshness`.
-- [Tiered enrichment — company, person, topic](agent-platform/tiered-enrichment.md) — `enrich.*`: cached brief instantly, first-party evidence on a miss with the full brief rebuilding in the background, `mode: "full"` to wait for the deep brief.
-- [Lookalikes — nearest accounts, deals, and themes](agent-platform/lookalikes.md) — `lookalike.find` + `themes`: "more like this one" over your own corpus, with the honest `available: false` contract while centroids materialize.
 - [Agentic Chat — start, poll, respond](agent-platform/agentic-chat.md) — the always-async lane end to end: start -> poll (or stream) -> render -> answer a pause. REST + the MCP `agents` tool, plus the `depth` knob.
 - [Routines — make a Chat recur](agent-platform/routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now, and `actions_allowed` for autonomous sends.
 - [Saved agents — reuse a prompt](agent-platform/saved-agents.md) — the agent library: create a named agent, pin it in a Chat, schedule it as a Routine.
@@ -119,5 +117,5 @@ The developer-facing view of the engine the prompts above run on: how to drive A
 
 - [Voice of customer, end to end](agent-platform/voice-of-customer-end-to-end.md) — one question across both doors, teaching the `escalate_to_chat` fast -> Chat handoff.
 - [Call prep + objection handling, end to end](agent-platform/call-prep-objection-end-to-end.md) — the flagship: who looks like this prospect, what worked/didn't, and the exact rebuttal — one Chat, grounded in your corpus.
-- [The expansion motion, end to end](agent-platform/expansion-motion-end-to-end.md) — the multi-endpoint flagship: lookalike your best closed-won, fast-enrich each match, then semantic-search the objections they already raised.
+- [The expansion motion, end to end](agent-platform/expansion-motion-end-to-end.md) — the flagship chain: read what your best closed-won sounded like, semantic-search the corpus for accounts that sound like it, then semantic-search the objections they already raised.
 - [Operation reference](agent-platform/reference.md) — where the authoritative contracts live (the docs tool catalog + the OpenAPI-driven API reference), and the recipe-to-operation map for the public surface.

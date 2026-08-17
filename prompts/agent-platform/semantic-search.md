@@ -117,7 +117,7 @@ similarity scores.
 ## Variations
 
 - **Let the router decide**: send the query with `mode: "auto"` (or no mode). Meaning-shaped wording routes semantic on its own; check `mode_ran` to see where it landed.
-- **Theme-level instead of utterance-level**: when you want "which *themes* sound like this" rather than individual moments, use [`lookalike` `themes`](lookalikes.md) — it's the theme-centroid version of the same idea.
+- **Theme-level instead of utterance-level**: when you want "which *themes* sound like this" rather than individual moments, group the results by `cluster_id` — or hand the question to a [Chat](agentic-chat.md), which runs the theme reads internally.
 - **Concept + hard slice**: run semantic with a `company_id in […]` filter to ask one question across a specific account list — the pattern the [expansion motion](expansion-motion-end-to-end.md) is built on.
 - **Escalate when "find" becomes "explain"**: similarity finds the moments; it doesn't explain the trend. "Which of these themes are growing and why" is a [Chat](agentic-chat.md).
 
@@ -131,6 +131,5 @@ similarity scores.
 ## See also
 
 - [Structured search](structured-search.md) — the typed-filter lane of the same door, and the full filter vocabulary.
-- [Lookalikes](lookalikes.md) — centroid similarity over entities and themes (the "more like this one" siblings).
 - [Fast lane — `search.run`](fast-lane-search.md) — the plain-language NL lane for countable asks.
 - [Agent platform overview](README.md) — the flag prerequisite and the scope table.

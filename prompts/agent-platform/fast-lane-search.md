@@ -177,5 +177,5 @@ Return the matching rows AND the SQL you ran. If the result hit the row cap, say
 
 - [Quick lookup (fast lane)](../pipeline-pulse/quick-lookup-fast-lane.md) — the paste-ready prompt version of this door.
 - [Agentic Chat](agentic-chat.md) — where an `escalate_to_chat` ask goes to get finished.
-- The sibling endpoints, when you already know the shape of the answer: [Structured search](structured-search.md) (typed filters + aggregations instead of prose), [Semantic search](semantic-search.md) (meaning over the call corpus), [Tiered enrichment](tiered-enrichment.md) ("tell me about X" with a cached brief now), and [Lookalikes](lookalikes.md) ("more accounts like this one").
+- The sibling endpoints, when you already know the shape of the answer: [Structured search](structured-search.md) (typed filters + aggregations instead of prose), and [Semantic search](semantic-search.md) (meaning over the call corpus).
 - [Agent platform overview](README.md) — the two doors, the flag prerequisite, the scope table.

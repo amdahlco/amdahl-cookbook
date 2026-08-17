@@ -6,7 +6,7 @@ argument-hint: <competitor name or domain>
 Run the Amdahl "competitor deep-dive" play for **$ARGUMENTS**. Use the connected **Amdahl** MCP tools (CRM + calls fused with the public web), not generic `web_search`. If the server isn't connected, tell the user to run `/amdahl-gtm:setup`.
 
 **Wave 1 — gather in parallel:**
-- Public posture → `enrich` { action: company, domain } (or { action: topic } for a category read): their positioning, pricing posture, recent launches, funding, messaging, who they say they're for.
+- Public posture → `agents` { action: start_chat }: their positioning, pricing posture, recent launches, funding, messaging, who they say they're for — and the divergence against what your buyers say about them.
 - Call reality → `search` { action: query, semantic } + `search` { action: run }: every time this competitor comes up on our calls — who raised them, in what context (incumbent, active eval, late entrant), what buyers actually said about them. Pull verbatim quotes with role + date.
 - Trend → `search` { action: query } with `group_by` over time: are they showing up earlier / later, more / less, in which segments?
 

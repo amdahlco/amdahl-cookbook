@@ -14,7 +14,7 @@ This recipe exists because the first integrator had to reverse-engineer all of i
 
 **The workspace you pick on the authorize screen is the data boundary.** The eval grades against that workspace's customer conversations - its calls, its CRM, its quotes. Pick a sandbox workspace and every grade will be grounded in the sandbox's (probably empty) corpus. Pick production and the grades mean something.
 
-Once connected, five tools appear: `agents` / `search` / `enrich` / `lookalike` / `evals`.
+Once connected, three tools appear: `agents` / `search` / `evals`.
 
 The MCP connection is what LangSmith agents and the playground use. The evaluator wrapper in step 4 runs your own Python, so it uses the REST equivalents with an API key (**Settings -> API keys** in the Amdahl console; grading needs `evals:execute`, the gate read needs `evals:read`).
 
