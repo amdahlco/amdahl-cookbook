@@ -132,8 +132,8 @@ GET /evals/prompt-and-message-eval/adoption?window_days=90
     "runs_with_signal": 12,
     "runs_adopted": 9,
     "runs_disputed": 1,
-    "adoption_rate": null,
-    "abstain_reason": "unpublished",
+    "adoption_rate": 0.75,
+    "abstain_reason": null,
     "counted_evidence": ["did_it_myself", "reported_to_me"],
     "verified_true": 6, "verified_false": 1, "verified_unchecked": 5
   }
@@ -149,7 +149,7 @@ The four counts **narrow**, and each one answers a different question:
 
 ## Traps
 
-- **`adoption_rate: null` is not zero.** Check `abstain_reason`. `unpublished` means the rate is deliberately withheld pending calibration; `thin_window` means too few reports to assert one; `no_signal` means nobody has reported; `no_eligible_runs` means nothing recommended anything. Four different situations, four different things to do.
+- **`adoption_rate: null` is not zero.** Check `abstain_reason`. `thin_window` means too few reports to assert a rate; `no_signal` means nobody has reported; `no_eligible_runs` means nothing recommended anything in the window. Three different situations, three different things to do — and none of them is "adoption is 0%".
 - **Read `counted_evidence` before quoting the rate.** It names which evidence values the number was computed over. `inferred` is never one of them.
 - **Never report on a person's behalf as though you watched it.** If a user says they'll use something and the conversation ends, you have `reported_to_me` at best, and often nothing worth recording. A wrong record here is worse than a missing one, because it gets counted.
 - **Don't optimize for adoption.** It is tempting to feed this back into which suggestions you surface. Doing that selects for agreeable, low-effort suggestions that require no work and change nothing. Use it to *cull* — a suggestion kind nobody ever adopts and nobody ever disputes is probably unactionable — not to rank.
