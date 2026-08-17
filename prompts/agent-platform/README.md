@@ -4,19 +4,20 @@ The rest of the cookbook is paste-ready prompts. This section is the **developer
 
 Two doors, and the whole trick is knowing which one you're at:
 
-- **Fast lane — `search.run`.** One synchronous call. You ask a concrete question, it writes SQL over your tenant data, runs it, and hands back the rows **and the SQL it ran** in a single blocking response (optionally blended with a quick public web read). For "get me the number." It **blocks and returns the answer**.
+- **Fast lane — `search.query`, mode `fuzzy`.** One synchronous call. You ask a concrete question, it writes SQL over your tenant data, runs it, and hands back the rows **and the SQL it ran** in a single blocking response. For "get me the number." It **blocks and returns the answer**.
 - **Agentic lane — Chat.** A multi-step Master agent that decomposes the question, calls the data/cluster/web tools itself, and composes a cited answer. Because a real investigation takes longer than one HTTP request, Chat is **always asynchronous**: you `start` it and get **handles** back immediately, then poll (or stream) for the result.
 
-> **The one seam worth learning:** `search.run` returns `escalate_to_chat: true` when your ask outgrows the fast lane. That field is the designed bridge — fire fast, and if it comes back `escalate_to_chat`, re-fire the same question as a Chat. [Fast lane -> Chat](fast-lane-search.md#escalate-to-chat) walks it end to end.
+> **The one seam worth learning:** the fast lane returns `escalate_to_chat: true` when your ask outgrows it. That field is the designed bridge — fire fast, and if it comes back `escalate_to_chat`, re-fire the same question as a Chat. [Fast lane -> Chat](fast-lane-search.md#escalate-to-chat) walks it end to end.
 
-Beside the two doors sit the **endpoints** — synchronous primitives for when you already know the shape of the answer: [structured + semantic search](structured-search.md) (`search.query`, one routed endpoint with a typed-filter lane, an NL lane, and a meaning-based lane). One blocking call, same as the fast lane.
+All three synchronous lanes are the SAME endpoint. `search.query` (`POST /search/query`) routes each ask to one of `fuzzy` (the fast lane above), [`filter`](structured-search.md) (typed predicates), or [`semantic`](semantic-search.md) (meaning over the call corpus). Omit `mode` and a router picks; pass it and your choice wins.
 
-## Prerequisite — your workspace must be on Agent Platform v2
+## No prerequisite — this surface ships to every workspace
 
-Everything in this section (the `search` + `agents` tools on MCP; `POST /search/query`, `GET /search/fields`, `POST /chat`, `/routines`, `/agents` on REST) is gated **per workspace** by the `agent_v2` flag.
+Everything in this section (the `search` + `agents` tools on MCP; `POST /search/query`, `GET /search/fields`, `POST /chat`, `/routines`, `/agents` on REST) is available on **every** workspace.
 
-- **On MCP:** if your connected session lists a `search` tool and an `agents` tool, you're on v2. If it still lists `blueprints` / `pages` and **no** `search` / `agents`, your workspace is on the pre-rollout surface — ask your Amdahl admin to enable Agent Platform v2.
-- **On REST:** a gated call on a flag-off workspace returns `403` with `error.code: "feature_disabled"`.
+Earlier versions of this page named an `agent_v2` per-workspace flag and a `403` with `error.code: "feature_disabled"`. **Neither exists** — the flag is retired and there is one code path. If you built a capability check around that error, delete it.
+
+The MCP surface is three coarse tools: **`search`**, **`agents`**, and **`evals`**. The `blueprints` and `pages` tools were retired (those are console surfaces now).
 
 ## Scopes — what an MCP key / API key needs
 
@@ -24,14 +25,13 @@ Everything here is covered by the **`mcp_customer_agent`** scope bundle (the def
 
 | Door / family | Scope |
 |---|---|
-| `search.run` (fast lane) | `data:read` |
-| `search.query` / `search.fields` (structured + semantic search) | `data:read` |
+| `search.query` (fast lane, structured, semantic) / `search.fields` | `data:read` |
 | Start / rename a Chat | `conversations:write` |
 | Read a Chat / poll a run | `conversations:read` |
 | Answer a pause / cancel a run | `workflows:write` |
 | Agent library read / write | `agents:read` / `agents:write` |
 | Routines read / write | `routines:read` / `routines:write` |
-| Grade a message / run an eval (`evals.run`, MCP `grade`) | `evals:execute` |
+| Grade a message / run an eval (`evals.run`, MCP `evals` action `run`) | `evals:execute` |
 | Author or validate an eval (`evals.create` / `evals.update` / `evals.validate`) | `evals:write` |
 | Browse evals, poll runs, grader kinds | `evals:read` |
 
@@ -46,13 +46,13 @@ Before the individual calls, the shape of the whole thing — where Amdahl sits 
 
 ## The recipes
 
-- [Fast lane — `search.run`](fast-lane-search.md) — one synchronous call over REST + MCP: the request, the full response envelope (`internal.status`, the SQL, blended citations), the typed-failure contract (it never throws past validation), and the `escalate_to_chat` handoff into Chat.
+- [Fast lane — `search.query`, mode `fuzzy`](fast-lane-search.md) — one synchronous call over REST + MCP: the request, the full response envelope (`detail.internal.status`, the SQL, `uncovered` + `retry_guidance`), the typed-failure contract (it never throws past validation), the async/`max_subqueries` path for broad asks, and the `escalate_to_chat` handoff into Chat.
 - [Structured search — typed filters](structured-search.md) — the config-DSL lane of `search.query`: declarative `{field, op, value}` filters, `group_by` + `metrics` aggregations, the compiled SQL as the receipt, and the `GET /search/fields` vocabulary catalog.
 - [Semantic search — meaning over the call corpus](semantic-search.md) — the vector lane of the same endpoint: meaning-shaped asks, combining a semantic query with the narrow semantic filter set, and reading `mode_ran` + `freshness` before you trust the results.
 - [Agentic Chat — start, poll, respond](agentic-chat.md) — the async lane end to end: `start` -> poll `read_url` (or `chat_status`) -> render the answer -> `respond` to an `awaiting_input` pause -> stream a run live. Over REST and over the MCP `agents` tool. Includes the `depth` knob (and why the default is `deep`).
 - [Routines — make a Chat recur](routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now over REST + MCP, the `config` (incl. `actions_allowed` for autonomous sends), and when a Routine beats a Workflow.
 - [Saved agents — reuse a prompt](saved-agents.md) — the agent library: create a named, reusable agent, pin it in a Chat, and schedule it as a Routine. CRUD over REST + MCP.
-- [Evals — grade a message against customer voice](evals.md) — `evals.run` (MCP `grade`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown (grounding / specificity / differentiation / cta_clarity / tone_fit), the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval (`rule` / `sor_anchored` / `evidence_judge` graders).
+- [Evals — grade a message against customer voice](evals.md) — `evals.run` (MCP `evals` action `run`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown (relevant positioning / grounding / verified specifics / differentiation / cta clarity), the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval (`rule` / `sor_anchored` / `evidence_judge` graders).
 - [Amdahl evals in LangSmith](evals-in-langsmith.md) — wire the eval as a pipeline gate: connect the MCP server in LangSmith, fire `evals.run` with `mode: "gate"` (grade-only, no rewrite), poll the `/gate` read, and a copy-paste LangSmith custom evaluator that turns `gate.passed` into feedback. Plus the trap list (why `overall_score` and `lift` must never gate a pipeline, and how to pin evidence for A/Bs).
 - [The answer envelope](answer-envelope.md) — how to render a Chat answer in your own UI: the seven `content_block` types (`text` / `callout` / `citation` / `table` / `chart_spec` / `metric` / `cluster_finding`), `follow_ups`, and the `amdahl:q` / `amdahl:cite` link grammar (figures explore, claims prove).
 

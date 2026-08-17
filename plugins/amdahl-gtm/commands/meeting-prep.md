@@ -8,7 +8,7 @@ Run the Amdahl meeting-prep play for **$ARGUMENTS**. Use the connected **Amdahl*
 Infer the meeting type from the arguments (default: general sales call). If it's a QBR or renewal, weight toward year-long trajectory and an expansion / defend posture.
 
 **Wave 1 — gather in parallel:**
-- Full account history → `search` { action: run } + `search` { action: query }: who's been on the calls (names + roles), what's been said, what's open, what's stalled, sentiment over time, the last 3 meaningful moments (verbatim, dated).
+- Full account history → `search` { action: query } (mode `fuzzy` to describe the ask, `filter` for an exact slice): who's been on the calls (names + roles), what's been said, what's open, what's stalled, sentiment over time, the last 3 meaningful moments (verbatim, dated).
 - Public signal → `agents` { action: start_chat }: anything in their world that's relevant right now. Start it FIRST and poll while you run the corpus gathers — it is the slow leg.
 - Open threads → `search` { action: query, semantic }: unresolved objections, promised follow-ups, questions we never answered.
 

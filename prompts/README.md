@@ -65,7 +65,7 @@ Weekly health, risk surfacing, zombie cleanup, and fast lookups — all on a cad
 - [Weekly recap](pipeline-pulse/weekly-recap.md) — what moved, what slipped, what's new, what went quiet, plus the one question to ask in standup.
 - [Deals at risk](pipeline-pulse/deals-at-risk.md) — deals that look healthy on paper but are at risk in the call content, sorted by ACV × severity.
 - [Stalled pipeline triage](pipeline-pulse/stalled-pipeline-triage.md) — chase / nurture / close-lost, with the honest verbatim "why it died" on each loss.
-- [Quick lookup (fast lane)](pipeline-pulse/quick-lookup-fast-lane.md) — one concrete question, one synchronous `search` call: the rows plus the SQL it ran, with an optional blended public angle. For "get me the number," not a multi-step investigation.
+- [Quick lookup (fast lane)](pipeline-pulse/quick-lookup-fast-lane.md) — one concrete question, one synchronous `search` call: the rows plus the SQL it ran, over your own data. For "get me the number," not a multi-step investigation.
 
 ## Pages & dashboards (2)
 
@@ -94,7 +94,7 @@ Author reusable, typed **Workflow** recipes (blueprints) the platform can valida
 
 ## Agent platform — API + MCP (16)
 
-The developer-facing view of the engine the prompts above run on: how to drive Amdahl's two "ask Amdahl" doors — and the automation around them — from your own code, over REST and MCP. Requires Agent Platform v2 (the `search` + `agents` MCP tools). See the [section README](agent-platform/README.md).
+The developer-facing view of the engine the prompts above run on: how to drive Amdahl's two "ask Amdahl" doors — and the automation around them — from your own code, over REST and MCP. Available on every workspace (the `search` + `agents` MCP tools). See the [section README](agent-platform/README.md).
 
 **The mental model:**
 
@@ -103,13 +103,13 @@ The developer-facing view of the engine the prompts above run on: how to drive A
 
 **The doors + primitives:**
 
-- [Fast lane — `search.run`](agent-platform/fast-lane-search.md) — one synchronous call: the request, the full response envelope (`internal.status`, the SQL, blended citations), the typed-failure contract, and the `escalate_to_chat` handoff.
+- [Fast lane — `search.query`, mode `fuzzy`](agent-platform/fast-lane-search.md) — one synchronous call: the request, the full response envelope (`detail.internal.status`, the SQL, `uncovered`), the typed-failure contract, and the `escalate_to_chat` handoff.
 - [Structured search — typed filters](agent-platform/structured-search.md) — the config-DSL lane of `search.query`: declarative `{field, op, value}` filters, `group_by` + `metrics` aggregations, and the `search.fields` vocabulary catalog (the compiled SQL comes back as the receipt).
 - [Semantic search — meaning over the call corpus](agent-platform/semantic-search.md) — the vector lane of the same endpoint: meaning-shaped asks, semantic query + filters, and reading `mode_ran` + `freshness`.
 - [Agentic Chat — start, poll, respond](agent-platform/agentic-chat.md) — the always-async lane end to end: start -> poll (or stream) -> render -> answer a pause. REST + the MCP `agents` tool, plus the `depth` knob.
 - [Routines — make a Chat recur](agent-platform/routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now, and `actions_allowed` for autonomous sends.
 - [Saved agents — reuse a prompt](agent-platform/saved-agents.md) — the agent library: create a named agent, pin it in a Chat, schedule it as a Routine.
-- [Evals — grade a message against customer voice](agent-platform/evals.md) — `evals.run` (MCP `grade`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown, the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval.
+- [Evals — grade a message against customer voice](agent-platform/evals.md) — `evals.run` (MCP `evals` action `run`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown, the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval.
 - [Amdahl evals in LangSmith](agent-platform/evals-in-langsmith.md) — wire the eval as a pipeline gate: `evals.run` with `mode: "gate"` (grade-only, no rewrite), the `/gate` read, a copy-paste LangSmith custom evaluator, and the trap list for anyone gating a pipeline on eval numbers.
 - [The answer envelope](agent-platform/answer-envelope.md) — render a Chat answer in your own UI: the seven `content_block` types, `follow_ups`, and the `amdahl:q` / `amdahl:cite` link grammar.
 
