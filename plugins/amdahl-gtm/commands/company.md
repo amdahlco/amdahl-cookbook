@@ -10,7 +10,7 @@ Use the connected **Amdahl** MCP tools — they fuse this tenant's own CRM + cal
 **Disambiguate first.** If "$ARGUMENTS" is a nickname or an ambiguous name, resolve it to a domain (ask the user if unsure). If it's a giant multi-BU company, ask which division to focus on before you spend the calls.
 
 **Wave 1 — gather in parallel:**
-- Internal history → `search` { action: run } and `search` { action: query } over the interactions + deals surfaces: every deal, call, support ticket, email, CRM note. Surface deal stage, ACV, who we've talked to (with roles), the last 3 meaningful things said on calls (verbatim, speaker + date), open objections, sentiment trajectory.
+- Internal history → `search` { action: query } over the interactions + deals surfaces (mode `fuzzy` to describe the ask, `filter` for an exact slice): every deal, call, support ticket, email, CRM note. Surface deal stage, ACV, who we've talked to (with roles), the last 3 meaningful things said on calls (verbatim, speaker + date), open objections, sentiment trajectory.
 - Public signal (last 90 days first, last 12 months if thin) → `agents` { action: start_chat }: ask for funding, hiring patterns, product launches, leadership changes, M&A, and public commentary from their execs. The Master holds the web fan-out; poll `chat_status`. There is no synchronous enrichment verb.
 - Adjacent mentions → `search` { action: query, semantic }: any time this company has come up on calls or notes from OTHER accounts — partners, customers, prospects mentioning them.
 

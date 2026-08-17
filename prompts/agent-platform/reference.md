@@ -19,8 +19,8 @@ The agent-platform recipes map to these operation ids — look any of them up in
 
 | Recipe | Operation ids |
 |---|---|
-| [Fast lane](fast-lane-search.md) | `search.run` |
-| [Structured search](structured-search.md) | `search.query`, `search.fields` |
+| [Fast lane](fast-lane-search.md) | `search.query` (fuzzy lane) |
+| [Structured search](structured-search.md) | `search.query` (filter lane), `search.fields` |
 | [Semantic search](semantic-search.md) | `search.query` (semantic lane), `search.fields` |
 | [Agentic Chat](agentic-chat.md) | `chat.start`, `chat.get_run`, `chat.get`, `chat.list`, `chat.rename`, `agents.resume`, `agents.cancel` |
 | [Routines](routines.md) | `routines.create`, `routines.list`, `routines.get`, `routines.update`, `routines.delete`, `routines.run_now` |

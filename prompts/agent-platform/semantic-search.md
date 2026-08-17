@@ -131,5 +131,5 @@ similarity scores.
 ## See also
 
 - [Structured search](structured-search.md) — the typed-filter lane of the same door, and the full filter vocabulary.
-- [Fast lane — `search.run`](fast-lane-search.md) — the plain-language NL lane for countable asks.
+- [Fast lane — mode `fuzzy`](fast-lane-search.md) — the plain-language NL lane of this same endpoint, for countable asks.
 - [Agent platform overview](README.md) — the flag prerequisite and the scope table.
