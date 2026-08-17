@@ -94,7 +94,7 @@ Success is always a `success: true` object. The rows are at the top level; the f
 The load-bearing fields:
 
 - **`detail.internal.status`** — `ok` | `empty` | `unsupported` | `failed`. This is your control flow, not an exception. `ok` = rows returned. `empty` = the query ran and matched nothing (often a too-narrow filter) — an honest zero, and a real answer. `unsupported` = the ask does not fit a single query (`escalate_to_chat` will be `true`). `failed` = the SQL could not be produced or run even after one self-repair round.
-- **`compiled.sql`** — the exact query it ran. The receipt: skim it before you quote the number.
+- **`compiled.sql`** — the exact query it ran. The receipt: skim it before you quote the number. Read it here, not at `detail.internal.sql`: every lane sets `compiled.sql`, while `detail` is the fuzzy lane's envelope and is absent on a `filter` run. The two carry the same string when both are present.
 - **`detail.internal.truncated`** — `true` when the row set hit `limit`. A metric computed over a truncated set is a metric over an arbitrary slice — narrow the filter or raise `limit` instead of trusting it.
 - **`detail.uncovered`** — parts of a multi-intent ask that produced no answer, each with a reason (`breadth_cap`, `deadline`, `planner_incomplete`). **An empty array is the only thing that means full coverage.** A non-empty one means the answer you got is real but partial.
 - **`detail.retry_guidance`** — present when something was missed: the remedy as a parameter to set (`raise_max_subqueries` / `run_async` / `narrow_query`) rather than a hint to interpret.
