@@ -410,10 +410,12 @@ not_applicable, tell me we don't have customer data to grade against yet — don
 - **`not_applicable` is not a fail.** It means no customer voice has landed yet — branch on it, don't render it as a zero.
 - **Name an audience, then read whether it stuck.** An `audience` you pass is only used as the framing if your corpus clears three evidence floors. Check `audience.status` — a report that says "graded against executives" and one that fell back to the whole corpus look identical if you skip it. And if the reason is `lookup_failed`, that is our check breaking: **never** relay it as "you have no conversations with that audience".
 - **`cached` keys on the exact inputs.** A new message always re-grades; an identical message returns the prior run. Re-grade the *same* draft against fresh data with `reuse: force`.
+- **Report back what you did with it.** Once you have acted on a report — applied the prompt patch, decided against the rewrite — record it with `evals.record_feedback`, stating **how you know** (`did_it_myself` / `reported_to_me` / `inferred`). It is the only thing that can tell a rising score from a report nobody opened. See [Eval feedback loop](evals-feedback-loop.md).
 - **Scopes:** grading needs `evals:execute`; a read-only key (`evals:read`) can browse evals, poll runs and `validate`. Authoring (`evals:write`) is gated off during the beta regardless of scope.
 
 ## See also
 
+- [Eval feedback loop](evals-feedback-loop.md) — the other half: report whether a run's recommendation was applied, and roll adoption up across runs.
 - [Stress-test a message](../positioning-messaging/stress-test-a-message.md) — the paste-ready prompt version of this grader, for when you're working in chat rather than code.
 - [Fast lane](fast-lane-search.md) — the synchronous read lane. (The `sor_anchored` grader's anchor is a `data.query`, not this lane; the previous wording said otherwise.)
 - [The answer envelope](answer-envelope.md) — how to render the quotes and rewrite in your own UI.
