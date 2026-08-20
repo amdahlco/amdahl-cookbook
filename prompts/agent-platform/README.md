@@ -34,6 +34,8 @@ Everything here is covered by the **`mcp_customer_agent`** scope bundle (the def
 | Grade a message / run an eval (`evals.run`, MCP `evals` action `run`) | `evals:execute` |
 | Author or validate an eval (`evals.create` / `evals.update` / `evals.validate`) | `evals:write` |
 | Browse evals, poll runs, grader kinds | `evals:read` |
+| Connections reads (catalog, instances, status, runs, summary) | `connections:read` |
+| Connections writes (connect / disconnect / reconnect / config) | `connections:write` / `connections:delete` — OAuth sessions only; not on any API-key bundle |
 
 A read-only key (`mcp_read_only`) can run every synchronous endpoint and read chats — but cannot start a Chat, answer a pause, or write an agent/routine.
 
@@ -55,6 +57,7 @@ Before the individual calls, the shape of the whole thing — where Amdahl sits 
 - [Evals — grade a message against customer voice](evals.md) — `evals.run` (MCP `evals` action `run`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown (relevant positioning / grounding / verified specifics / differentiation / cta clarity), the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval (`rule` / `sor_anchored` / `evidence_judge` graders).
 - [Amdahl evals in LangSmith](evals-in-langsmith.md) — wire the eval as a pipeline gate: connect the MCP server in LangSmith, fire `evals.run` with `mode: "gate"` (grade-only, no rewrite), poll the `/gate` read, and a copy-paste LangSmith custom evaluator that turns `gate.passed` into feedback. Plus the trap list (why `overall_score` and `lift` must never gate a pipeline, and how to pin evidence for A/Bs).
 - [Eval feedback loop](evals-feedback-loop.md) — close the loop: report what happened *after* a run (`feedback`), read one run's reports back (`feedback_status`), and roll adoption up across runs (`adoption`). The `evidence` field an agent must be honest about, the three-state `verified`, the narrowing denominators on the roll-up, and why adoption is a signal to cull with rather than optimize for.
+- [Connections — connector CRUD](connections.md) — manage the workspace's data sources from code or an agent turn: the self-describing catalog (logo + connect-flow spec per entry), connect over api_key / handle / OAuth, watch health + sync runs + the data summary, and repair in place. Reads on any key; the writes are OAuth-session-only.
 - [The answer envelope](answer-envelope.md) — how to render a Chat answer in your own UI: the seven `content_block` types (`text` / `callout` / `citation` / `table` / `chart_spec` / `metric` / `cluster_finding`), `follow_ups`, and the `amdahl:q` / `amdahl:cite` link grammar (figures explore, claims prove).
 
 ## End-to-end use cases

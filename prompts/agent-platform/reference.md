@@ -26,8 +26,9 @@ The agent-platform recipes map to these operation ids — look any of them up in
 | [Routines](routines.md) | `routines.create`, `routines.list`, `routines.get`, `routines.update`, `routines.delete`, `routines.run_now` |
 | [Saved agents](saved-agents.md) | `agents.create_agent`, `agents.list_agents`, `agents.get_agent`, `agents.update_agent`, `agents.delete_agent` |
 | [Evals](evals.md) | `evals.run`, `evals.create`, `evals.update`, `evals.validate`, `eval.list`, `eval.get`, `eval_run.list`, `eval_run.get`, `grader_kind.list`, `grader_kind.get` |
+| [Connections](connections.md) | `connections.list_catalog`, `connections.list`, `connections.get`, `connections.get_status`, `connections.list_runs`, `connections.get_summary`, `connections.connect`, `connections.disconnect`, `connections.update`, `connections.reconnect`, `connections.set_call_filters`, `connections.set_crm_recency`, `connections.set_comms_filter` |
 
-These families — `search`, the `chat` / `routines` / agent-library surface, and `evals` — are the whole public API. An external key calling anything outside it gets a `403` with `error.code: "not_on_public_api"`; those operations serve the console only.
+These families — `search`, the `chat` / `routines` / agent-library surface, `evals`, and `connections` — are the whole public API. An external key calling anything outside it gets a `403` with `error.code: "not_on_public_api"`; those operations serve the console only. One nuance on `connections`: the reads are callable with any key, but the lifecycle writes (`connect` / `disconnect` / `update` / `reconnect` and the config endpoints) authorize only on an OAuth session — an API key gets a `403` there by design, not for want of a scope.
 
 ## Tips
 
