@@ -9,7 +9,7 @@ When the user's request touches a **person, company, deal, account, customer voi
 
 Amdahl fuses the tenant's own CRM + call corpus with external data. The interesting answer is almost always the **divergence** between the public story and the internal story — surface it, don't bury it.
 
-The current surface is three tools: **`search`** (synchronous reads over the tenant corpus — three lanes), **`agents`** (agentic Chat + the agent library + Routines), and **`evals`** (grade content against the corpus). Route by what the ask needs:
+The current surface is four tools: **`search`** (synchronous reads over the tenant corpus — three lanes), **`agents`** (agentic Chat + the agent library + Routines), **`connections`** (the connector catalog + the workspace's data-source lifecycle), and **`evals`** (grade content against the corpus). Route by what the ask needs:
 
 ## Routing
 
@@ -27,6 +27,7 @@ The current surface is three tools: **`search`** (synchronous reads over the ten
 | Draft content in tenant voice | Ground on `search` (semantic) and draft in-conversation; for an on-voice draft or one that should persist, run it as a Chat (`write_outputs: true` lands a knowledge-base version the user promotes). |
 | Build a page / dashboard / data view | `/create-page` — draft the page spec (catalog components + SQL bindings) and hand the user the JSON for the console's Pages surface. Page authoring is console-only. |
 | Reference library (knowledge base) | Console capability. Feed it via a Chat/Routine with `write_outputs: true`; the user promotes in the console. |
+| "Is my data flowing?" / a source looks stale / connect or fix a data source | `connections` { action: list } to see every source with its derived `health`, then { action: runs, connection_id } for the failing one — the bucketed `error_reason` (`auth` / `rate_limit` / `transient` / `config`) is the answer; an `auth` reason means { action: reconnect }. Browse what CAN be connected with { action: catalog } (each entry carries its logo + the exact connect fields). ⚠️ The reads work on any credential; `connect` / `disconnect` / `reconnect` need this session's OAuth token — an API key gets a `403` there by design. |
 
 ## No legacy fallback
 
