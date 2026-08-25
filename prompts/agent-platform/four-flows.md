@@ -21,7 +21,7 @@ In every one, **your skill asks the question and decides what to do — Amdahl o
 | **Scheduled** — Monday digest | Cron. Nobody asked for it | "What changed since last week?" | Themes that are new or growing, accounts that moved band and why, where positioning has drifted from what buyers say | Posts the digest |
 | **Ad hoc** — Someone asks | In Slack: "why do we keep losing to them?" | "Compare the deals we won against the ones we lost, on what was actually discussed" | Win rate against that rival, and what was covered in the won deals but missing from the lost — over **every** closed deal, not a sample | Answers in the thread, with the calls cited so anyone can check |
 
-Which door each uses: **Automated / Ad hoc** short lookups are the [fast lane](fast-lane-search.md); an **Interactive** investigation is a [Chat](agentic-chat.md); the **Scheduled** one is a [Routine](routines.md) that fires a Chat on cron.
+Which door each uses: **Automated / Ad hoc** short lookups are the [fast lane](fast-lane-search.md); an **Interactive** investigation is a [Chat](agentic-chat.md); the **Scheduled** one is a [Routine](routines.md) that fires a Chat on cron; an event-triggered one is a [Subscription](subscriptions.md) that fires a Chat when its source observes an occurrence.
 
 ---
 

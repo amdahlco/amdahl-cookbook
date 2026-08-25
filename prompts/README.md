@@ -1,6 +1,6 @@
 # Recipe library
 
-48 recipes for go-to-market work. Most are self-contained markdown files with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips; the [agent-platform](agent-platform/README.md) section adds the developer-facing REST + MCP shapes for the same engine. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
+49 recipes for go-to-market work. Most are self-contained markdown files with one paste-ready prompt, a "why this matters" explainer, what comes back, variations, and tips; the [agent-platform](agent-platform/README.md) section adds the developer-facing REST + MCP shapes for the same engine. The deeper recipes use a wave structure — explicit parallel sub-tasks the model can fan out on, then a synthesis pass — so a single paste does the work of three rounds of back-and-forth.
 
 New here? Start with the [main README](../README.md) for setup and the six headliner prompts.
 
@@ -92,7 +92,7 @@ Author reusable, typed **Workflow** recipes (blueprints) the platform can valida
 
 - [How to write an Amdahl blueprint](blueprints/authoring-a-blueprint.md) — the mental model, the full DSL anatomy (inputs, outputs, the 8 step kinds, `$`-references, `prompt://` fragments, policy, trigger), validating in the console, and two worked examples (from scratch, and fork-a-starter).
 
-## Agent platform — API + MCP (16)
+## Agent platform — API + MCP (18)
 
 The developer-facing view of the engine the prompts above run on: how to drive Amdahl's two "ask Amdahl" doors — and the automation around them — from your own code, over REST and MCP. Available on every workspace (the `search` + `agents` MCP tools). See the [section README](agent-platform/README.md).
 
@@ -108,6 +108,7 @@ The developer-facing view of the engine the prompts above run on: how to drive A
 - [Semantic search — meaning over the call corpus](agent-platform/semantic-search.md) — the vector lane of the same endpoint: meaning-shaped asks, semantic query + filters, and reading `mode_ran` + `freshness`.
 - [Agentic Chat — start, poll, respond](agent-platform/agentic-chat.md) — the always-async lane end to end: start -> poll (or stream) -> render -> answer a pause. REST + the MCP `agents` tool, plus the `depth` knob.
 - [Routines — make a Chat recur](agent-platform/routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now, and `actions_allowed` for autonomous sends.
+- [Subscriptions — fire a Chat on an event](agent-platform/subscriptions.md) — the event-driven sibling of a Routine: a source (first: a lead time before each Google Calendar event) fires a fresh Chat per occurrence, with the event rendered into the turn. Kinds catalog, timing rules, fire ledger, test-fire.
 - [Saved agents — reuse a prompt](agent-platform/saved-agents.md) — the agent library: create a named agent, pin it in a Chat, schedule it as a Routine.
 - [Evals — grade a message against customer voice](agent-platform/evals.md) — `evals.run` (MCP `evals` action `run`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown, the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval.
 - [Amdahl evals in LangSmith](agent-platform/evals-in-langsmith.md) — wire the eval as a pipeline gate: `evals.run` with `mode: "gate"` (grade-only, no rewrite), the `/gate` read, a copy-paste LangSmith custom evaluator, and the trap list for anyone gating a pipeline on eval numbers.
