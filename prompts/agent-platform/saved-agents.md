@@ -1,6 +1,6 @@
 # Saved agents — reuse a prompt
 
-**What this does**: Saves a named, reusable agent — a slug, a display name, and a system prompt — into your workspace's agent library, so a prompt you tuned once can be pinned into any [Chat](agentic-chat.md) or fired on a schedule by a [Routine](routines.md). Create / list / get / update / delete over the REST API and the MCP `agents` tool.
+**What this does**: Saves a named, reusable agent — a slug, a display name, and a system prompt — into your workspace's agent library, so a prompt you tuned once can be pinned into any [Chat](agentic-chat.md), fired on a schedule by a [Routine](routines.md), or fired on an event by a [Subscription](subscriptions.md). Create / list / get / update / delete over the REST API and the MCP `agents` tool.
 
 **When to use it**: You've landed a Master prompt that works — "our SDR-brief agent," "our win-loss postmortem agent" — and you want it once, reusable, instead of pasting the same 300-word instruction every time. A saved agent is that prompt, given a handle.
 

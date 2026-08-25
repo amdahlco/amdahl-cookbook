@@ -13,11 +13,11 @@ All three synchronous lanes are the SAME endpoint. `search.query` (`POST /search
 
 ## No prerequisite — this surface ships to every workspace
 
-Everything in this section (the `search` + `agents` tools on MCP; `POST /search/query`, `GET /search/fields`, `POST /chat`, `/routines`, `/agents` on REST) is available on **every** workspace.
+Everything in this section (the `search` + `agents` tools on MCP; `POST /search/query`, `GET /search/fields`, `POST /chat`, `/routines`, `/subscriptions`, `/agents` on REST) is available on **every** workspace.
 
 Earlier versions of this page named an `agent_v2` per-workspace flag and a `403` with `error.code: "feature_disabled"`. **Neither exists** — the flag is retired and there is one code path. If you built a capability check around that error, delete it.
 
-The MCP surface is three coarse tools: **`search`**, **`agents`**, and **`evals`**. The `blueprints` and `pages` tools were retired (those are console surfaces now).
+The MCP surface is four coarse tools: **`search`**, **`agents`**, **`evals`**, and **`connections`**. The `blueprints` and `pages` tools were retired (those are console surfaces now).
 
 ## Scopes — what an MCP key / API key needs
 
@@ -31,13 +31,14 @@ Everything here is covered by the **`mcp_customer_agent`** scope bundle (the def
 | Answer a pause / cancel a run | `workflows:write` |
 | Agent library read / write | `agents:read` / `agents:write` |
 | Routines read / write | `routines:read` / `routines:write` |
+| Subscriptions read / write | `subscriptions:read` / `subscriptions:write` |
 | Grade a message / run an eval (`evals.run`, MCP `evals` action `run`) | `evals:execute` |
 | Author or validate an eval (`evals.create` / `evals.update` / `evals.validate`) | `evals:write` |
 | Browse evals, poll runs, grader kinds | `evals:read` |
 | Connections reads (catalog, instances, status, runs, summary) | `connections:read` |
 | Connections writes (connect / disconnect / reconnect / config) | `connections:write` / `connections:delete` — OAuth sessions only; not on any API-key bundle |
 
-A read-only key (`mcp_read_only`) can run every synchronous endpoint and read chats — but cannot start a Chat, answer a pause, or write an agent/routine.
+A read-only key (`mcp_read_only`) can run every synchronous endpoint and read chats — but cannot start a Chat, answer a pause, or write an agent/routine/subscription.
 
 ## Start with the mental model
 
@@ -53,6 +54,7 @@ Before the individual calls, the shape of the whole thing — where Amdahl sits 
 - [Semantic search — meaning over the call corpus](semantic-search.md) — the vector lane of the same endpoint: meaning-shaped asks, combining a semantic query with the narrow semantic filter set, and reading `mode_ran` + `freshness` before you trust the results.
 - [Agentic Chat — start, poll, respond](agentic-chat.md) — the async lane end to end: `start` -> poll `read_url` (or `chat_status`) -> render the answer -> `respond` to an `awaiting_input` pause -> stream a run live. Over REST and over the MCP `agents` tool. Includes the `depth` knob (and why the default is `deep`).
 - [Routines — make a Chat recur](routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now over REST + MCP, the `config` (incl. `actions_allowed` for autonomous sends), and when a Routine beats a Workflow.
+- [Subscriptions — fire a Chat on an event](subscriptions.md) — the event-driven sibling of a Routine: a source (first: a configurable lead time before each Google Calendar event) fires a fresh Chat per occurrence, with the event rendered into the turn. The self-describing kinds catalog, the timing rules, the fire ledger, and test-fire.
 - [Saved agents — reuse a prompt](saved-agents.md) — the agent library: create a named, reusable agent, pin it in a Chat, and schedule it as a Routine. CRUD over REST + MCP.
 - [Evals — grade a message against customer voice](evals.md) — `evals.run` (MCP `evals` action `run`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown (relevant positioning / grounding / verified specifics / differentiation / cta clarity), the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval (`rule` / `sor_anchored` / `evidence_judge` graders).
 - [Amdahl evals in LangSmith](evals-in-langsmith.md) — wire the eval as a pipeline gate: connect the MCP server in LangSmith, fire `evals.run` with `mode: "gate"` (grade-only, no rewrite), poll the `/gate` read, and a copy-paste LangSmith custom evaluator that turns `gate.passed` into feedback. Plus the trap list (why `overall_score` and `lift` must never gate a pipeline, and how to pin evidence for A/Bs).

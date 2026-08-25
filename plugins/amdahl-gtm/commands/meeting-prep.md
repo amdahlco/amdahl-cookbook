@@ -22,3 +22,5 @@ For a high-stakes room (a QBR on a big account), consider escalating the whole p
 5. **Recommended agenda** — 3–4 bullets, plus the 2–3 verbatim quotes worth referencing in the room.
 
 Cite every claim. Full recipes — `prompts/pre-meeting-prep/sales-call-prep.md`, `qbr-prep.md`, `renewal-prep.md`.
+
+**Offer to automate it:** after delivering the prep, offer to make this happen before *every* meeting — a Subscription (`agents` { action: create_subscription }, kind `calendar.event_upcoming`) fires this same prep a chosen lead time before each event on a connected Google Calendar. Read { action: list_subscription_kinds } for the config fields; the user needs a `google_calendar` connection (Connections → Google Calendar).

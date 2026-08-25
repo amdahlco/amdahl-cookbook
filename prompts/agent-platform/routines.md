@@ -2,7 +2,7 @@
 
 **What this does**: Puts a Chat on a cron. A **Routine** is a schedule that fires one server-side Master agent turn — a fresh Chat, in its own Session — each occurrence. "Every Monday at 9, compile the pipeline recap and email it to the team." No open session required, no DSL: a name, a prompt, and a cron. Create / list / update / delete / run-now over the REST API and the MCP `agents` tool.
 
-**When to use it**: Any standing GTM job that should repeat *inside Amdahl* without you pasting anything — a weekly customer-voice digest, a Monday pipeline recap, a daily new-competitor-mention sweep. If the work is a one-off, just run a [Chat](agentic-chat.md); a Routine is the "…and keep doing it" wrapper around exactly that.
+**When to use it**: Any standing GTM job that should repeat *inside Amdahl* without you pasting anything — a weekly customer-voice digest, a Monday pipeline recap, a daily new-competitor-mention sweep. If the work is a one-off, just run a [Chat](agentic-chat.md); a Routine is the "…and keep doing it" wrapper around exactly that. If the trigger is an *event* rather than a clock ("prep me before every calendar meeting"), reach for the event-driven sibling: a [Subscription](subscriptions.md).
 
 ## Why this matters
 
@@ -144,6 +144,7 @@ A **Routine** is a scheduled *Chat* — a prompt and a cron, created from any co
 
 ## See also
 
+- [Subscriptions](subscriptions.md) — the event-driven sibling: same fire spine, triggered by an occurrence (a calendar event's lead window) instead of a cron.
 - [Agentic Chat](agentic-chat.md) — what each Routine fire actually is.
 - [Saved agents](saved-agents.md) — the reusable prompt you can pin into a Routine.
 - [Notify the workspace team](../notifications/notify-the-workspace-team.md) — the `email_member` contract a Routine uses for autonomous sends.
