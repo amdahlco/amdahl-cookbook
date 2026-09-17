@@ -27,6 +27,8 @@ Either way, that single install gives you the MCP connection **and** the slash c
 
 The plugin ships the `amdahl` MCP server (`https://app.amdahl.ai/mcp`) and starts it when the plugin is enabled. The first time a command calls an Amdahl tool, the standard MCP OAuth approval opens in your browser; after that it stays connected and scoped to your workspace. No token paste, no JSON to edit.
 
+It also ships `amdahl-docs` (`https://docs.amdahl.ai/mcp`), which serves Amdahl's documentation as tools — `list_docs`, `read_doc`, `search_docs`. That one is public: no OAuth prompt, no key, nothing to approve. It means a command can look up how a tool actually behaves instead of guessing at a parameter name, and it is why you never have to paste a docs URL into a prompt. Your data stays on the first server; this one carries only the manual.
+
 Run `/amdahl-gtm:setup` to confirm the connection and see what's on file. If you don't have an Amdahl account yet, start at <https://amdahl.ai>.
 
 ## Commands
