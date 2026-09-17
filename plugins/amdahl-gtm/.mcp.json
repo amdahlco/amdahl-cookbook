@@ -3,6 +3,10 @@
     "amdahl": {
       "type": "http",
       "url": "https://app.amdahl.ai/mcp"
+    },
+    "amdahl-docs": {
+      "type": "http",
+      "url": "https://docs.amdahl.ai/mcp"
     }
   }
 }
