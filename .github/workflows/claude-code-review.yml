@@ -6,16 +6,34 @@
 # Markdown docs repo (no code build, no TypeScript autofix machinery).
 #
 # What it does on every PR:
-#   1. Ask Claude to review the diff for DOCUMENTATION issues only (broken
+#   1. Run the unit tests of the review scripts in .github/scripts.
+#   2. Ask Claude to review the diff for DOCUMENTATION issues only (broken
 #      links, wrong API/MCP shapes, real customer names that should be
 #      placeholders, factual drift, malformed markdown).
-#   2. Post a summary comment (findings are advisory — they never block).
-#   3. Approve the PR as the amdahl-review-bot App ("review agent +1"),
-#      so a non-Critical docs PR gets an automatic +1 the same way the code
-#      repos do.
+#   3. Post a summary comment, then approve the PR as the amdahl-review-bot
+#      App ("review agent +1") when .github/scripts/cookbook_gate.py allows
+#      it. Findings can block the approve: a ⚠️ Link, ⚠️ Contract or ⚠️ Names
+#      finding does, and so does a finding with a missing or unrecognised
+#      severity. ✨ Consistency and ✨ Markdown findings are advisory. A
+#      maintainer who has read the blocking findings can apply the
+#      `review-ack` label and re-run this workflow to approve anyway, as in
+#      the code repos. Adding the label does not start a run by itself.
+#
+# Failure handling: FAIL CLOSED
+#   The Anthropic call goes through .github/scripts/anthropic_review_call.py
+#   (the same helper as amdahl-frontend), which returns the model's text or
+#   fails the step with a named reason in /tmp/review_status.txt. A missing
+#   key, an API error, a diff too large to review whole, or model output with
+#   no parseable JSON array fails the job; none of them counts as zero
+#   findings. A failed job posts one "Automated review did not run" comment
+#   with the reason and does not approve. The summary comment and the approve
+#   run only after the review completed, and the approval is pinned to the
+#   reviewed commit. The scripts run from the workflow's own commit
+#   (.review-tools/), and the reviewed diff is built from the checked-out head.
 #
 # Required secrets (an admin sets these on the repo or the amdahlco org):
-#   - PROD_ANTHROPIC_API_KEY   the Anthropic key the review call uses.
+#   - CI_ANTHROPIC_API_KEY   the Anthropic key the review call uses. Without
+#     it the job fails with no_key and posts the did-not-run comment.
 #   - BOT_APP_ID + BOT_APP_PRIVATE_KEY   the amdahl-review-bot GitHub App
 #     (installed on this repo with pull-requests: write). Preferred — an App
 #     is never the PR author, so it can Approve, and its token auto-expires.
@@ -50,7 +68,10 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    timeout-minutes: 10
+    # The model-calling step has its own 9-minute timeout, so a hung call
+    # fails a step, which runs the failure() report at the end of the job. A
+    # job timeout would cancel the job and skip that report.
+    timeout-minutes: 15
     # Job-level env so the app-token step's `if:` can gate on it (step-level
     # env is not in scope for that same step's `if`).
     env:
@@ -66,29 +87,61 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      # -----------------------------------------------------------------
-      # Step 1: Review the diff (Claude writes findings to a JSON file).
-      # -----------------------------------------------------------------
-      - name: Generate review findings
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.PROD_ANTHROPIC_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -eo pipefail
-          echo '[]' > /tmp/review_findings.json
+      # The review scripts run from the commit this workflow file was loaded
+      # from (the PR merge commit), not from the PR head. A branch cut before
+      # the scripts existed still gets them, and their CLI always matches the
+      # workflow that calls them. A PR that edits a script tests its own copy,
+      # because the merge commit includes the PR's changes.
+      - name: Checkout review scripts
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          path: .review-tools
+          sparse-checkout: .github/scripts
+          persist-credentials: false
 
-          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-            echo "::warning::PROD_ANTHROPIC_API_KEY is not set — skipping the review step (the Approve step still runs)."
-            exit 0
+      - name: Test the review scripts
+        run: |
+          if ! python3 -m unittest discover -s .review-tools/.github/scripts -p 'test_*.py' -v; then
+            echo "review script tests: failed (see the unittest output in the run log)" >> /tmp/review_status.txt
+            exit 1
           fi
 
-          # Fetch the PR diff. gh pr diff 406s past GitHub's 20k-line API cap,
-          # so fall back to a local merge-base diff (fetch-depth 0 above).
-          BASE_REF='${{ github.event.pull_request.base.ref }}'
-          if ! gh pr diff ${{ github.event.pull_request.number }} > /tmp/pr.diff 2>/tmp/pr_diff_err.txt; then
-            echo "gh pr diff failed ($(head -1 /tmp/pr_diff_err.txt)); falling back to local git diff"
-            git fetch origin "$BASE_REF" --quiet
-            git diff "origin/${BASE_REF}...HEAD" > /tmp/pr.diff
+      # -----------------------------------------------------------------
+      # Step 1: Review the diff (Claude writes findings to a JSON file).
+      # Every failure appends "<step>: <reason> (<detail>)" to
+      # /tmp/review_status.txt and exits 1. Nothing writes a stand-in '[]'.
+      # -----------------------------------------------------------------
+      - name: Generate review findings
+        timeout-minutes: 9
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.CI_ANTHROPIC_API_KEY }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -eo pipefail
+          rm -f /tmp/review_findings.json
+
+          # No key means no review, and no review means no approval.
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::error::CI_ANTHROPIC_API_KEY is not set; the review cannot run"
+            echo "review: no_key (CI_ANTHROPIC_API_KEY is empty or unset)" >> /tmp/review_status.txt
+            exit 1
+          fi
+
+          # Build the diff from the checked-out head (head.sha), not with
+          # gh pr diff, which returns the PR's current head. A re-run of an
+          # older run must review the commit it checked out, because that is
+          # the commit it may approve. The local diff also has no 20,000-line
+          # API cap. The checkout above uses fetch-depth 0.
+          echo "Building the PR diff for $HEAD_SHA..."
+          if ! git fetch origin "$BASE_REF" --quiet; then
+            echo "review diff: git fetch origin $BASE_REF failed" >> /tmp/review_status.txt
+            exit 1
+          fi
+          if ! git diff "origin/${BASE_REF}...HEAD" > /tmp/pr.diff; then
+            echo "review diff: git diff origin/${BASE_REF}...HEAD failed" >> /tmp/review_status.txt
+            exit 1
           fi
           echo "Diff: $(wc -l < /tmp/pr.diff) lines, $(wc -c < /tmp/pr.diff) bytes"
 
@@ -136,69 +189,93 @@ jobs:
 
           cat /tmp/review_prompt_header.txt /tmp/pr.diff > /tmp/full_prompt.txt
 
-          # Single-shot review via the Anthropic API (cookbook PRs are small).
-          python3 << 'APIEOF'
-          import urllib.request, urllib.error, json, os, sys, time
+          # The prompt is never trimmed. A review of part of the diff could
+          # approve changes it never read, so a prompt over the limit fails
+          # the review with diff_too_large and a human reviews the PR.
+          python3 << 'SIZEEOF' || exit 1
+          import sys
 
-          prompt = open('/tmp/full_prompt.txt').read()
-          # Guard against a huge diff blowing the context — trim to ~200k chars.
-          if len(prompt) > 200000:
-              prompt = prompt[:200000] + "\n\n[diff truncated for review]\n"
+          limit = 200000
+          with open('/tmp/full_prompt.txt', encoding='utf-8', errors='replace') as handle:
+              size = len(handle.read())
+          print(f'Prompt: {size} chars (limit {limit})')
+          if size > limit:
+              line = (f'review diff: diff_too_large (the prompt is {size} chars and the limit is {limit}; '
+                      'reviewing part of the diff is not a review)')
+              print(f'::error::{line}')
+              with open('/tmp/review_status.txt', 'a') as status:
+                  status.write(line + '\n')
+              sys.exit(1)
+          SIZEEOF
 
-          payload = json.dumps({
-              'model': 'claude-sonnet-4-5',
-              'max_tokens': 4096,
-              'messages': [{'role': 'user', 'content': prompt}],
-          }).encode()
+          # One Anthropic call through the shared helper. It writes the model's
+          # text to /tmp/review_output.txt or fails with a named reason
+          # (no_key, billing, auth, http_<n>, truncated, ...) in
+          # /tmp/review_status.txt. There is no '[]' fallback.
+          if ! python3 .review-tools/.github/scripts/anthropic_review_call.py \
+              --step "review" \
+              --prompt-file /tmp/full_prompt.txt \
+              --max-tokens 8192 \
+              --timeout 180 \
+              --budget-seconds 420 \
+              --out /tmp/review_output.txt; then
+            exit 1
+          fi
 
-          def build_req():
-              return urllib.request.Request(
-                  'https://api.anthropic.com/v1/messages',
-                  data=payload,
-                  headers={
-                      'x-api-key': os.environ['ANTHROPIC_API_KEY'],
-                      'anthropic-version': '2023-06-01',
-                      'content-type': 'application/json',
-                  },
-              )
+          # The output must hold a JSON array of finding objects. Anything else
+          # fails the job: it is an unreviewed PR, not a PR with zero findings.
+          python3 << 'PARSEEOF' || exit 1
+          import json, re, sys
 
-          text = '[]'
-          for attempt in range(3):
-              try:
-                  with urllib.request.urlopen(build_req(), timeout=180) as resp:
-                      data = json.loads(resp.read())
-                      text = data['content'][0]['text']
-                      break
-              except urllib.error.HTTPError as e:
-                  body = e.read().decode()
-                  if e.code == 429:
-                      wait = int(e.headers.get('Retry-After', 30))
-                      print(f'Rate limited, waiting {wait}s (attempt {attempt + 1}/3)', file=sys.stderr)
-                      time.sleep(wait)
-                      continue
-                  print(f'HTTP {e.code}: {body[:300]}', file=sys.stderr)
-                  break
-              except Exception as e:
-                  print(f'Error: {e}', file=sys.stderr)
-                  break
+          def fail(why):
+              line = f'review: unparseable ({why})'
+              print(f'::error::{line}')
+              with open('/tmp/review_status.txt', 'a') as status:
+                  status.write(line + '\n')
+              sys.exit(1)
 
-          import re
+          try:
+              with open('/tmp/review_output.txt', encoding='utf-8') as handle:
+                  text = handle.read()
+          except OSError as e:
+              fail(f'no model output file: {e}')
           match = re.search(r'\[[\s\S]*\]', text)
-          findings = []
-          if match:
-              try:
-                  parsed = json.loads(match.group())
-                  if isinstance(parsed, list):
-                      findings = parsed
-              except json.JSONDecodeError as e:
-                  print(f'JSON parse error: {e} — snippet: {text[:300]}', file=sys.stderr)
+          if not match:
+              print(f'No JSON array found; snippet: {text[:300]}')
+              fail('no JSON array in the model output')
+          try:
+              findings = json.loads(match.group())
+          except json.JSONDecodeError as e:
+              print(f'JSON parse error: {e}; snippet: {text[:300]}')
+              fail(f'JSON parse error: {e}')
+          if not isinstance(findings, list) or not all(isinstance(f, dict) for f in findings):
+              print(f'JSON is not an array of objects; snippet: {text[:300]}')
+              fail('JSON is not an array of finding objects')
 
-          json.dump(findings, open('/tmp/review_findings.json', 'w'), indent=2)
+          with open('/tmp/review_findings.json', 'w') as out:
+              json.dump(findings, out, indent=2)
           print(f'Review produced {len(findings)} finding(s)')
-          APIEOF
+          PARSEEOF
 
       # -----------------------------------------------------------------
-      # Step 2: Mint the amdahl-review-bot App token (Approve identity).
+      # Step 2: Positive evidence that the review ran to the end. The
+      # comment-and-approve step runs only when review_completed is 'true'.
+      # -----------------------------------------------------------------
+      - name: Mark review completed
+        id: review-complete
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if ! python3 -c "import json, sys; d = json.load(open(sys.argv[1])); sys.exit(0 if isinstance(d, list) and all(isinstance(x, dict) for x in d) else 1)" /tmp/review_findings.json 2>/dev/null; then
+            echo "::error::/tmp/review_findings.json is missing or not a JSON list of findings"
+            echo "mark review completed: unparseable (/tmp/review_findings.json is missing or not a JSON list of findings)" >> /tmp/review_status.txt
+            exit 1
+          fi
+          echo "review_completed=true" >> "$GITHUB_OUTPUT"
+          echo "review_completed=true for $HEAD_SHA"
+
+      # -----------------------------------------------------------------
+      # Step 3: Mint the amdahl-review-bot App token (Approve identity).
       # An App is never the PR author (no self-approve error) and its token
       # auto-expires. Skipped (→ BOT_PAT fallback) until the App secrets exist.
       # -----------------------------------------------------------------
@@ -212,9 +289,12 @@ jobs:
           private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
 
       # -----------------------------------------------------------------
-      # Step 3: Post the summary comment + Approve.
+      # Step 4: Post the summary comment, then Approve when
+      # .github/scripts/cookbook_gate.py allows it. Runs only after a
+      # completed review.
       # -----------------------------------------------------------------
       - name: Comment and approve
+        if: ${{ steps.review-complete.outputs.review_completed == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Prefer the App token (short-lived, never the PR author); fall back
@@ -225,38 +305,75 @@ jobs:
           # explicitly (empty on the PAT path, which keeps the gh-api-user path).
           BOT_LOGIN: ${{ steps.app-token.outputs.app-slug != '' && format('{0}[bot]', steps.app-token.outputs.app-slug) || '' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          # Set to 'true' only by the "Mark review completed" step. Nothing is
+          # posted or approved without it.
+          REVIEW_COMPLETED: ${{ steps.review-complete.outputs.review_completed }}
+          # The commit this run checked out and reviewed. The approval is
+          # pinned to it and skipped if the PR head has moved.
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -eo pipefail
+
+          # A failure here records its reason for the did-not-run comment.
+          fail() {
+            echo "::error::$1"
+            echo "comment and approve: $1" >> /tmp/review_status.txt
+            exit 1
+          }
+
+          if [ "${REVIEW_COMPLETED:-}" != "true" ]; then
+            fail "review_completed is '${REVIEW_COMPLETED:-}', not 'true'; posting nothing and not approving"
+          fi
+
           export GH_TOKEN="${BOT_PAT:-$GITHUB_TOKEN}"
           if [ -z "${BOT_PAT:-}" ]; then
             echo "::warning::BOT_PAT / App token is unset — an Approve via GITHUB_TOKEN will not count toward required reviews."
           fi
 
-          COUNT=$(python3 -c "import json; print(len(json.load(open('/tmp/review_findings.json'))))" 2>/dev/null || echo 0)
-          echo "Findings: $COUNT"
-
-          if [ "$COUNT" -eq 0 ]; then
-            gh pr comment "$PR_NUMBER" --body '🤖 **Code Review Complete** — No issues found ✅
-
-          This PR looks clean. No fixes needed.
-
-          Approving this PR (review agent +1).'
-          else
-            # Build an advisory checklist — docs findings never block the Approve.
-            python3 -c "
-          import json
-          f = json.load(open('/tmp/review_findings.json'))
-          lines = [f'🤖 **Code Review Summary** — {len(f)} advisory finding(s)', '', '> Documentation findings are advisory — the review agent still approves. Address any that are real:', '']
-          for it in f:
-              path = it.get('path', '?'); line = it.get('line', 0)
-              first = (it.get('body') or it.get('summary') or '').split(chr(10))[0]
-              lines.append(f'- [ ] \`{path}:{line}\` — {first}')
-          open('/tmp/summary.md', 'w').write(chr(10).join(lines))
-          "
-            gh pr comment "$PR_NUMBER" --body-file /tmp/summary.md
+          # These results are for HEAD_SHA. If the PR head has moved (a newer
+          # push, or a re-run of an older run), post nothing: the newer head
+          # gets its own run.
+          HEAD_NOW="$(gh pr view "$PR_NUMBER" --json headRefOid -q .headRefOid 2>/dev/null || true)"
+          if [ -z "$HEAD_NOW" ]; then
+            fail "github_api (could not read the head commit of PR #$PR_NUMBER)"
+          fi
+          if [ "$HEAD_NOW" != "$HEAD_SHA" ]; then
+            echo "::notice::PR head is now $HEAD_NOW but this run reviewed $HEAD_SHA; posting nothing and not approving"
+            exit 0
           fi
 
-          # -------- Approve (advisory; a failure warns, never blocks) --------
+          # Maintainer override: the review-ack label lets the gate approve
+          # despite blocking findings. Labels are read live, so a re-run after
+          # adding the label sees it. If they cannot be read, the gate sees no
+          # labels, which can only withhold an approval.
+          if ! gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name' > /tmp/pr_labels.txt 2>/dev/null; then
+            echo "::warning::Could not read the labels of PR #$PR_NUMBER; deciding as if it had none"
+            : > /tmp/pr_labels.txt
+          fi
+
+          # The gate writes the summary comment and prints approve=true|false
+          # and reason=<text>. Only the exact line approve=true approves.
+          if ! python3 .review-tools/.github/scripts/cookbook_gate.py \
+              --findings /tmp/review_findings.json \
+              --labels-file /tmp/pr_labels.txt \
+              --review-completed "$REVIEW_COMPLETED" \
+              --summary-out /tmp/summary.md > /tmp/gate_decision.txt; then
+            fail "gate_error (cookbook_gate.py could not decide; see the run log)"
+          fi
+          cat /tmp/gate_decision.txt
+          APPROVE="$(sed -n 's/^approve=//p' /tmp/gate_decision.txt)"
+          REASON="$(sed -n 's/^reason=//p' /tmp/gate_decision.txt)"
+
+          if ! gh pr comment "$PR_NUMBER" --body-file /tmp/summary.md; then
+            fail "github_api (could not post the summary comment)"
+          fi
+
+          # -------- Approve (only when the gate allows it) --------
+          if [ "$APPROVE" != "true" ]; then
+            echo "🛑 Not approving: $REASON"
+            exit 0
+          fi
+
           # An approval only registers from an identity that is NOT the PR
           # author AND is not the Actions token (GitHub blocks GITHUB_TOKEN from
           # approving PRs). So the amdahl-review-bot App (BOT_APP_ID +
@@ -264,17 +381,75 @@ jobs:
           # skip cleanly rather than attempt an approve that GitHub will refuse.
           if [ -z "${BOT_PAT:-}" ]; then
             echo "::warning::Approve skipped — no amdahl-review-bot App (BOT_APP_ID + BOT_APP_PRIVATE_KEY) or BOT_PAT is configured. GitHub blocks GITHUB_TOKEN from approving PRs, so no identity can approve. Configure the App to enable the auto-approve (+1)."
-          else
-            # Prefer BOT_LOGIN (an App slug has no `gh api user`); fall back to
-            # the authenticated user's login for the PAT path.
-            REVIEWER="${BOT_LOGIN:-$(gh api user -q .login 2>/dev/null || true)}"
-            AUTHOR="$(gh pr view "$PR_NUMBER" --json author -q .author.login 2>/dev/null || true)"
-            if [ -n "$REVIEWER" ] && [ "$REVIEWER" = "$AUTHOR" ]; then
-              echo "::warning::Skipping Approve — the Approve identity '$REVIEWER' is the PR author (GitHub forbids self-approve). Point BOT_PAT at a dedicated bot user or configure the amdahl-review-bot App."
-            else
-              gh pr review "$PR_NUMBER" --approve \
-                --body "🤖 **Code Review Approve** — automated review found no verified blocking issues." \
-                && echo "✅ Approved PR #$PR_NUMBER as ${REVIEWER:-bot}" \
-                || echo "::warning::Approve failed — check the bot's write access and that it is an allowed reviewer on the protected branch."
-            fi
+            exit 0
           fi
+
+          # Prefer BOT_LOGIN (an App slug has no `gh api user`); fall back to
+          # the authenticated user's login for the PAT path.
+          REVIEWER="${BOT_LOGIN:-$(gh api user -q .login 2>/dev/null || true)}"
+          AUTHOR="$(gh pr view "$PR_NUMBER" --json author -q .author.login 2>/dev/null || true)"
+          if [ -n "$REVIEWER" ] && [ "$REVIEWER" = "$AUTHOR" ]; then
+            echo "::warning::Skipping Approve — the Approve identity '$REVIEWER' is the PR author (GitHub forbids self-approve). Point BOT_PAT at a dedicated bot user or configure the amdahl-review-bot App."
+            exit 0
+          fi
+
+          # Approve only the reviewed commit. Re-check the head right before
+          # approving, and pin the review to HEAD_SHA with commit_id so it
+          # cannot land on a later push.
+          HEAD_NOW="$(gh pr view "$PR_NUMBER" --json headRefOid -q .headRefOid 2>/dev/null || true)"
+          if [ "$HEAD_NOW" != "$HEAD_SHA" ]; then
+            echo "::warning::Skipping Approve: PR head is '$HEAD_NOW' but this run reviewed '$HEAD_SHA'"
+            exit 0
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" \
+              -f event=APPROVE -f commit_id="$HEAD_SHA" \
+              -f body="🤖 **Code Review Approve** for ${HEAD_SHA:0:12}: $REASON." --silent; then
+            echo "✅ Approved PR #$PR_NUMBER at $HEAD_SHA as ${REVIEWER:-bot}"
+          else
+            echo "::warning::Approve failed — check the bot's write access and that it is an allowed reviewer on the protected branch."
+          fi
+
+      # -----------------------------------------------------------------
+      # Failure path: tell the PR the review did not run, with the reason
+      # the failing step wrote to /tmp/review_status.txt. No approval
+      # follows: every step after a failed one is skipped.
+      # -----------------------------------------------------------------
+      - name: Report that the review did not run
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 << 'PY'
+          import os
+
+          try:
+              reasons = open('/tmp/review_status.txt').read().strip()
+          except FileNotFoundError:
+              reasons = ''
+          if not reasons:
+              reasons = 'A review step failed before recording a reason. See the run log.'
+          reasons = reasons.replace('```', "'''")
+
+          body = '\n'.join([
+              '<!-- amdahl-review-did-not-run -->',
+              f"**Automated review did not run** for commit {os.environ['HEAD_SHA'][:12]}.",
+              '',
+              'The review bot did not approve this commit. It needs a human review. '
+              'Once the cause below is fixed, push a commit or re-run the latest '
+              'Code Review run for this PR.',
+              '',
+              'Reason:',
+              '```',
+              reasons,
+              '```',
+              '',
+              f"Run: {os.environ['RUN_URL']}",
+          ])
+          open('/tmp/review_did_not_run.md', 'w').write(body + '\n')
+          PY
+          cat /tmp/review_did_not_run.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/review_did_not_run.md \
+            || echo "::warning::Could not post the did-not-run comment on PR #$PR_NUMBER"
