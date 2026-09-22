@@ -112,9 +112,9 @@ jobs:
       #
       # This checkout is NOT the same protection GitHub gives this workflow
       # file itself. For a same-repo (non-fork) pull_request run, GitHub
-      # executes the .yml from the PR's own head — verified against this
+      # executes the .yml from the PR's own head (verified against this
       # job's own run history, including the run that first added this very
-      # step, which a base-pinned .yml could not have picked up — so a
+      # step, which a base-pinned .yml could not have picked up), so a
       # collaborator with push access to a branch here could still edit this
       # file directly within their own PR and bypass the gate that way. That
       # is the trust boundary branch-push access already gives everywhere
