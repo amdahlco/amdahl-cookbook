@@ -34,10 +34,14 @@
 #   completed, and the approval is pinned to the reviewed commit. A run that
 #   withholds or fails does not dismiss an approval an earlier run gave the
 #   same commit (a re-run); new pushes are covered by dismiss_stale_reviews.
-#   The scripts run from the PR's base commit (.review-tools/), the same
-#   pinning GitHub gives this workflow file itself, so a PR cannot edit its
-#   own copy of the scripts that review and gate it. The reviewed diff is
-#   still built from the checked-out head.
+#   The scripts run from the PR's base commit (.review-tools/), not from the
+#   PR's own edits to them, so a PR cannot make its own copy of the scripts
+#   approve itself. This file itself has no equivalent protection: GitHub
+#   runs a same-repo pull_request job from the PR's own head, .yml edits
+#   included, so a collaborator with push access to a branch here could
+#   still edit this file directly to bypass the gate. See the note on the
+#   "Checkout review scripts" step below. The reviewed diff is still built
+#   from the checked-out head.
 #
 # Required secrets (an admin sets these on the repo or the amdahlco org):
 #   - CI_ANTHROPIC_API_KEY   the Anthropic key the review call uses. Without
@@ -95,17 +99,26 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      # The review scripts run from the PR's base commit, the same pinning
-      # GitHub already gives this workflow YAML for pull_request triggers, and
-      # for the same reason: github.sha is GitHub's test-merge commit
-      # (base+head), so it contains the PR's own edits to these scripts. A PR
-      # could otherwise hardcode should_approve() to always approve, or gut
-      # its own tests, and the job would run that edited copy with full
-      # secrets in scope. Once this PR merges, every future PR's base sha
-      # already contains .github/scripts, so a branch cut before the scripts
-      # existed still gets them — a PR's own edits to a review script just
-      # take effect only after that PR is merged, like its own workflow-file
-      # edits do today.
+      # The review scripts run from the PR's base commit, not github.sha
+      # (GitHub's test-merge commit for pull_request triggers, base+head
+      # merged, which includes the PR's own edits). Without this, a same-repo
+      # PR could hardcode should_approve() to always approve, or gut its own
+      # tests so they still exit 0, and the job would run that edited copy
+      # with full secrets (CI_ANTHROPIC_API_KEY, a pull-requests: write
+      # token, BOT_PAT/App token) in scope. Once this PR merges, every future
+      # PR's base sha already contains .github/scripts, so a branch cut
+      # before the scripts existed still gets them; a PR's own edits to a
+      # review script take effect only after that PR merges.
+      #
+      # This checkout is NOT the same protection GitHub gives this workflow
+      # file itself. For a same-repo (non-fork) pull_request run, GitHub
+      # executes the .yml from the PR's own head — verified against this
+      # job's own run history, including the run that first added this very
+      # step, which a base-pinned .yml could not have picked up — so a
+      # collaborator with push access to a branch here could still edit this
+      # file directly within their own PR and bypass the gate that way. That
+      # is the trust boundary branch-push access already gives everywhere
+      # else in the repo; this checkout only closes the .github/scripts path.
       - name: Checkout review scripts
         uses: actions/checkout@v6
         with:
