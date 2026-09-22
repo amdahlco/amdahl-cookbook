@@ -33,8 +33,11 @@
 #   approve. The summary comment and the approve run only after the review
 #   completed, and the approval is pinned to the reviewed commit. A run that
 #   withholds or fails does not dismiss an approval an earlier run gave the
-#   same commit (a re-run); new pushes are covered by dismiss_stale_reviews. The scripts run from the workflow's own commit
-#   (.review-tools/), and the reviewed diff is built from the checked-out head.
+#   same commit (a re-run); new pushes are covered by dismiss_stale_reviews.
+#   The scripts run from the PR's base commit (.review-tools/), the same
+#   pinning GitHub gives this workflow file itself, so a PR cannot edit its
+#   own copy of the scripts that review and gate it. The reviewed diff is
+#   still built from the checked-out head.
 #
 # Required secrets (an admin sets these on the repo or the amdahlco org):
 #   - CI_ANTHROPIC_API_KEY   the Anthropic key the review call uses. Without
@@ -92,20 +95,27 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      # The review scripts run from the commit this workflow file was loaded
-      # from (the PR merge commit), not from the PR head. A branch cut before
-      # the scripts existed still gets them, and their CLI always matches the
-      # workflow that calls them. A PR that edits a script tests its own copy,
-      # because the merge commit includes the PR's changes.
+      # The review scripts run from the PR's base commit, the same pinning
+      # GitHub already gives this workflow YAML for pull_request triggers, and
+      # for the same reason: github.sha is GitHub's test-merge commit
+      # (base+head), so it contains the PR's own edits to these scripts. A PR
+      # could otherwise hardcode should_approve() to always approve, or gut
+      # its own tests, and the job would run that edited copy with full
+      # secrets in scope. Once this PR merges, every future PR's base sha
+      # already contains .github/scripts, so a branch cut before the scripts
+      # existed still gets them — a PR's own edits to a review script just
+      # take effect only after that PR is merged, like its own workflow-file
+      # edits do today.
       - name: Checkout review scripts
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.base.sha }}
           path: .review-tools
           sparse-checkout: .github/scripts
           persist-credentials: false
 
       - name: Test the review scripts
+        timeout-minutes: 5
         run: |
           if ! python3 -m unittest discover -s .review-tools/.github/scripts -p 'test_*.py' -v; then
             echo "review script tests: failed (see the unittest output in the run log)" >> /tmp/review_status.txt
@@ -154,7 +164,16 @@ jobs:
           # .gitattributes line marks -diff or binary) reaches the diff as a
           # single "Binary files ... differ" line, so the model never reads
           # it. Any added or changed binary file fails the review with
-          # unreviewable. Deleted files are not checked.
+          # unreviewable. Deleted files are not checked. A pure rename (same
+          # bytes, git's R100) is not flagged even when the file is binary --
+          # there is nothing new to read -- but a rename that also changed
+          # the bytes (R<100) still is: numstat cannot tell binary "-/-" for
+          # an unchanged rename apart from binary "-/-" for a changed one, so
+          # --name-status -M is checked first for the R100 case specifically.
+          if ! git diff --diff-filter=d --name-status -M -z "origin/${BASE_REF}...HEAD" > /tmp/pr.namestatus; then
+            echo "review diff: git diff --name-status origin/${BASE_REF}...HEAD failed" >> /tmp/review_status.txt
+            exit 1
+          fi
           if ! git diff --no-renames --diff-filter=d --numstat -z "origin/${BASE_REF}...HEAD" > /tmp/pr.numstat; then
             echo "review diff: git diff --numstat origin/${BASE_REF}...HEAD failed" >> /tmp/review_status.txt
             exit 1
@@ -162,12 +181,36 @@ jobs:
           python3 << 'BINEOF' || exit 1
           import sys
 
+          # --name-status -z gives "STATUS\0path\0" for an add/modify, and
+          # "R100\0old\0new\0" (three tokens) for a rename -- -M's rename
+          # detection reports the same file under both --name-status and
+          # --numstat, but only --name-status carries the similarity, so
+          # this pass alone can tell "same bytes" from "same bytes, binary".
+          with open('/tmp/pr.namestatus', 'rb') as handle:
+              tokens = [t for t in handle.read().split(b'\0') if t != b'']
+          unchanged_renames = set()
+          i = 0
+          while i < len(tokens):
+              status = tokens[i]
+              if status[:1] == b'R':
+                  new_path = tokens[i + 2]
+                  if status == b'R100':
+                      unchanged_renames.add(new_path)
+                  i += 3
+              else:
+                  i += 2
+
           with open('/tmp/pr.numstat', 'rb') as handle:
               records = handle.read().split(b'\0')
           binary = []
           for record in records:
               fields = record.split(b'\t', 2)
-              if len(fields) == 3 and fields[0] == b'-' and fields[1] == b'-':
+              if (
+                  len(fields) == 3
+                  and fields[0] == b'-'
+                  and fields[1] == b'-'
+                  and fields[2] not in unchanged_renames
+              ):
                   binary.append(fields[2].decode('utf-8', 'replace'))
           if binary:
               shown = ', '.join(binary[:20])
