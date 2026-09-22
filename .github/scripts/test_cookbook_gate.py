@@ -130,6 +130,27 @@ class RenderSummaryTest(unittest.TestCase):
         self.assertIn("2 blocking, 1 advisory", text)
         self.assertIn("`review-ack`", text)
 
+    def test_label_approval_says_the_label_covers_later_pushes(self):
+        approve, reason = gate.should_approve([LINK], ["review-ack"], True)
+        text = gate.render_summary([LINK], approve, reason)
+        self.assertTrue(approve)
+        self.assertIn("also approves later pushes", text)
+        self.assertIn("Remove the label", text)
+
+    def test_approval_without_the_label_has_no_label_warning(self):
+        for findings in ([], [MARKDOWN]):
+            with self.subTest(findings=findings):
+                approve, reason = gate.should_approve(findings, ["review-ack"], True)
+                text = gate.render_summary(findings, approve, reason)
+                self.assertTrue(approve)
+                self.assertNotIn("later pushes", text)
+
+    def test_withheld_summary_says_an_earlier_approval_still_counts(self):
+        approve, reason = gate.should_approve([LINK], [], True)
+        text = gate.render_summary([LINK], approve, reason)
+        self.assertFalse(approve)
+        self.assertIn("that approval still counts", text)
+
 
 class CliTest(unittest.TestCase):
     def setUp(self):

@@ -12,7 +12,9 @@ The rule, in order:
      missing or unrecognised severity, and anything that is not a finding
      object, because the gate cannot tell it is harmless.
   3. The review-ack label approves despite blocking findings. A maintainer
-     sets it after reading them, as in the code repos.
+     sets it after reading them, as in the code repos. The label is read on
+     every run, so it also approves later pushes until someone removes it;
+     the summary comment says so whenever the label is what approved.
 
 CLI, used by .github/workflows/claude-code-review.yml:
 
@@ -109,12 +111,23 @@ def render_summary(findings, approve, reason):
     lines.append("")
     if approve:
         lines.append("**Approval: allowed** (review agent +1): %s." % reason)
+        if any(is_blocking(f) for f in findings or ()):
+            # Only the label approves past a blocking finding, and it is read
+            # on every run, so it also covers pushes nobody has looked at.
+            lines.append("")
+            lines.append(
+                "While the `%s` label is set, the bot also approves later pushes to this PR, "
+                "including ones that add blocking findings. Remove the label once these "
+                "findings are handled." % REVIEW_ACK_LABEL
+            )
     else:
         lines.append("**Approval: withheld**: %s." % reason)
         lines.append("")
         lines.append(
             "Fix the blocking findings and push. If a finding is wrong, a maintainer can apply "
-            "the `%s` label and re-run this workflow to approve anyway." % REVIEW_ACK_LABEL
+            "the `%s` label and re-run this workflow to approve anyway. If an earlier run "
+            "approved this same commit, that approval still counts until a maintainer "
+            "dismisses it." % REVIEW_ACK_LABEL
         )
     return "\n".join(lines) + "\n"
 

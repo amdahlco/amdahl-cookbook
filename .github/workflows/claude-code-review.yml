@@ -17,18 +17,23 @@
 #      severity. ✨ Consistency and ✨ Markdown findings are advisory. A
 #      maintainer who has read the blocking findings can apply the
 #      `review-ack` label and re-run this workflow to approve anyway, as in
-#      the code repos. Adding the label does not start a run by itself.
+#      the code repos. Adding the label does not start a run by itself. The
+#      label is read on every run, so while it is set the bot also approves
+#      later pushes that add blocking findings; remove it once the findings
+#      it covered are handled.
 #
 # Failure handling: FAIL CLOSED
 #   The Anthropic call goes through .github/scripts/anthropic_review_call.py
 #   (the same helper as amdahl-frontend), which returns the model's text or
 #   fails the step with a named reason in /tmp/review_status.txt. A missing
-#   key, an API error, a diff too large to review whole, or model output with
-#   no parseable JSON array fails the job; none of them counts as zero
-#   findings. A failed job posts one "Automated review did not run" comment
-#   with the reason and does not approve. The summary comment and the approve
-#   run only after the review completed, and the approval is pinned to the
-#   reviewed commit. The scripts run from the workflow's own commit
+#   key, an API error, a diff too large to review whole, a changed file git
+#   shows as binary, or model output with no parseable JSON array fails the
+#   job; none of them counts as zero findings. A failed job posts one
+#   "Automated review did not run" comment with the reason and does not
+#   approve. The summary comment and the approve run only after the review
+#   completed, and the approval is pinned to the reviewed commit. A run that
+#   withholds or fails does not dismiss an approval an earlier run gave the
+#   same commit (a re-run); new pushes are covered by dismiss_stale_reviews. The scripts run from the workflow's own commit
 #   (.review-tools/), and the reviewed diff is built from the checked-out head.
 #
 # Required secrets (an admin sets these on the repo or the amdahlco org):
@@ -144,6 +149,37 @@ jobs:
             exit 1
           fi
           echo "Diff: $(wc -l < /tmp/pr.diff) lines, $(wc -c < /tmp/pr.diff) bytes"
+
+          # A file git treats as binary (one with a NUL byte, or one a
+          # .gitattributes line marks -diff or binary) reaches the diff as a
+          # single "Binary files ... differ" line, so the model never reads
+          # it. Any added or changed binary file fails the review with
+          # unreviewable. Deleted files are not checked.
+          if ! git diff --no-renames --diff-filter=d --numstat -z "origin/${BASE_REF}...HEAD" > /tmp/pr.numstat; then
+            echo "review diff: git diff --numstat origin/${BASE_REF}...HEAD failed" >> /tmp/review_status.txt
+            exit 1
+          fi
+          python3 << 'BINEOF' || exit 1
+          import sys
+
+          with open('/tmp/pr.numstat', 'rb') as handle:
+              records = handle.read().split(b'\0')
+          binary = []
+          for record in records:
+              fields = record.split(b'\t', 2)
+              if len(fields) == 3 and fields[0] == b'-' and fields[1] == b'-':
+                  binary.append(fields[2].decode('utf-8', 'replace'))
+          if binary:
+              shown = ', '.join(binary[:20])
+              if len(binary) > 20:
+                  shown += f' and {len(binary) - 20} more'
+              line = f'review diff: unreviewable (git shows a binary diff for {shown}; the model cannot read these files)'
+              print(f'::error::{line}')
+              with open('/tmp/review_status.txt', 'a') as status:
+                  status.write(line + '\n')
+              sys.exit(1)
+          print('No binary files in the diff')
+          BINEOF
 
           cat > /tmp/review_prompt_header.txt << 'HEADER_EOF'
           You are reviewing a pull request to the Amdahl Cookbook — a library of copy-paste GTM prompt recipes and developer guides written in Markdown. There is NO application code here. Do NOT review for code security, types, runtime bugs, or performance. Review the diff for DOCUMENTATION-QUALITY issues only, and output findings as JSON.
@@ -437,9 +473,10 @@ jobs:
               '<!-- amdahl-review-did-not-run -->',
               f"**Automated review did not run** for commit {os.environ['HEAD_SHA'][:12]}.",
               '',
-              'The review bot did not approve this commit. It needs a human review. '
-              'Once the cause below is fixed, push a commit or re-run the latest '
-              'Code Review run for this PR.',
+              'This run did not approve this commit. It needs a human review. '
+              'If an earlier run approved this same commit, that approval still '
+              'counts until a maintainer dismisses it. Once the cause below is '
+              'fixed, push a commit or re-run the latest Code Review run for this PR.',
               '',
               'Reason:',
               '```',
