@@ -16,7 +16,7 @@ A real investigation takes longer than one HTTP request, so **Chat is always asy
 | Poll one run | `chat.get_run` | `GET /chats/:id/runs/:run_id` | `chat_status` | `conversations:read` |
 | Read a chat + its runs | `chat.get` | `GET /chats/:id` | (resource `chat://<id>`) | `conversations:read` |
 | List chats | `chat.list` | `GET /chats` | (resource `chat://list`) | `conversations:read` |
-| Answer a pause | (resume) | `POST /conversations/:id/turns/:run/resume` | `respond` | `workflows:write` |
+| Answer a pause | `agents.resume` | `POST /agents/:run_id/resume` | `respond` | `workflows:write` |
 | Cancel a run | `agents.cancel` | `POST /agents/:run_id/cancel` | `cancel_chat` | `workflows:write` |
 | Rename a chat | `chat.rename` | `PATCH /chats/:id` | — | `conversations:write` |
 
@@ -57,7 +57,7 @@ agents start_chat
   "status": "queued",
   "stream_url": "/api/platform/v1/conversations/c_8f21.../turns/r_4a90.../stream",
   "read_url":   "/api/platform/v1/chats/c_8f21.../runs/r_4a90...",
-  "resume_url": "/api/platform/v1/conversations/c_8f21.../turns/r_4a90.../resume"
+  "resume_url": "/api/platform/v1/agents/r_4a90.../resume"
 }
 ```
 
@@ -162,7 +162,7 @@ Answer it with the run's `resume_url` (REST) or the `respond` action (MCP). The 
 **REST:**
 
 ```
-POST /conversations/c_8f21.../turns/r_4a90.../resume
+POST /agents/r_4a90.../resume
 Authorization: Bearer <api-key with workflows:write>
 Content-Type: application/json
 
