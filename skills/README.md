@@ -16,15 +16,19 @@ agree with the verdict. See
 ## Setup
 
 ```bash
-export AMDAHL_API_KEY='...'          # Settings → API keys in the console
+export AMDAHL_KEY='...'              # Settings, then Developer, Create key
 ```
 
 Optional: `AMDAHL_API_BASE` (defaults to `https://app.amdahl.ai/api/platform/v1`),
 `AMDAHL_POLL_ATTEMPTS`, `AMDAHL_POLL_INTERVAL`.
 
-`AMDAHL_MCP_API_KEY` is accepted as a fallback, because an MCP client config
-already sets it and keeping two copies of one secret in sync is how they go
-stale.
+`AMDAHL_KEY` is the canonical name. `AMDAHL_API_KEY` and `AMDAHL_MCP_API_KEY`
+are accepted as fallbacks, because older setups and MCP client configs already
+set them, and keeping two copies of one secret in sync is how they go stale.
+
+Create the key in the console under Settings, then Developer, **Create key**.
+Set **Access** to **Customer agent** (the default): grading needs
+`evals:execute`, which a Read only key lacks.
 
 ## Scripts
 

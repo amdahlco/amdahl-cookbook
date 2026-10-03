@@ -35,11 +35,11 @@
 # The API base. Override for a non-production workspace.
 AMDAHL_API_BASE="${AMDAHL_API_BASE:-https://app.amdahl.ai/api/platform/v1}"
 
-# The workspace API key. `AMDAHL_API_KEY` is the documented name;
-# `AMDAHL_MCP_API_KEY` is accepted because that is what an MCP client config
-# already sets, and making people keep two copies of one secret in sync is how
-# they end up stale.
-AMDAHL_KEY="${AMDAHL_API_KEY:-${AMDAHL_MCP_API_KEY:-}}"
+# The workspace API key. `AMDAHL_KEY` is the documented name, the one every
+# Amdahl doc uses. `AMDAHL_API_KEY` and `AMDAHL_MCP_API_KEY` are accepted as
+# fallbacks, because older setups and MCP client configs already set them, and
+# making people keep two copies of one secret in sync is how they end up stale.
+AMDAHL_KEY="${AMDAHL_KEY:-${AMDAHL_API_KEY:-${AMDAHL_MCP_API_KEY:-}}}"
 
 # How long the server holds a read open waiting for the run to settle.
 # `GET /eval-runs/<id>?wait_ms=30000` blocks up to 30s, so a 2-3 minute run is
@@ -81,8 +81,8 @@ AMDAHL_RL_FILE="${AMDAHL_BREAKER_FILE}.rl"
 HTTP_TIMEOUT=$(( AMDAHL_WAIT_MS / 1000 + 30 ))
 
 if [ -z "$AMDAHL_KEY" ]; then
-  echo "ERROR: set AMDAHL_API_KEY to your workspace API key." >&2
-  echo "  export AMDAHL_API_KEY='...'   # Settings -> API keys in the console" >&2
+  echo "ERROR: set AMDAHL_KEY to your workspace API key." >&2
+  echo "  export AMDAHL_KEY='...'   # console: Settings, then Developer, Create key" >&2
   return 1 2>/dev/null || exit 1
 fi
 

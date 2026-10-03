@@ -53,7 +53,7 @@ renders, so the two cannot disagree.
 2. **Grade.**
 
    ```bash
-   export AMDAHL_API_KEY='...'          # Settings → API keys
+   export AMDAHL_KEY='...'              # Settings, then Developer, Create key
    bash scripts/grade.sh draft.md runs/2026-08-03-launch "" "VP of Marketing"
    ```
 
@@ -217,7 +217,7 @@ to force a re-grade.
 
 | Env var | Default | What it does |
 | --- | --- | --- |
-| `AMDAHL_API_KEY` | - | Workspace API key. `AMDAHL_MCP_API_KEY` is accepted too. |
+| `AMDAHL_KEY` | - | Workspace API key. `AMDAHL_API_KEY` and `AMDAHL_MCP_API_KEY` are accepted too. |
 | `AMDAHL_API_BASE` | production | Point at a non-production workspace. |
 | `AMDAHL_EVAL_SLUG` | `prompt-and-message-eval` | Which eval to run. |
 | `AMDAHL_WAIT_MS` | `30000` | How long the server holds each read open (`?wait_ms=`). `0` falls back to tight polling, only useful against a server that does not support it. |
