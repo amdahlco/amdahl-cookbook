@@ -19,20 +19,20 @@ Six questions you'll be able to answer the minute you finish setup. Each one lin
 
 ---
 
-## Connect in the Claude UI — no key needed
+## Connect — no key needed
 
-Claude signs in to your workspace over OAuth. Works in the Claude web app and Claude Desktop — both expose Settings → Connectors.
+Connect once. Every client below signs in to your workspace over OAuth with your work email, so there is no key to copy.
 
-1. Open Claude and go to **Settings → Connectors** (direct link: <https://claude.ai/customize/connectors>).
-2. Click **Add custom connector**.
-3. Name it **Amdahl** and set the URL to `https://app.amdahl.ai/mcp`.
-4. Click **Connect**, then **Configure**.
-5. Sign in to Amdahl when prompted, then choose this workspace.
+- **Claude or ChatGPT:** add a connector with the URL `https://app.amdahl.ai/mcp` and sign in with your work email. In Claude it is **Settings → Connectors → Add custom connector** (direct link: <https://claude.ai/customize/connectors>); name it **Amdahl**. In ChatGPT, custom connectors are under Settings → Apps and Connectors, with Developer mode on.
+- **Claude Code:** run `claude mcp add --transport http amdahl https://app.amdahl.ai/mcp`, then `/mcp`.
+- **Codex:** run `codex mcp add amdahl --url https://app.amdahl.ai/mcp` and `codex mcp login amdahl`. Then add `required = true` under `[mcp_servers.amdahl]` in `~/.codex/config.toml`, so Codex waits for Amdahl before it starts.
+
+No workspace yet? Sign in at <https://console.amdahl.ai/new> to join the beta. If your company already uses Amdahl, an admin there can add you.
+
+**Check your setup.** Ask Claude to call the `connections` tool with `action: "setup_status"`. It names the workspace you connected and your role, says whether the Message Optimizer will accept your calls (and if not, why), and lists any data connection that needs attention.
 
 <!-- TODO: screenshot of the connector-add UI here -->
 <!-- TODO: screenshot of the OAuth approval -->
-
-If you don't have an Amdahl account yet, start at <https://amdahl.ai>.
 
 ## Setup — Claude Code (1 line)
 
@@ -42,7 +42,7 @@ For the technical folks. Same OAuth flow, but from your terminal:
 claude mcp add --transport http amdahl "https://app.amdahl.ai/mcp"
 ```
 
-The first time you call an Amdahl tool, the OAuth approval opens in your browser. After that it stays connected.
+Then run `/mcp` and sign in in your browser. After that it stays connected.
 
 ### Or install the plugin (one-click, adds slash commands)
 
@@ -156,7 +156,9 @@ If you've installed the plugin, the `blueprint-authoring` skill routes "make thi
 
 Two ready-to-drop agent skills for the grading loop — write, ground, draft,
 grade, fix, rerun. Copy a directory into your harness's skills path
-(`.claude/skills/` for Claude Code), set `AMDAHL_API_KEY`, and it works as-is.
+(`.claude/skills/` for Claude Code), set `AMDAHL_KEY`, and it works as-is.
+Create the key in the console under Settings, then Developer, **Create key**,
+with **Access** set to **Customer agent**.
 
 | Skill                                                    | Does                                                   | Hands back                  |
 | -------------------------------------------------------- | ------------------------------------------------------ | --------------------------- |
