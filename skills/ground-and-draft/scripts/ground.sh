@@ -46,10 +46,10 @@ LIMIT="${4:-25}"
 FILTERS="${5:-}"
 
 AMDAHL_API_BASE="${AMDAHL_API_BASE:-https://app.amdahl.ai/api/platform/v1}"
-AMDAHL_KEY="${AMDAHL_API_KEY:-${AMDAHL_MCP_API_KEY:-}}"
+AMDAHL_KEY="${AMDAHL_KEY:-${AMDAHL_API_KEY:-${AMDAHL_MCP_API_KEY:-}}}"
 if [ -z "$AMDAHL_KEY" ]; then
-  echo "ERROR: set AMDAHL_API_KEY to your workspace API key." >&2
-  echo "  export AMDAHL_API_KEY='...'   # Settings -> API keys in the console" >&2
+  echo "ERROR: set AMDAHL_KEY to your workspace API key." >&2
+  echo "  export AMDAHL_KEY='...'   # console: Settings, then Developer, Create key" >&2
   exit 1
 fi
 

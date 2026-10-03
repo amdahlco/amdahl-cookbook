@@ -27,7 +27,7 @@ actually said rather than in what the model assumes they would say.
 2. **Ground — scoped the way the grade will be scoped.**
 
    ```bash
-   export AMDAHL_API_KEY='...'          # Settings → API keys
+   export AMDAHL_KEY='...'              # Settings, then Developer, Create key
    bash scripts/ground.sh semantic "their pain, in plain language" \
      evidence/$(date +%F)-launch.json 25 \
      '[{"field":"speaker_type","op":"eq","value":"external"}]'
