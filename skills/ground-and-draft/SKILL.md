@@ -1,6 +1,6 @@
 ---
 name: ground-and-draft
-description: Pull real customer evidence from the Amdahl corpus, freeze it, and draft GTM copy grounded in it. Use at the start of any GTM writing task — outbound email, sequence step, one-pager, call prep, website copy — BEFORE grading. Hands back a draft for a human to read.
+description: Pull real customer evidence from the Amdahl corpus, freeze it, and get GTM copy grounded in it. For an outbound email or LinkedIn message, Amdahl writes it from the grounded context; for other copy (one-pager, call prep, website copy) you draft it. Use at the start of any GTM writing task, BEFORE grading. Hands back a draft for a human to read.
 ---
 
 # ground-and-draft
@@ -64,10 +64,25 @@ actually said rather than in what the model assumes they would say.
    read the breakdown anyway, because a pull that comes back thin after filtering
    is telling you the theme is yours, not theirs.
 
-4. **Draft.** Their problem first, in their words. One proof point. No invented
-   numbers, no invented peer names, no invented case studies — the eval checks
-   specifics against the corpus and a fabricated one is worse than a vague one.
-   Obey the artifact's own length and voice rules.
+4. **Draft.** For an outbound email or LinkedIn message, ground, then Amdahl
+   writes. Do not draft it yourself: the Optimizer writes from context and does
+   not read a draft. Call `messages.optimize` with:
+   - `context.facts`: the recipient, the trigger or signal, what you offer, and
+     the proof point, one fact per entry, each stated exactly as its source does.
+     Never put a customer quote in a fact: a fact is graded as yours, not a
+     customer's.
+   - `context.rules`: the artifact's length, voice and ask.
+   - `"evidence": "workspace"`, so the Optimizer reads your customers' words
+     itself and checks the message's claims against them.
+
+   The returned `message` is the draft. Use it as returned. See
+   https://docs.amdahl.ai/concepts/context for what counts as enough context.
+
+   For any other copy (a one-pager, call prep, website copy), draft it yourself.
+   Their problem first, in their words. One proof point. No invented numbers, no
+   invented peer names, no invented case studies — the eval checks specifics
+   against the corpus and a fabricated one is worse than a vague one. Obey the
+   artifact's own length and voice rules.
 
 5. **Create the run folder.**
    ```
