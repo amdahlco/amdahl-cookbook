@@ -6,7 +6,7 @@
 
 ## Why this matters
 
-Not every question deserves a full investigation. "How many deals are in stage 3?" is a lookup, and routing it through a heavy multi-step agent turn is slow and overkill. Amdahl's fast lane is the synchronous `search` tool: it turns your question into a SQL query over your tenant's data, runs it, and returns the rows **and the query it ran** in a single call — so you get the answer immediately and can see exactly how it was computed. It's the right tool for "get me the number"; save the multi-step Chat for "figure out what's going on."
+Not every question deserves a full investigation. "How many deals are in stage 3?" is a lookup, and routing it through a heavy multi-step agent turn is slow and overkill. Amdahl's fast lane is the synchronous `search_customers` tool: it turns your question into a SQL query over your tenant's data, runs it, and returns the rows **and the query it ran** in a single call — so you get the answer immediately and can see exactly how it was computed. It's the right tool for "get me the number"; save the multi-step Chat for "figure out what's going on."
 
 The fast lane reads **your own data only**. It has no public-web mode — for a market or competitor number, ask it as a [Chat](../agent-platform/agentic-chat.md), which fans out to the web and reports the divergence between what the market says and what your customers say.
 
@@ -46,6 +46,6 @@ The fast lane is your data only. For "how many of our deals mention {competitor}
 
 ## Tips
 
-- **Name the lane.** Saying "fast lookup, not an investigation" keeps Claude on the synchronous `search` tool instead of opening a multi-step Chat — faster and cheaper for a simple ask.
+- **Name the lane.** Saying "fast lookup, not an investigation" keeps Claude on the synchronous `search_customers` tool instead of opening a multi-step Chat — faster and cheaper for a simple ask.
 - **A partial answer is still a real answer — but say which part.** If the lookup covered two of your three questions, the two numbers are sound; presenting them as the whole answer is the failure mode. Ask it to name what it missed.
 - **The SQL is the trust.** Every lookup returns the query it ran; skim it before you quote the number in a forecast.

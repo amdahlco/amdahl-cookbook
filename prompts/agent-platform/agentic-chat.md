@@ -10,13 +10,13 @@ A real investigation takes longer than one HTTP request, so **Chat is always asy
 
 ## The operations
 
-| Job | Operation | REST | MCP (`agents` tool) | Scope |
+| Job | Operation | REST | MCP tool | Scope |
 |---|---|---|---|---|
 | Start a run | `chat.start` | `POST /chat` | `start_chat` | `conversations:write` |
-| Poll one run | `chat.get_run` | `GET /chats/:id/runs/:run_id` | `chat_status` | `conversations:read` |
+| Poll one run | `chat.get_run` | `GET /chats/:id/runs/:run_id` | `get_chat_run` | `conversations:read` |
 | Read a chat + its runs | `chat.get` | `GET /chats/:id` | (resource `chat://<id>`) | `conversations:read` |
 | List chats | `chat.list` | `GET /chats` | (resource `chat://list`) | `conversations:read` |
-| Answer a pause | `agents.resume` | `POST /agents/:run_id/resume` | `respond` | `workflows:write` |
+| Answer a pause | `agents.resume` | `POST /agents/:run_id/resume` | `answer_chat_question` | `workflows:write` |
 | Cancel a run | `agents.cancel` | `POST /agents/:run_id/cancel` | `cancel_chat` | `workflows:write` |
 | Rename a chat | `chat.rename` | `PATCH /chats/:id` | — | `conversations:write` |
 
@@ -39,10 +39,10 @@ Content-Type: application/json
 }
 ```
 
-**MCP** (the `agents` tool, `start_chat` action):
+**MCP** (`start_chat`):
 
 ```
-agents start_chat
+start_chat
   input  = "Prep me for the Spotify call: which of our customers look like them, what worked and what didn't, and the exact rebuttal when they ask why they can't just use their Zoom MCP."
   config = { "depth": "standard" }
 ```
@@ -92,10 +92,10 @@ GET /chats/c_8f21.../runs/r_4a90...?wait_ms=30000
 Authorization: Bearer <api-key with conversations:read>
 ```
 
-**MCP** (`chat_status`):
+**MCP** (`get_chat_run`):
 
 ```
-agents chat_status
+get_chat_run
   chat_id = "c_8f21..."
   run_id  = "r_4a90..."
   wait_ms = 30000
@@ -157,7 +157,7 @@ If the run needs a decision (and `on_question` isn't `none`), it settles at `sta
 }
 ```
 
-Answer it with the run's `resume_url` (REST) or the `respond` action (MCP). The response must match the `pending_input.schema`.
+Answer it with the run's `resume_url` (REST) or the `answer_chat_question` tool (MCP). The response must match the `pending_input.schema`.
 
 **REST:**
 
@@ -169,15 +169,15 @@ Content-Type: application/json
 { "choice": "Spotify for Artists (artists.spotify.com)" }
 ```
 
-**MCP** (`respond`):
+**MCP** (`answer_chat_question`):
 
 ```
-agents respond
+answer_chat_question
   run_id   = "r_4a90..."
   response = { "choice": "Spotify for Artists (artists.spotify.com)" }
 ```
 
-The run re-queues (`status: "queued"`); go back to Step 2 and keep polling. To abandon a run instead, cancel it — `POST /agents/:run_id/cancel` (REST) or `agents cancel_chat run_id=...` (MCP); cancellation cascades to any sub-agents it spawned.
+The run re-queues (`status: "queued"`); go back to Step 2 and keep polling. To abandon a run instead, cancel it — `POST /agents/:run_id/cancel` (REST) or `cancel_chat run_id=...` (MCP); cancellation cascades to any sub-agents it spawned.
 
 ## The whole loop, in pseudocode
 
@@ -194,7 +194,7 @@ render r.run.answer   # answer_text + content_blocks + follow_ups
 
 ## Paste this into Claude
 
-The MCP-native version — Claude drives the `agents` tool for you:
+The MCP-native version — Claude drives `start_chat` and `get_chat_run` for you:
 
 ```
 Investigate this over our own customer data — a full multi-step Chat, not a quick lookup.

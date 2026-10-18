@@ -16,7 +16,7 @@ The fast lane is the one door that **blocks and returns the answer**. It turns y
 |---|---|
 | Operation | `search.query` |
 | REST | `POST /search/query` |
-| MCP | `search` tool, action `query` |
+| MCP | `search_customers` |
 | Scope | `data:read` |
 
 One verb, three lanes. `mode: "fuzzy"` is this one; the siblings are [structured search](structured-search.md) (`filter`) and [semantic search](semantic-search.md) (`semantic`). Omit `mode` and an auto-router picks; pass it and your choice always wins.
@@ -48,10 +48,10 @@ Content-Type: application/json
 }
 ```
 
-**MCP** (the `search` coarse tool, `query` action):
+**MCP** (`search_customers`):
 
 ```
-search query
+search_customers
   query = "How many open opportunities over $50K ACV have had no meaningful touch in the last 14 days? List deal name, ACV, owner, and last-touch date, newest activity first."
   mode  = "fuzzy"
   limit = 50
@@ -149,7 +149,7 @@ Two features of the old `search.run` were removed with it, and neither has a dro
 
 ## Paste this into Claude
 
-The MCP-native version of the same lookup — Claude picks the `search` tool for you:
+The MCP-native version of the same lookup — Claude picks `search_customers` for you:
 
 ```
 Fast lookup, not a deep investigation — use the synchronous search over our data and return the answer in one pass.

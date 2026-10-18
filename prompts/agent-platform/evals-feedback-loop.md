@@ -1,6 +1,6 @@
 # Eval feedback loop — did the recommendation actually land?
 
-**What this does**: Records what happened *after* an eval run — whether its recommendation was applied, where, and why not when it wasn't — and rolls that up across runs. Three calls: `feedback` (write), `feedback_status` (read one run), `adoption` (read the roll-up). Over the REST API and over the MCP `evals` tool.
+**What this does**: Records what happened *after* an eval run — whether its recommendation was applied, where, and why not when it wasn't — and rolls that up across runs. Three calls: `record_eval_feedback` (write), `get_eval_feedback` (read one run), `get_eval_adoption` (read the roll-up), over the REST API and as MCP tools.
 
 **When to use it**: You have an agent or a script that reads eval reports and then *does* something with them — rewrites a routine's prompt, files the improved copy, decides against it. Call `feedback` once you have acted. Over time `adoption` answers the question the score never could: is anyone using this?
 
@@ -14,11 +14,11 @@ That gap matters more than it sounds. A rising score with no adoption means your
 
 ## The operations
 
-| Job | Operation | REST | MCP (`evals` tool) | Scope |
+| Job | Operation | REST | MCP tool | Scope |
 |---|---|---|---|---|
-| Report what happened | `evals.record_feedback` | `POST /eval-runs/:id/feedback` | `feedback` | `evals:execute` |
-| Read one run's feedback | `eval_run.feedback` | `GET /eval-runs/:id/feedback` | `feedback_status` | `evals:read` |
-| Roll it up across runs | `eval.adoption` | `GET /evals/:slug/adoption` | `adoption` | `evals:read` |
+| Report what happened | `evals.record_feedback` | `POST /eval-runs/:id/feedback` | `record_eval_feedback` | `evals:execute` |
+| Read one run's feedback | `eval_run.feedback` | `GET /eval-runs/:id/feedback` | `get_eval_feedback` | `evals:read` |
+| Roll it up across runs | `eval.adoption` | `GET /evals/:slug/adoption` | `get_eval_adoption` | `evals:read` |
 
 ---
 
@@ -39,10 +39,10 @@ Content-Type: application/json
 }
 ```
 
-**MCP** (the `evals` tool, `feedback` action):
+**MCP** (`record_eval_feedback`):
 
 ```
-evals feedback
+record_eval_feedback
   run_id: 8f3c…
   outcome: used_with_edits
   evidence: did_it_myself

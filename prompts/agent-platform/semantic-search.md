@@ -14,7 +14,7 @@ Content discovery over calls is exactly where literal filters fail: nobody's CRM
 |---|---|
 | Operation | `search.query` (semantic lane) |
 | REST | `POST /search/query` |
-| MCP | `search` tool, action `query` |
+| MCP | `search_customers` |
 | Scope | `data:read` |
 
 ## Request
@@ -31,10 +31,10 @@ Content-Type: application/json
 }
 ```
 
-**MCP** (the `search` coarse tool, `query` action):
+**MCP** (`search_customers`):
 
 ```
-search query
+search_customers
   query = "What do customers say about onboarding friction and time-to-value?"
   mode  = "semantic"
   limit = 20
@@ -102,7 +102,7 @@ One more routing rule worth knowing: the **fuzzy** NL lane takes a free-text que
 ## Paste this into Claude
 
 ```
-Meaning search over our call corpus — use the search tool's query action in
+Meaning search over our call corpus — use search_customers in
 semantic mode, not a literal filter and not a SQL lookup.
 
 Find: {e.g. "what customers say about onboarding friction and time-to-value"}.

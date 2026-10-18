@@ -1,6 +1,8 @@
 # Subscriptions — fire a Chat on an event
 
-**What this does**: Puts an agent behind an event. A **Subscription** is the event-driven sibling of a [Routine](routines.md): where a routine fires on a cron, a subscription fires when its **source** observes an occurrence — each fire is one server-side Master turn (or the [saved agent](saved-agents.md) you pin) in a **fresh Chat**, with the triggering event rendered into the turn so the agent knows exactly what woke it. First source: **`calendar.event_upcoming`** — a configurable lead time before each event on a connected Google Calendar. Create / list / update / delete / test-fire over the REST API and the MCP `agents` tool.
+**What this does**: Puts an agent behind an event. A **Subscription** is the event-driven sibling of a [Routine](routines.md): where a routine fires on a cron, a subscription fires when its **source** observes an occurrence — each fire is one server-side Master turn (or the [saved agent](saved-agents.md) you pin) in a **fresh Chat**, with the triggering event rendered into the turn so the agent knows exactly what woke it. First source: **`calendar.event_upcoming`** — a configurable lead time before each event on a connected Google Calendar. Create / list / update / delete / test-fire over the REST API.
+
+> **No Subscription can fire today, and they are not on MCP.** Their only event source, Google Calendar, is retired: existing subscriptions stay stored but do not fire, and a new one would not fire either. Subscriptions are not on the Amdahl MCP server's tool list, so an MCP-connected agent cannot create one; the REST endpoints below remain. Subscription reads are still MCP resources: `subscription://kinds`, `subscription://list`, `subscription://<id>`, and `subscription://<id>/fires`. For work that should run before meetings, use a [Routine](routines.md) on a cron (for example every weekday morning). This page describes the source as it works when it is available.
 
 **When to use it**: Any GTM job that should react to *something happening* rather than a clock. "Prep me 6 hours before every customer meeting, and again 10 minutes before" is two subscriptions on the same calendar connection — one per lead time, each with its own prompt, agent, and per-fire policy. If the work repeats on a schedule, use a [Routine](routines.md); if it's a one-off, just run a [Chat](agentic-chat.md).
 
@@ -10,16 +12,16 @@ A cron fires whether or not anything happened; an event fires because it did. Th
 
 ## The operations
 
-| Job | Operation | REST | MCP (`agents` tool) | Scope |
-|---|---|---|---|---|
-| Discover source kinds | `subscriptions.list_kinds` | `GET /subscriptions/kinds` | `list_subscription_kinds` | `subscriptions:read` |
-| Create a subscription | `subscriptions.create` | `POST /subscriptions` | `create_subscription` | `subscriptions:write` |
-| List subscriptions | `subscriptions.list` | `GET /subscriptions` | `list_subscriptions` | `subscriptions:read` |
-| Get one | `subscriptions.get` | `GET /subscriptions/:id` | `get_subscription` | `subscriptions:read` |
-| The fire ledger | `subscriptions.list_fires` | `GET /subscriptions/:id/fires` | `list_subscription_fires` | `subscriptions:read` |
-| Update | `subscriptions.update` | `PATCH /subscriptions/:id` | `update_subscription` | `subscriptions:write` |
-| Delete | `subscriptions.delete` | `DELETE /subscriptions/:id` | `delete_subscription` | `subscriptions:write` |
-| Test-fire now | `subscriptions.test_fire` | `POST /subscriptions/:id/test-fire` | `test_fire_subscription` | `subscriptions:write` |
+| Job | Operation | REST | Scope |
+|---|---|---|---|
+| Discover source kinds | `subscriptions.list_kinds` | `GET /subscriptions/kinds` | `subscriptions:read` |
+| Create a subscription | `subscriptions.create` | `POST /subscriptions` | `subscriptions:write` |
+| List subscriptions | `subscriptions.list` | `GET /subscriptions` | `subscriptions:read` |
+| Get one | `subscriptions.get` | `GET /subscriptions/:id` | `subscriptions:read` |
+| The fire ledger | `subscriptions.list_fires` | `GET /subscriptions/:id/fires` | `subscriptions:read` |
+| Update | `subscriptions.update` | `PATCH /subscriptions/:id` | `subscriptions:write` |
+| Delete | `subscriptions.delete` | `DELETE /subscriptions/:id` | `subscriptions:write` |
+| Test-fire now | `subscriptions.test_fire` | `POST /subscriptions/:id/test-fire` | `subscriptions:write` |
 
 The reads are also MCP resources: `subscription://kinds`, `subscription://list`, `subscription://<id>`, `subscription://<id>/fires`.
 
@@ -29,7 +31,7 @@ The calendar source reads through a **`google_calendar` connection** (Connection
 
 ## The kinds catalog is the contract — read it first
 
-`GET /subscriptions/kinds` (MCP `list_subscription_kinds`) is **self-describing**: each source kind ships its config fields — key, type, required, description — so the `config` you write matches what the kind expects, and a new source kind shows up here with its fields the day it ships, no doc update required. Don't hardcode a field list from this page; discover it.
+`GET /subscriptions/kinds` (MCP resource `subscription://kinds`) is **self-describing**: each source kind ships its config fields — key, type, required, description — so the `config` you write matches what the kind expects, and a new source kind shows up here with its fields the day it ships, no doc update required. Don't hardcode a field list from this page; discover it.
 
 ## Create a subscription
 
@@ -54,17 +56,6 @@ Content-Type: application/json
   "agent": "gtm-strategist",
   "run_config": { "depth": "standard", "actions_allowed": ["email_member"] }
 }
-```
-
-**MCP** (`agents` tool, `create_subscription`):
-
-```
-agents create_subscription
-  name        = "Meeting prep"
-  source_kind = "calendar.event_upcoming"
-  prompt      = "Prep me for this meeting: who is attending, what we last discussed with their company, open deals, and the three things to bring up."
-  config      = { "connection_id": "<id>", "lead_minutes": 360, "require_attendees": true }
-  agent       = "gtm-strategist"
 ```
 
 ### `calendar.event_upcoming` config
@@ -93,7 +84,7 @@ PATCH /subscriptions/sub_7c20...          -> edit name / prompt / config / agent
 DELETE /subscriptions/sub_7c20...         -> remove it and its fire history (Chats it already fired survive)
 ```
 
-On MCP these are `list_subscriptions` / `get_subscription` / `update_subscription` / `delete_subscription`. To clear a pinned agent on update, pass `agent: null`. **`source_kind` is immutable** — changing the kind re-means the stored config and every pending fire, so make a new subscription instead.
+To clear a pinned agent on update, pass `agent: null`. **`source_kind` is immutable** — changing the kind re-means the stored config and every pending fire, so make a new subscription instead.
 
 ## Test-fire — watch one before you trust it
 
@@ -108,7 +99,7 @@ A test fire is a preview, not an occurrence — it is **not** written to the fir
 
 ## The fires ledger — "is my trigger actually firing?"
 
-`GET /subscriptions/:id/fires` (MCP `list_subscription_fires`) lists planned occurrences with due times, outcomes, and the event snapshot each carried:
+`GET /subscriptions/:id/fires` (MCP resource `subscription://<id>/fires`) lists planned occurrences with due times, outcomes, and the event snapshot each carried:
 
 | Status | Meaning |
 |---|---|
@@ -119,23 +110,6 @@ A test fire is a preview, not an occurrence — it is **not** written to the fir
 | `canceled` | The occurrence no longer stands (`event_canceled`, `event_rescheduled`). |
 
 Every fired Chat also shows up in the normal Chats list — `GET /chats?subscription_id=<id>` scopes the list to one subscription's fires, and each carries a `subscription` trigger badge.
-
-## Paste this into Claude
-
-The MCP-native way — just ask, and Claude creates the Subscription:
-
-```
-Set up an event Subscription in Amdahl.
-
-Before every meeting on my connected Google Calendar — {6 hours} ahead —
-{prep me: who is attending, what we last discussed with their company, open
-deals, and the three things to bring up}.
-
-Use the agents tool: list_subscription_kinds first to read the calendar
-kind's config fields, then create_subscription with the right
-connection_id and lead_minutes. Test-fire it once so I can see a run, and
-show me what you created.
-```
 
 ## Variations
 
@@ -152,7 +126,7 @@ Same fire spine, different trigger: a **Routine** answers "every Monday at 9", a
 
 - **Discover, don't hardcode.** The kinds catalog carries each source's config fields; a config the kind doesn't declare is rejected at create time with the field named.
 - **A fire is a headless Chat.** `on_question` is always `"none"` — write the prompt so the run can finish without asking anyone anything.
-- **The ledger is the debug surface.** A subscription that "isn't working" is one `list_subscription_fires` read: no rows means the source never observed a matching event; `skipped` rows name why.
+- **The ledger is the debug surface.** A subscription that "isn't working" is one fires-ledger read (`GET /subscriptions/:id/fires`): no rows means the source never observed a matching event; `skipped` rows name why.
 - **`actions_allowed` defaults permissive**, exactly as on Routines — absent means every cataloged action. Pass a list to narrow, `[]` for investigate-only.
 
 ## See also

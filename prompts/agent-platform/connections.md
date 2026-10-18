@@ -6,23 +6,23 @@
 
 ## The operations
 
-| | Operation | REST | MCP (`connections` tool) | Scope |
+| | Operation | REST | MCP tool | Scope |
 |---|---|---|---|---|
-| The catalog | `connections.list_catalog` | `GET /connections/catalog` | action `catalog` | `connections:read` |
-| Connected instances | `connections.list` | `GET /connections` | action `list` | `connections:read` |
-| One connection | `connections.get` | `GET /connections/:id` | action `get` | `connections:read` |
-| Status (polling) | `connections.get_status` | `GET /connections/:id/status` | action `status` | `connections:read` |
-| Sync-run history | `connections.list_runs` | `GET /connections/:id/runs` | action `runs` | `connections:read` |
-| Data summary | `connections.get_summary` | `GET /connections/:id/summary` | action `summary` | `connections:read` |
-| Connect | `connections.connect` | `POST /connections` | action `connect` | `connections:write` |
-| Disconnect | `connections.disconnect` | `DELETE /connections/:id` | action `disconnect` | `connections:delete` |
-| Set the owner | `connections.update` | `PATCH /connections/:id` | action `update` | `connections:write` |
-| Repair in place | `connections.reconnect` | `POST /connections/:id/reconnect` | action `reconnect` | `connections:write` |
+| The catalog | `connections.list_catalog` | `GET /connections/catalog` | `list_connectors` | `connections:read` |
+| Connected instances | `connections.list` | `GET /connections` | `list_connections` | `connections:read` |
+| One connection | `connections.get` | `GET /connections/:id` | `get_connection` | `connections:read` |
+| Status (polling) | `connections.get_status` | `GET /connections/:id/status` | `get_connection_status` | `connections:read` |
+| Sync-run history | `connections.list_runs` | `GET /connections/:id/runs` | `list_connection_syncs` | `connections:read` |
+| Data summary | `connections.get_summary` | `GET /connections/:id/summary` | `get_connection_summary` | `connections:read` |
+| Connect | `connections.connect` | `POST /connections` | `connect_source` | `connections:write` |
+| Disconnect | `connections.disconnect` | `DELETE /connections/:id` | `disconnect_connection` | `connections:delete` |
+| Set the owner | `connections.update` | `PATCH /connections/:id` | `update_connection` | `connections:write` |
+| Repair in place | `connections.reconnect` | `POST /connections/:id/reconnect` | `reconnect_connection` | `connections:write` |
 | Call filters | `connections.set_call_filters` | `PUT /connections/:id/call-filters` | — (REST only) | `connections:write` |
 | CRM recency | `connections.set_crm_recency` | `PUT /connections/:id/crm-recency` | — (REST only) | `connections:write` |
 | Comms filter | `connections.set_comms_filter` | `PUT /connections/:id/comms-filter` | — (REST only) | `connections:write` |
 
-**Which credential can do what is the part to get right up front.** The six reads work on every credential, including a read-only API key. The writes (`connect` / `disconnect` / `update` / `reconnect` and the three config endpoints) ride only on an **OAuth session** — a signed-in member's delegated token, the thing a Claude.ai / Claude Code MCP connection holds. A headless API key gets a `403` on them by design: connector lifecycle stays with a person, while keys watch. So: OAuth-connected agents manage connectors; API-key scripts monitor them.
+**Which credential can do what is the part to get right up front.** The six reads work on every credential, including a read-only API key. The writes (`connect_source` / `disconnect_connection` / `update_connection` / `reconnect_connection` on MCP, and the three config endpoints) ride only on an **OAuth session** — a signed-in member's delegated token, the thing a Claude.ai / Claude Code MCP connection holds. A headless API key gets a `403` on them by design: connector lifecycle stays with a person, while keys watch. So: OAuth-connected agents manage connectors; API-key scripts monitor them.
 
 ## Browse: the catalog is self-describing
 
@@ -37,19 +37,19 @@ Every connected-instance read carries a matching `connector` block (`{ type, nam
 
 ## Connect
 
-`POST /connections` (or the MCP `connect` action) takes `connector_type` plus the fields the catalog's `connect` spec declared, and routes on the connector's auth method. Branch on `mode` in the response:
+`POST /connections` (or the MCP `connect_source` tool) takes `connector_type` plus the fields the catalog's `connect` spec declared, and routes on the connector's auth method. Branch on `mode` in the response:
 
 - **`connected`** — an `api_key` or `handle` connect landed: the credential stored (or the handle resolved) and the first sync was triggered.
 - **`oauth_redirect`** — you got an `authorize_url`. Send the human there; the provider callback completes the connection server-side. Poll `GET /connections/:id/status` until `health` leaves `syncing`.
 - **`already_connected`** — the existing connection, unchanged (workspace data sources are single-instance; the same handle dedupes).
 
-For a call recorder, pass `call_filters` **on the connect itself** — the decision rides atomically, so the source never lands connected-but-paused waiting for a filter nobody configured. On MCP, the `connect` action forwards `call_filters` for exactly this reason.
+For a call recorder, pass `call_filters` **on the connect itself** — the decision rides atomically, so the source never lands connected-but-paused waiting for a filter nobody configured. On MCP, `connect_source` forwards `call_filters` for exactly this reason.
 
 ```jsonc
 // MCP
-connections { "action": "connect", "connector_type": "askelephant", "api_key": "sk-apik_..." }
+connect_source { "connector_type": "askelephant", "api_key": "sk-apik_..." }
 // handle connector
-connections { "action": "connect", "connector_type": "twitter", "account_handle": "acme" }
+connect_source { "connector_type": "twitter", "account_handle": "acme" }
 ```
 
 ## Watch
@@ -59,7 +59,7 @@ connections { "action": "connect", "connector_type": "twitter", "account_handle"
 - `runs` is the sync-run history, newest first, with a bucketed `error_reason` (`auth` / `rate_limit` / `transient` / `config` / `unknown`) — raw provider error text is never surfaced.
 - `summary` is a glanceable snapshot of the connection's own synced data (deals and contacts for a CRM, calls for a recorder). Not-yet-synced degrades to `partial` with `null` stats — and `null` never means `0`.
 
-**The stale-data investigation an agent should run**: `list` → find the source whose `health` is not `healthy` → `runs` for it → read `error_reason`. An `auth` reason means reconnect (below); `rate_limit` means it will retry on its own; blaming cadence is almost never the answer.
+**The stale-data investigation an agent should run**: `list_connections` → find the source whose `health` is not `healthy` → `list_connection_syncs` for it → read `error_reason`. An `auth` reason means reconnect (below); `rate_limit` means it will retry on its own; blaming cadence is almost never the answer.
 
 ## Fix
 

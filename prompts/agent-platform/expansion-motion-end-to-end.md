@@ -135,7 +135,7 @@ attach per-account objections
 
 ## Paste this into Claude
 
-The MCP-native version — Claude drives `search` for you:
+The MCP-native version — Claude drives `search_customers` for you:
 
 ```
 Build me an expansion target list from our own corpus, grounded at every step.

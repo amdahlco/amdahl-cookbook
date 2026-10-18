@@ -32,7 +32,7 @@ Content-Type: application/json
 **MCP:**
 
 ```
-agents start_chat
+start_chat
   input  = "Prep me for a call with Spotify (a large, technically sophisticated prospect already building on MCP internally). Which of our customers look most like them, and in those deals what worked and what didn't? Then give me the exact rebuttal for 'why can't we just use our own Zoom MCP?' Ground every claim in real call quotes."
   config = { "depth": "standard" }
 ```

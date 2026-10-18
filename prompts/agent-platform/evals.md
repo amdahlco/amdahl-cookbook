@@ -20,15 +20,15 @@ A run is **read-only by construction** — it only ever dispatches read ops (the
 
 | | |
 |---|---|
-| Grade a message | `evals.run` — `POST /evals/run` — MCP `evals` action `run` — scope `evals:execute` |
+| Grade a message | `evals.run` — `POST /evals/run` — MCP `run_eval` — scope `evals:execute` |
 | **Read the report card** | **`GET /eval-runs/:id/report`** (`eval_run://<id>/report`) — scope `evals:read`. Server-rendered markdown to paste, plus the same numbers machine-readable. **Prefer this when a human will read the result** — see [The report card](#report-card) |
-| Poll a run | `GET /eval-runs/:id` (`eval_run://<id>`) — MCP `evals` action `status` (pass `wait_ms` up to 30000 to block instead of tight-looping) — scope `evals:read` |
-| List runs | `GET /eval-runs` (`eval_run://list`) — MCP `evals` action `list_runs` — scope `evals:read` |
-| Browse evals | `GET /evals` (`eval://list`), `GET /evals/:slug` (`eval://<slug>`) — MCP `evals` actions `list` / `get` — scope `evals:read` |
+| Poll a run | `GET /eval-runs/:id` (`eval_run://<id>`) — MCP `get_eval_run` (pass `wait_ms` up to 30000 to block instead of tight-looping) — scope `evals:read` |
+| List runs | `GET /eval-runs` (`eval_run://list`) — MCP `list_eval_runs` — scope `evals:read` |
+| Browse evals | `GET /evals` (`eval://list`), `GET /evals/:slug` (`eval://<slug>`) — MCP `list_evals` / `get_eval` — scope `evals:read` |
 | Grader kinds | `GET /grader-kinds` (`grader_kind://list`) — scope `evals:read` |
-| Dry-run a definition | `POST /evals/validate` — MCP `evals` action `validate` — scope `evals:read`, writes nothing |
+| Dry-run a definition | `POST /evals/validate` — MCP `validate_eval` — scope `evals:read`, writes nothing |
 
-> **On MCP, the reads are tool ACTIONS, not just resource URIs.** `evals.run` is async-handle, so a run id is useless without a read — and the MCP spec does not require a client to implement `resources/*`, so a tools-only client could once start a graded run and then have no way to reach the verdict. `status` / `list_runs` / `list` / `get` are thin adapters over the same reads the URIs serve, added so that dead end is closed. If your client speaks `resources/*`, either channel works and they cannot disagree. (The tool carries a few more actions than this table — call it with no action, or read its schema, for the current list.)
+> **On MCP, the reads are tools, not just resource URIs.** `evals.run` is async-handle, so a run id is useless without a read — and the MCP spec does not require a client to implement `resources/*`, so a tools-only client could once start a graded run and then have no way to reach the verdict. `get_eval_run` / `list_eval_runs` / `list_evals` / `get_eval` are thin adapters over the same reads the URIs serve, added so that dead end is closed. If your client speaks `resources/*`, either channel works and they cannot disagree. (There are more eval tools than this table, such as `get_eval_gate`, `get_eval_evidence`, `get_eval_drafts` and `get_eval_improvement`; see the tool catalog.)
 
 > **No prerequisite — evals ships to every workspace.** This surface is **not** gated. It grades pasted content against your own customer quotes and reaches only read operations that predate the Agent Platform program, so it was deliberately exempted from that program's flag, and the flag itself is now retired. Earlier versions of this page named an `agent_v2` prerequisite and a `403 feature_disabled`; **neither exists** — if you built a capability check around that error, delete it. Authoring is a separate matter and is still closed (next note).
 
@@ -75,10 +75,10 @@ Content-Type: application/json
 }
 ```
 
-**MCP** (the `evals` coarse tool, `run` action):
+**MCP** (`run_eval`):
 
 ```
-evals run
+run_eval
   eval   = "prompt-and-message-eval"
   inputs = { prompt: "...", message: "Hi Dana — most VPs of Sales ...", audience: "VP of Sales, mid-market SaaS" }
   reuse  = "cached"
@@ -132,7 +132,7 @@ Authorization: Bearer <api-key with evals:read>
 
 Read `status`; when it is `complete`, the run resource carries the report. A missing / cross-tenant id returns null.
 
-**Don't tight-loop.** On MCP, `evals status` takes a `wait_ms` (capped at 30000) and blocks until the run settles, returning the live status if it hasn't. A budget past the cap is clamped, never rejected, and the wait is an upper bound on added latency rather than that bound plus one poll interval.
+**Don't tight-loop.** On MCP, `get_eval_run` takes a `wait_ms` (capped at 30000) and blocks until the run settles, returning the live status if it hasn't. A budget past the cap is clamped, never rejected, and the wait is an upper bound on added latency rather than that bound plus one poll interval.
 
 The report lives on the `improvement_loop` grader's result, under `verdict.cases[].graders[].improvement`. Trimmed to the load-bearing fields:
 
@@ -339,7 +339,7 @@ The grader kinds you compose from — browse them via `grader_kind://list`:
 - **`evidence_judge`** — an LLM scores 1–5 on each rubric dimension **against retrieved VoC evidence** and returns supporting/contradicting quotes. Grade-only: no before/after.
 - **`improvement_loop`** — the richest kind, and what `prompt-and-message-eval` is built from: retrieve → grade → improve → **blind-judge both** → report the lift, with per-facet detail and anchored suggestions.
 
-**Create** (`POST /evals`), **update** (`PATCH /evals/:slug`), and dry-run **validate** (`POST /evals/validate`) — the same actions are on the MCP `evals` tool:
+**Create** (`POST /evals`), **update** (`PATCH /evals/:slug`), and dry-run **validate** (`POST /evals/validate`) — the same operations are MCP tools (`create_eval`, `update_eval`, `validate_eval`):
 
 ```
 POST /evals
@@ -371,7 +371,7 @@ A bad definition (an unknown grader kind, a grader config that references a fiel
 
 ## Paste this into Claude
 
-The MCP-native version — Claude picks the `evals` tool for you:
+The MCP-native version — Claude picks `run_eval` and `get_eval_run` for you:
 
 ```
 Grade this outbound email against how our customers actually talk before I send it.
@@ -383,7 +383,7 @@ Draft message:
 """
 Audience: {e.g. "VP of Sales, mid-market SaaS"}
 
-Use the prompt-and-message-eval eval, start it, then poll with the status action (pass wait_ms rather
+Use the prompt-and-message-eval eval, start it with run_eval, then poll with get_eval_run (pass wait_ms rather
 than looping). When it completes, FETCH THE REPORT CARD (eval_run://<id>/report) and paste its markdown
 verbatim — do not re-derive the numbers or rewrite the headline. Then add, in this order: (1) the anchored
 suggestions, "keep" ones first; (2) the per-facet breakdown for the prompt and the message SEPARATELY,

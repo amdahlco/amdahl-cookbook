@@ -14,13 +14,13 @@ This recipe exists because the first integrator had to reverse-engineer all of i
 
 **The workspace you pick on the authorize screen is the data boundary.** The eval grades against that workspace's customer conversations - its calls, its CRM, its quotes. Pick a sandbox workspace and every grade will be grounded in the sandbox's (probably empty) corpus. Pick production and the grades mean something.
 
-Once connected, four tools appear: `agents` / `connections` / `evals` / `search`.
+Once connected, Amdahl's tools appear, one per operation (52 of them), for example `run_eval`, `get_eval_gate`, `search_customers` and `start_chat`.
 
 The MCP connection is what LangSmith agents and the playground use. The evaluator wrapper in step 4 runs your own Python, so it uses the REST equivalents with an API key (**Settings -> API keys** in the Amdahl console; grading needs `evals:execute`, the gate read needs `evals:read`).
 
 ## 2. The one-call pipeline gate
 
-Fire `evals.run`: the `evals` MCP tool, `run` action. REST equivalent:
+Fire `evals.run`: the `run_eval` MCP tool. REST equivalent:
 
 ```
 POST https://app.amdahl.ai/api/platform/v1/evals/run
@@ -50,7 +50,7 @@ The call returns a run handle immediately, not the verdict:
 
 ## 3. Read the verdict with the gate read
 
-Poll the gate read: `GET /eval-runs/{id}/gate` (MCP: `evals` tool, `gate` action). It supports `wait_ms` up to `30000`, so block on the server instead of tight-looping:
+Poll the gate read: `GET /eval-runs/{id}/gate` (MCP: `get_eval_gate`). It supports `wait_ms` up to `30000`, so block on the server instead of tight-looping:
 
 ```
 GET https://app.amdahl.ai/api/platform/v1/eval-runs/{run_id}/gate?wait_ms=30000

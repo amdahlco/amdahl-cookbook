@@ -14,14 +14,14 @@ The fast lane (mode `fuzzy`) is great when a model should interpret your questio
 |---|---|
 | Operation | `search.query` (filter lane) |
 | REST | `POST /search/query` |
-| MCP | `search` tool, action `query` |
+| MCP | `search_customers` |
 | Scope | `data:read` |
 
 | | |
 |---|---|
 | Operation | `search.fields` (the field catalog) |
 | REST | `GET /search/fields` |
-| MCP | `search` tool, action `fields` |
+| MCP | `list_search_fields` |
 | Scope | `data:read` |
 
 ## Step 0 — discover the vocabulary
@@ -38,7 +38,7 @@ Authorization: Bearer <api-key with data:read>
 **MCP:**
 
 ```
-search fields
+list_search_fields
 ```
 
 **What comes back** — one entry per surface (`interactions`, `deals`, `deal_qualification`):
@@ -93,10 +93,10 @@ Content-Type: application/json
 }
 ```
 
-**MCP** (the `search` coarse tool, `query` action):
+**MCP** (`search_customers`):
 
 ```
-search query
+search_customers
   surface  = "deals"
   filters  = [
     { "field": "deal_stage_status", "op": "eq", "value": "open" },
@@ -177,10 +177,10 @@ Rules the compiler enforces (each violation is a named `invalid_argument`): `gro
 The MCP-native version — Claude discovers the fields and composes the filters for you:
 
 ```
-Structured slice of our data — use the search tool's query action with typed
+Structured slice of our data — use search_customers with typed
 filters, not a plain-language search.
 
-First call the fields action and check the exact field names for the {deals |
+First call list_search_fields and check the exact field names for the {deals |
 interactions | deal_qualification} surface. Then run: {e.g. "open deals with
 amount >= 50000, ordered by amount descending, top 25" — or "count + total
 amount grouped by stage label"}.
