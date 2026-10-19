@@ -29,7 +29,7 @@ Connect once. Every client below signs in to your workspace over OAuth with your
 
 No workspace yet? Sign in at <https://console.amdahl.ai/new> to join the beta. If your company already uses Amdahl, an admin there can add you.
 
-**Check your setup.** Ask Claude to call the `connections` tool with `action: "setup_status"`. It names the workspace you connected and your role, says whether the Message Optimizer will accept your calls (and if not, why), and lists any data connection that needs attention.
+**Check your setup.** Ask Claude to call the `get_setup_status` tool. It names the workspace you connected and your role, says whether the Message Optimizer will accept your calls (and if not, why), and lists any data connection that needs attention.
 
 <!-- TODO: screenshot of the connector-add UI here -->
 <!-- TODO: screenshot of the OAuth approval -->
@@ -140,10 +140,10 @@ The full index lives at [prompts/README.md](prompts/README.md).
 
 The recipes above are paste-ready prompts. When you want work to repeat *inside Amdahl* — without you pasting anything — there are two paths in:
 
-- **Routines** — the MCP-native way to schedule work. A Routine is a cron that fires a **Chat** (one server-side Master agent turn, in a fresh Session) each occurrence. From any connected Claude session, ask for a standing refresh ("every Monday, refresh the pipeline health report") and Claude creates it with the `agents` tool's `create_routine` action — a name, a prompt, and a cron. No DSL required, and each fire shows up as its own Session you can open and read.
+- **Routines** — the MCP-native way to schedule work. A Routine is a cron that fires a **Chat** (one server-side Master agent turn, in a fresh Session) each occurrence. From any connected Claude session, ask for a standing refresh ("every Monday, refresh the pipeline health report") and Claude creates it with the `create_routine` tool — a name, a prompt, and a cron. No DSL required, and each fire shows up as its own Session you can open and read.
 - **Workflows (blueprints)** — the fully-typed path: a **blueprint** is a typed recipe with declared inputs, outputs, and a validated step graph that the platform can version, fork, schedule, and run headlessly. Authoring and running Workflows is a **console capability** (the Workflows surface; the `blueprints` MCP tool was retired, and the endpoints behind the console aren't reachable with an external API key). It's a different thing from a cookbook prompt; the guide opens by untangling the two.
 
-> **Surface note:** the agent platform (the `search` + `agents` MCP tools) is on **every** workspace — the per-workspace rollout flag it once sat behind is retired, so there is no capability check to make and no `feature_disabled` error to handle. The `blueprints` and `pages` MCP tools were retired with it; Workflows and Pages are console surfaces now.
+> **Surface note:** the agent platform (MCP tools such as `search_customers` and `start_chat`) is on **every** workspace — the per-workspace rollout flag it once sat behind is retired, so there is no capability check to make and no `feature_disabled` error to handle. The `blueprints` and `pages` MCP tools were retired with it; Workflows and Pages are console surfaces now.
 
 
 - [How to write an Amdahl blueprint](prompts/blueprints/authoring-a-blueprint.md) — the mental model, the DSL anatomy, validating in the console, and two worked examples (one from scratch, one fork-and-customize).
@@ -186,7 +186,7 @@ Everything above runs on two "ask Amdahl" doors, and you can drive both from you
 - **Rendering the answer** — the seven content-block types and the `amdahl:q` / `amdahl:cite` link grammar, for showing a Chat result in your own UI. [Recipe](prompts/agent-platform/answer-envelope.md).
 - **End-to-end use cases** — full journeys over both surfaces: [voice of customer](prompts/agent-platform/voice-of-customer-end-to-end.md) (teaches the fast -> Chat handoff), [call prep + objection handling](prompts/agent-platform/call-prep-objection-end-to-end.md), and [the expansion motion](prompts/agent-platform/expansion-motion-end-to-end.md) (read your best win's own language, then semantic-search the corpus for the accounts that sound like it).
 
-Available on every workspace: the `search` + `agents` MCP tools, or `POST /search/query` and `POST /chat` on REST.
+Available on every workspace: the `search_customers` and `start_chat` MCP tools, or `POST /search/query` and `POST /chat` on REST.
 
 ---
 

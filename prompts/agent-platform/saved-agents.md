@@ -1,6 +1,6 @@
 # Saved agents — reuse a prompt
 
-**What this does**: Saves a named, reusable agent — a slug, a display name, and a system prompt — into your workspace's agent library, so a prompt you tuned once can be pinned into any [Chat](agentic-chat.md), fired on a schedule by a [Routine](routines.md), or fired on an event by a [Subscription](subscriptions.md). Create / list / get / update / delete over the REST API and the MCP `agents` tool.
+**What this does**: Saves a named, reusable agent — a slug, a display name, and a system prompt — into your workspace's agent library, so a prompt you tuned once can be pinned into any [Chat](agentic-chat.md) or fired on a schedule by a [Routine](routines.md). Create / list / get / update / delete over the REST API and MCP (`create_agent`, `list_agents`, `get_agent`, `update_agent`, `delete_agent`).
 
 **When to use it**: You've landed a Master prompt that works — "our SDR-brief agent," "our win-loss postmortem agent" — and you want it once, reusable, instead of pasting the same 300-word instruction every time. A saved agent is that prompt, given a handle.
 
@@ -10,7 +10,7 @@ A Chat's default Master is a generalist. A saved agent is a specialist you defin
 
 ## The operations
 
-| Job | Operation | REST | MCP (`agents` tool) | Scope |
+| Job | Operation | REST | MCP tool | Scope |
 |---|---|---|---|---|
 | Create an agent | `agents.create_agent` | `POST /agents` | `create_agent` | `agents:write` |
 | List agents | `agents.list_agents` | `GET /agents` | `list_agents` | `agents:read` |
@@ -18,7 +18,7 @@ A Chat's default Master is a generalist. A saved agent is a specialist you defin
 | Update | `agents.update_agent` | `PATCH /agents/:id` | `update_agent` | `agents:write` |
 | Delete | `agents.delete_agent` | `DELETE /agents/:id` | `delete_agent` | `agents:write` |
 
-Reads project the `agent://` resource scheme on MCP (`agent://list`, `agent://<id>`); writes are the `agents`-tool actions above.
+Reads project the `agent://` resource scheme on MCP (`agent://list`, `agent://<id>`); writes are the MCP tools above.
 
 ---
 
@@ -41,10 +41,10 @@ Content-Type: application/json
 }
 ```
 
-**MCP** (`agents` tool, `create_agent`):
+**MCP** (`create_agent`):
 
 ```
-agents create_agent
+create_agent
   slug   = "sdr-brief"
   name   = "SDR call-prep brief"
   prompt = "You are our SDR call-prep specialist. Given a company, produce a one-page brief: ..."
@@ -80,7 +80,7 @@ POST /chat
 **MCP:**
 
 ```
-agents start_chat
+start_chat
   input = "Prep me for the Spotify call."
   agent = "sdr-brief"
 ```
@@ -121,7 +121,7 @@ Slug: sdr-brief. Name: "SDR call-prep brief". Prompt: {paste the tuned
 instruction — who it is, the exact sections it should output, the rule to
 ground every claim in real call quotes and never invent a number}.
 
-Use the agents tool's create_agent. Then start a Chat pinned to sdr-brief
+Use the create_agent tool. Then start a Chat pinned to sdr-brief
 to prep {company} so I can see it in action.
 ```
 

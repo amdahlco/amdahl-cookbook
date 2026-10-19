@@ -6,7 +6,7 @@
 
 ## The `answer` object
 
-Every settled Chat run carries an `answer` (on `read_url` / `chat_status`):
+Every settled Chat run carries an `answer` (on `read_url` / MCP `get_chat_run`):
 
 ```json
 {

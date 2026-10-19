@@ -25,7 +25,7 @@ Content-Type: application/json
 **MCP:**
 
 ```
-search query
+search_customers
   query = "How many calls in the last 90 days raised a pricing objection? Break it down by month."
   mode  = "fuzzy"
 ```
@@ -93,7 +93,7 @@ Authorization: Bearer <api-key with conversations:write>
 **MCP:**
 
 ```
-agents start_chat
+start_chat
   input  = "Which customer objection themes are growing over the last two quarters, and what's driving each one?"
   config = { "depth": "standard" }
 ```
