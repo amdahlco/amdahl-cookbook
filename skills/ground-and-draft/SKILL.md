@@ -65,8 +65,7 @@ actually said rather than in what the model assumes they would say.
    is telling you the theme is yours, not theirs.
 
 4. **Draft.** For an outbound email or LinkedIn message, ground, then Amdahl
-   writes. Do not draft it yourself: the Optimizer writes from context and does
-   not read a draft. Call `POST /messages/optimize` (MCP: `optimize_message`) with:
+   writes. Do not draft it yourself: the Optimizer writes from context. Call `POST /messages/optimize` (MCP: `optimize_message`) with:
    - `context.facts`: the recipient, the trigger or signal, what you offer, and
      the proof point, one fact per entry, each stated exactly as its source does.
      Never put a customer quote in a fact: a fact is graded as yours, not a
