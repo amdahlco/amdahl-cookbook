@@ -80,9 +80,10 @@ actually said rather than in what the model assumes they would say.
 
    For any other copy (a one-pager, call prep, website copy), draft it yourself.
    Their problem first, in their words. One proof point. No invented numbers, no
-   invented peer names, no invented case studies — the eval checks specifics
-   against the corpus and a fabricated one is worse than a vague one. Obey the
-   artifact's own length and voice rules.
+   invented peer names, no invented case studies. A grade with
+   `evidence: "workspace"` checks specifics against your conversations
+   (`verified_specifics`), and a fabricated one is worse than a vague one. Obey
+   the artifact's own length and voice rules.
 
 5. **Create the run folder.**
    ```
@@ -97,15 +98,15 @@ actually said rather than in what the model assumes they would say.
 ## Freeze the evidence when you are comparing
 
 Live search is right when you are producing work. **Frozen evidence is required
-when you are comparing two versions**, because a second search returns different
-quotes and any difference you measure could be retrieval rather than your edit.
+when you are comparing two drafting attempts**, because a second search returns
+different quotes and any difference you see could be retrieval rather than your
+edit. The dated file this skill writes is the freeze: draft every attempt from
+the same file.
 
-Two ways to freeze:
-
-- **Across drafting attempts** — the dated file this skill writes.
-- **Across graded runs** — pass `evidence_from_run: "<run id>"` to `evals.run`,
-  and the new run reuses the first run's quotes with no file to manage.
-  `grade-and-report`'s `ab.sh` does this for you.
+The grade does not read that file. A grade with `evidence: "workspace"` reads
+the workspace's conversations itself, on each call, and nothing pins one grade
+to another grade's quotes. So two graded drafts are two independent grades:
+`grade-and-report`'s `ab.sh` says so on its output.
 
 ## Gotchas
 

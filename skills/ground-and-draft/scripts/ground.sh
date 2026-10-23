@@ -13,10 +13,12 @@
 #   filters-json a JSON array of {"field","op","value"} predicates, scoping the
 #                pull the same way you will scope the grade.
 #
-# SCOPE THE PULL THE WAY THE GRADE WILL BE SCOPED. `grade-and-report` passes
-# `audience` / `account` to evals.run, which scopes what the judge retrieves. If
-# the pull you drafted from was corpus-wide, you drafted against one population
-# and are graded against another.
+# SCOPE THE PULL TO WHO THE DRAFT IS FOR. `grade-and-report` grades with
+# `evidence: "workspace"`, which grades the draft against the workspace's
+# conversations. The grade reads that evidence itself, not this file. If it is
+# told who the draft is for (the beta `recipient` fields, per workspace), it
+# reads for that recipient. Pull for the same people, or you draft against one
+# population and are graded against another.
 #
 #   # buyer-side only - the default worth having on every pull
 #   ground.sh semantic "release approval friction" evidence/2026-08-03.json 25 \

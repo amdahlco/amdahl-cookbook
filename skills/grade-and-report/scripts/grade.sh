@@ -1,48 +1,44 @@
 #!/usr/bin/env bash
-# grade.sh - grade one draft and print the canonical report card.
+# grade.sh - grade one draft and print the card.
 #
-# Usage: grade.sh <inputs.json|draft.md> <run-dir> [eval-slug] [audience] [account]
-#   inputs.json   a JSON object of eval inputs, OR a plain draft file (any
-#                 non-.json path is wrapped as {"message": <contents>})
-#   run-dir       where scorecard.json + report.md are written (created if missing)
-#   eval-slug     default: prompt-and-message-eval
-#   audience      optional cohort, e.g. "VP of Marketing"
-#   account       optional account name, when it is in your corpus
+# Usage: grade.sh <draft.md|request.json> <run-dir> [context.json]
+#   draft.md      the draft, sent verbatim as `message`
+#   request.json  OR a request object: `message`, and optionally `context`,
+#                 `recipient`, `recipient_notes`, `message_type`, `channel`,
+#                 `evidence`. The recipient fields are beta, per workspace.
+#   run-dir       where grade.json + report.md are written (created if missing)
+#   context.json  optional {"facts": [...], "rules": [...]}; replaces any
+#                 `context` in request.json
+#
+# Calls POST messages/optimize with mode "grade". The grade answers on the same
+# call; nothing is written. `evidence` defaults to AMDAHL_EVIDENCE (workspace),
+# so the four evidence lines are graded against this workspace's conversations.
 #
 # Writes:
-#   <run-dir>/scorecard.json  the full run row (every field, for later analysis)
-#   <run-dir>/report.md       the server-authored card - THIS is what you show
+#   <run-dir>/request.json  what was sent
+#   <run-dir>/grade.json    the full response (every field, for later analysis)
+#   <run-dir>/report.md     the card rendered from grade.json - show this
 set -euo pipefail
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_lib.sh"
 
-IN="${1:?inputs.json or draft file required}"
+IN="${1:?draft file or request.json required}"
 RUNDIR="${2:?run-dir required}"
-SLUG="${3:-prompt-and-message-eval}"
-AUDIENCE="${4:-}"
-ACCOUNT="${5:-}"
+CONTEXT="${3:-}"
 
 mkdir -p "$RUNDIR"
 
-case "$IN" in
-  *.json) INPUTS=$(cat "$IN") ;;
-  *)      INPUTS=$(inputs_from_file "$IN" "$AUDIENCE" "$ACCOUNT") ;;
-esac
+REQUEST=$(grade_request_from_file "$IN" "$CONTEXT")
+printf '%s\n' "$REQUEST" > "$RUNDIR/request.json"
 
-RID=$(submit_run "$INPUTS" "$SLUG")
-echo "run_id=$RID"
-
-STATUS=$(poll_run "$RID")
-api_get "eval-runs/$RID" > "$RUNDIR/scorecard.json"
-
-if [ "$STATUS" != "complete" ]; then
-  echo "Run finished as '$STATUS' - see $RUNDIR/scorecard.json" >&2
+# The response is saved even when it is not a grade, so the reason survives.
+if ! grade_draft "$REQUEST" > "$RUNDIR/grade.json"; then
+  echo "Not graded - see $RUNDIR/grade.json" >&2
+  exit 1
 fi
 
-# The report endpoint renders every run state, including a failure or an
-# abstain, so there is always a block to show.
-report_markdown "$RID" > "$RUNDIR/report.md"
+render_grade_card "$RUNDIR/grade.json" > "$RUNDIR/report.md"
 
 echo
 cat "$RUNDIR/report.md"
 echo
-echo "Saved: $RUNDIR/report.md (show this) · $RUNDIR/scorecard.json (full run)"
+echo "Saved: $RUNDIR/report.md (show this) · $RUNDIR/grade.json (full response)"
