@@ -57,7 +57,7 @@ does not compare with a grade from this call.
    A fact backs only the claim it states, and it is never counted as a customer
    quote. To say who the draft is for, use a request file (`request.json`) with
    `message` and `recipient`; the recipient fields are beta, per workspace, and
-   a workspace without them answers `400 not_enabled_for_workspace`.
+   a workspace without them ignores them and names them in `ignored_params`.
 
 2. **Grade.**
 
