@@ -21,7 +21,7 @@ In every one, **your skill asks the question and decides what to do — Amdahl o
 | **Scheduled** — Monday digest | Cron. Nobody asked for it | "What changed since last week?" | Themes that are new or growing, accounts that moved band and why, where positioning has drifted from what buyers say | Posts the digest |
 | **Ad hoc** — Someone asks | In Slack: "why do we keep losing to them?" | "Compare the deals we won against the ones we lost, on what was actually discussed" | Win rate against that rival, and what was covered in the won deals but missing from the lost — over **every** closed deal, not a sample | Answers in the thread, with the calls cited so anyone can check |
 
-Which door each uses: **Automated / Ad hoc** short lookups are the [fast lane](fast-lane-search.md); an **Interactive** investigation is a [Chat](agentic-chat.md); the **Scheduled** one is a [Routine](routines.md) that fires a Chat on cron; an event-triggered one would be a [Subscription](subscriptions.md), but its only source (Google Calendar) is retired, so use a Routine on a cron for now.
+Which door each uses: **Automated / Ad hoc** short lookups are the [fast lane](fast-lane-search.md); an **Interactive** investigation is a [Chat](agentic-chat.md); the **Scheduled** one is a [Chat](agentic-chat.md) your own scheduler starts on a cron (Amdahl's Routines and Subscriptions were retired on 27 October 2026).
 
 ---
 
@@ -63,7 +63,7 @@ The outbound agent is a skill plus a trigger, calling the shared belt:
 
 - **Score / "worth it" / "what's blocking it"** — the deal close-likelihood + binding-constraint read: ask the [fast lane](fast-lane-search.md) (`search.query` mode `fuzzy` writes and runs the deal-qualification query for you — the warehouse reads are internal machinery behind the door, not tools you call).
 - **Ground / "closest conversations" / "exact words"** — theme + verbatim retrieval: [semantic search](semantic-search.md) for the nearest accounts and the exact words, or a [Chat](agentic-chat.md) when it needs synthesis (the Master runs the clustering + who-said-what reads internally).
-- **"What changed"** — new/growing themes + accounts that moved band + positioning drift (a [Routine](routines.md) whose fired Chat runs the trend + divergence reads).
+- **"What changed"** — new/growing themes + accounts that moved band + positioning drift (a Chat your scheduler starts each week, running the trend + divergence reads).
 - **"Won vs lost, over every closed deal, not a sample"** — an aggregate over the full corpus, not top-k retrieval. This is the join that makes the answer trustworthy; see [why hand-rolled context breaks](gtm-brain-architecture.md#why-the-hand-rolled-version-breaks).
 
 ## See also

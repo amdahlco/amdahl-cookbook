@@ -25,7 +25,7 @@ The split that matters: **setup is workspace configuration** (connect + configur
 | Read config / poll live status / see the activity ledger | Console → the connection's detail page |
 | Force a full re-mirror (backfill) | Console → the connection's detail page |
 | Stop mirroring (keep Notion pages) | Console → the connection's settings panel |
-| Feed it (add documents that mirror) | Any agent run that writes the KB — a Chat or Routine with `write_outputs: true`, promoted by you |
+| Feed it (add documents that mirror) | Any agent run that writes the KB — a Chat with `write_outputs: true`, promoted by you |
 
 The whole sync lifecycle is a **console capability** — there's no notifications-style agent door for it, by design: an agent can fill the knowledge base, not reconfigure the export.
 
@@ -47,7 +47,7 @@ That's the whole setup. From here it's automatic.
 
 You don't call anything to keep it running. Two paths keep Notion current:
 
-- **Instantly, off your KB writes.** Upload or append a knowledge-base document, or promote a version to current, and the change is queued for Notion right away. This includes documents an **agent** produces — a Chat or Routine with `write_outputs: true` commits a *proposed* KB version, and promotion is the human gate: it doesn't mirror until you promote it in the console.
+- **Instantly, off your KB writes.** Upload or append a knowledge-base document, or promote a version to current, and the change is queued for Notion right away. This includes documents an **agent** produces — a Chat with `write_outputs: true` commits a *proposed* KB version, and promotion is the human gate: it doesn't mirror until you promote it in the console.
 - **Hourly, via the reconcile sweep.** A background sweep compares your current KB against what's mirrored and queues anything out of sync — unmapped, version-drifted, errored, or needing archival. This is the unattended safety net: it backfills first-connect, and self-heals a page you deleted in Notion or a sync that hit a transient error.
 
 So the loop for an agent is: **land knowledge in Amdahl, and it appears in Notion once promoted.** For example, run a [competitor deep-dive](../competitive-intel/competitor-deep-dive.md) or a [win-loss postmortem](../win-loss-deal-postmortem/why-we-lost-this-deal.md) as a Chat with `write_outputs: true`, promote the resulting doc — and if the Notion sync is configured, it mirrors on the next tick with no extra step.
@@ -111,7 +111,7 @@ Then promote the doc when it's right, and check the mirror on the connection's c
 - **By document type:** `include: { document_types: ["competitive_brief", "positioning"] }` mirrors only those types.
 - **Protect hand-edited Notion pages:** set `drift_policy: "preserve"` so a teammate's edits in Notion are never overwritten by a re-sync (the sync logs `drift_preserved` and moves on).
 - **Keep Notion pages after a teardown:** Unsync (not a full disconnect) stops syncing but leaves every mirrored page intact — the safe "pause it" move.
-- **From code, not chat:** feed the pipeline over the public Chat API — `POST /chat` with `write_outputs` enabled in the config, or a Routine that does the same on a cadence. The docs land as proposed KB versions; promotion (console) is what mirrors them.
+- **From code, not chat:** feed the pipeline over the public Chat API — `POST /chat` with `write_outputs` enabled in the config, started by your own scheduler if you want it on a cadence. The docs land as proposed KB versions; promotion (console) is what mirrors them.
 
 ## Tips
 
@@ -124,6 +124,6 @@ Then promote the doc when it's right, and check the mirror on the connection's c
 ## See also
 
 - [Notify the workspace team](../notifications/notify-the-workspace-team.md) — the other last-mile primitive: email a teammate a readout instead of (or as well as) mirroring it to Notion.
-- Put "research -> save to KB" on a cadence with a **Routine** — a scheduled Chat created with the `create_routine` MCP tool (a name, a prompt with `write_outputs` on, a cron) — so the doc that mirrors to Notion is refreshed the same way every time. For a fully-typed recipe instead, author a Workflow in the console: [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md).
+- Put "research -> save to KB" on a cadence by having your own scheduler start the Chat (with `write_outputs` on), so the doc that mirrors to Notion is refreshed the same way every time. For a fully-typed recipe instead, author a Workflow in the console: [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md).
 - The rest of the cookbook: [recipe library](../README.md) — the GTM prompts whose outputs are worth keeping in your KB.
 - Product docs: <https://docs.amdahl.ai>.

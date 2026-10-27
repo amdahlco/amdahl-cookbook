@@ -82,13 +82,13 @@ Mirror your Amdahl knowledge base into a Notion database in your own workspace �
 
 ## Notifications (1)
 
-Email people on your workspace from an agent run — members-only, rate-capped, idempotent, so an agent can deliver autonomously without becoming a spam cannon. Driven through Chat and Routines (`actions_allowed`). See the [section README](notifications/README.md).
+Email people on your workspace from an agent run — members-only, rate-capped, idempotent, so an agent can deliver autonomously without becoming a spam cannon. Driven through Chat. See the [section README](notifications/README.md).
 
-- [Notify the workspace team](notifications/notify-the-workspace-team.md) — the **discover -> send -> verify** discipline, the guardrail contract (member-only / capped / idempotent), and the unattended paths: a Routine with `email_member` granted, or a Workflow `tool` step.
+- [Notify the workspace team](notifications/notify-the-workspace-team.md) — the **discover -> send -> verify** discipline, the guardrail contract (member-only / capped / idempotent), and the unattended path: a Workflow `tool` step.
 
 ## Workflows & blueprints (1)
 
-Author reusable, typed **Workflow** recipes (blueprints) the platform can validate, version, fork, schedule, and run headlessly. A console capability — from a connected Claude session, recurring work is a Routine and one-shot deep work is a Chat. See the [section README](blueprints/README.md).
+Author reusable, typed **Workflow** recipes (blueprints) the platform can validate, version, fork, schedule, and run headlessly. A console capability — from a connected Claude session, deep work is a Chat. See the [section README](blueprints/README.md).
 
 - [How to write an Amdahl blueprint](blueprints/authoring-a-blueprint.md) — the mental model, the full DSL anatomy (inputs, outputs, the 8 step kinds, `$`-references, `prompt://` fragments, policy, trigger), validating in the console, and two worked examples (from scratch, and fork-a-starter).
 
@@ -107,9 +107,6 @@ The developer-facing view of the engine the prompts above run on: how to drive A
 - [Structured search — typed filters](agent-platform/structured-search.md) — the config-DSL lane of `search.query`: declarative `{field, op, value}` filters, `group_by` + `metrics` aggregations, and the `search.fields` vocabulary catalog (the compiled SQL comes back as the receipt).
 - [Semantic search — meaning over the call corpus](agent-platform/semantic-search.md) — the vector lane of the same endpoint: meaning-shaped asks, semantic query + filters, and reading `mode_ran` + `freshness`.
 - [Agentic Chat — start, poll, respond](agent-platform/agentic-chat.md) — the always-async lane end to end: start -> poll (or stream) -> render -> answer a pause. REST + the MCP `start_chat` / `get_chat_run` tools, plus the `depth` knob.
-- [Routines — make a Chat recur](agent-platform/routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now, and `actions_allowed` for autonomous sends.
-- [Subscriptions — fire a Chat on an event](agent-platform/subscriptions.md) — the event-driven sibling of a Routine: a source (first: a lead time before each Google Calendar event) fires a fresh Chat per occurrence, with the event rendered into the turn. Kinds catalog, timing rules, fire ledger, test-fire. REST only (not on MCP); the Google Calendar source is retired, so none fire today.
-- [Saved agents — reuse a prompt](agent-platform/saved-agents.md) — the agent library: create a named agent, pin it in a Chat, schedule it as a Routine.
 - [Evals — grade a message against customer voice](agent-platform/evals.md) — `evals.run` (MCP `run_eval`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown, the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval.
 - [Amdahl evals in LangSmith](agent-platform/evals-in-langsmith.md) — wire the eval as a pipeline gate: `evals.run` with `mode: "gate"` (grade-only, no rewrite), the `/gate` read, a copy-paste LangSmith custom evaluator, and the trap list for anyone gating a pipeline on eval numbers.
 - [The answer envelope](agent-platform/answer-envelope.md) — render a Chat answer in your own UI: the seven `content_block` types, `follow_ups`, and the `amdahl:q` / `amdahl:cite` link grammar.

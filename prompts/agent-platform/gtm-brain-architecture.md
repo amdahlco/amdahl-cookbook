@@ -53,7 +53,7 @@ Amdahl is the **Context + Unification** layers — one MCP server — reading yo
 
 ## What this means for the recipes
 
-Every recipe in this section is you calling that context layer from your own agent. The [fast lane](fast-lane-search.md) and [Chat](agentic-chat.md) are the two ways to ask it; [routines](routines.md) and [saved agents](saved-agents.md) are how a play repeats. The [four flows](four-flows.md) show the four shapes those plays take. In all of them the agent stays yours — Amdahl answers; your skill decides what to do with the answer.
+Every recipe in this section is you calling that context layer from your own agent. The [fast lane](fast-lane-search.md) and [Chat](agentic-chat.md) are the two ways to ask it; your own scheduler starting a Chat is how a play repeats. The [four flows](four-flows.md) show the four shapes those plays take. In all of them the agent stays yours — Amdahl answers; your skill decides what to do with the answer.
 
 ## See also
 

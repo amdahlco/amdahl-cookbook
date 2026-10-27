@@ -173,7 +173,7 @@ account where the evidence is thin instead of padding it.
 - **Reactivation cut**: intersect the match list with a structured search for accounts whose last interaction `timestamp` is older than 90 days — near-matches that went quiet are the warmest cold list you own.
 - **Hand the interpretation to a Chat**: once the data's assembled, "which 3 of these should we work first, and with what play?" is a judgment call — a good [Chat](agentic-chat.md) ask with this list as input.
 - **Deep briefs on the shortlist**: once a human has picked the top few, a [Chat](agentic-chat.md) can research those accounts properly, market signal included. That is the right place for depth — a per-account brief across fifty candidates is work nobody reads.
-- **Make it a Routine**: wrap the whole prompt in a [Routine](routines.md) so the expansion list refreshes itself monthly as new calls land.
+- **Make it monthly**: have your own scheduler start the whole prompt as a Chat each month so the expansion list refreshes as new calls land.
 
 ## Tips
 

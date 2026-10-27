@@ -13,11 +13,13 @@ All three synchronous lanes are the SAME endpoint. `search.query` (`POST /search
 
 ## No prerequisite — this surface ships to every workspace
 
-Everything in this section (the per-operation MCP tools such as `search_customers`, `start_chat`, `create_routine` and `create_agent`; `POST /search/query`, `GET /search/fields`, `POST /chat`, `/routines`, `/subscriptions`, `/agents` on REST) is available on **every** workspace.
+Everything in this section (the per-operation MCP tools such as `search_customers` and `start_chat`; `POST /search/query`, `GET /search/fields` and `POST /chat` on REST) is available on **every** workspace.
 
 Earlier versions of this page named an `agent_v2` per-workspace flag and a `403` with `error.code: "feature_disabled"`. **Neither exists** — the flag is retired and there is one code path. If you built a capability check around that error, delete it.
 
-The MCP server lists one tool per operation (52 tools, for example `search_customers`, `start_chat`, `run_eval` and `get_setup_status`), and none of them takes an `action` param. The older names (`search`, `agents_read`, `evals_manage`, …) still answer for a deprecation window but are not listed. Subscriptions are REST only. The `blueprints` and `pages` tools were retired (those are console surfaces now).
+The MCP server lists one tool per operation (52 tools, for example `search_customers`, `start_chat`, `run_eval` and `get_setup_status`), and none of them takes an `action` param. The older names (`search`, `agents_read`, `evals_manage`, …) still answer for a deprecation window but are not listed. The `blueprints` and `pages` tools were retired (those are console surfaces now).
+
+Saved agents, Routines and Subscriptions were retired on 27 October 2026. Their REST routes (`/routines`, `/subscriptions`, and `POST`, `PATCH` and `DELETE` on `/agents`) answer `410` with `error.code: "gone"`. Their MCP tools (`list_agents`, `create_agent`, `create_routine`, `run_routine_now` and the rest) are no longer listed, and calling one returns a tool error. To repeat a play, start a Chat from your own scheduler.
 
 ## Scopes — what an MCP key / API key needs
 
@@ -29,16 +31,13 @@ Everything here is covered by the **`mcp_customer_agent`** scope bundle (the def
 | Start / rename a Chat | `conversations:write` |
 | Read a Chat / poll a run | `conversations:read` |
 | Answer a pause / cancel a run | `workflows:write` |
-| Agent library read / write | `agents:read` / `agents:write` |
-| Routines read / write | `routines:read` / `routines:write` |
-| Subscriptions read / write | `subscriptions:read` / `subscriptions:write` |
 | Grade a message / run an eval (`evals.run`, MCP `run_eval`) | `evals:execute` |
 | Author or validate an eval (`evals.create` / `evals.update` / `evals.validate`) | `evals:write` |
 | Browse evals, poll runs, grader kinds | `evals:read` |
 | Connections reads (catalog, instances, status, runs, summary) | `connections:read` |
 | Connections writes (connect / disconnect / reconnect / config) | `connections:write` / `connections:delete` — OAuth sessions only; not on any API-key bundle |
 
-A read-only key (`mcp_read_only`) can run every synchronous endpoint and read chats — but cannot start a Chat, answer a pause, or write an agent/routine/subscription.
+A read-only key (`mcp_read_only`) can run every synchronous endpoint and read chats — but cannot start a Chat or answer a pause.
 
 ## Start with the mental model
 
@@ -53,9 +52,6 @@ Before the individual calls, the shape of the whole thing — where Amdahl sits 
 - [Structured search — typed filters](structured-search.md) — the config-DSL lane of `search.query`: declarative `{field, op, value}` filters, `group_by` + `metrics` aggregations, the compiled SQL as the receipt, and the `GET /search/fields` vocabulary catalog.
 - [Semantic search — meaning over the call corpus](semantic-search.md) — the vector lane of the same endpoint: meaning-shaped asks, combining a semantic query with the narrow semantic filter set, and reading `mode_ran` + `freshness` before you trust the results.
 - [Agentic Chat — start, poll, respond](agentic-chat.md) — the async lane end to end: `start` -> poll `read_url` (or MCP `get_chat_run`) -> render the answer -> answer an `awaiting_input` pause (MCP `answer_chat_question`) -> stream a run live. Over REST and over MCP. Includes the `depth` knob (and why the default is `deep`).
-- [Routines — make a Chat recur](routines.md) — a cron that fires a fresh Chat each occurrence: create / list / update / delete / run-now over REST + MCP, the `config` (incl. `actions_allowed` for autonomous sends), and when a Routine beats a Workflow.
-- [Subscriptions — fire a Chat on an event](subscriptions.md) — the event-driven sibling of a Routine: a source (first: a configurable lead time before each Google Calendar event) fires a fresh Chat per occurrence, with the event rendered into the turn. The self-describing kinds catalog, the timing rules, the fire ledger, and test-fire. REST only (not on MCP); the Google Calendar source is retired, so none fire today.
-- [Saved agents — reuse a prompt](saved-agents.md) — the agent library: create a named, reusable agent, pin it in a Chat, and schedule it as a Routine. CRUD over REST + MCP.
 - [Evals — grade a message against customer voice](evals.md) — `evals.run` (MCP `run_eval`): pass in a drafted message + its prompt, poll the run, and read the scorecard — a `pass` / `partial` / `fail` / `not_applicable` verdict, a per-dimension breakdown (relevant positioning / grounding / verified specifics / differentiation / cta clarity), the verbatim customer quotes that support or contradict it, and a grounded rewrite. Plus the builder for authoring your own eval (`rule` / `sor_anchored` / `evidence_judge` graders).
 - [Amdahl evals in LangSmith](evals-in-langsmith.md) — wire the eval as a pipeline gate: connect the MCP server in LangSmith, fire `evals.run` with `mode: "gate"` (grade-only, no rewrite), poll the `/gate` read, and a copy-paste LangSmith custom evaluator that turns `gate.passed` into feedback. Plus the trap list (why `overall_score` and `lift` must never gate a pipeline, and how to pin evidence for A/Bs).
 - [Eval feedback loop](evals-feedback-loop.md) — close the loop: report what happened *after* a run (`feedback`), read one run's reports back (`feedback_status`), and roll adoption up across runs (`adoption`). The `evidence` field an agent must be honest about, the three-state `verified`, the narrowing denominators on the roll-up, and why adoption is a signal to cull with rather than optimize for.

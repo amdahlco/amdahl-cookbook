@@ -210,8 +210,8 @@ Use our CRM + call corpus (the divergence map), not generic web knowledge. When 
 ## Variations
 
 - **Continue a thread**: pass the prior `chat_id` on `start` to add a turn to an existing chat instead of opening a new one.
-- **Headless (no pauses)**: `config.on_question: "none"` so a run started by automation never blocks on a human question — it makes its best call and finishes. This is what [Routines](routines.md) use.
-- **Pin a saved agent**: `start` with `agent: "<slug>"` to run a [saved agent](saved-agents.md)'s prompt instead of the default Master.
+- **Headless (no pauses)**: `config.on_question: "none"` so a run started by automation never blocks on a human question — it makes its best call and finishes. Use this when your own scheduler starts the Chat.
+- **Pin a library agent**: `start` with `agent: "gtm-strategist"` to run that agent's prompt instead of the default Master.
 - **Cheapest path**: `config.depth: "quick"` — Sonnet, a lean kit, ~10 turns. Good for a bounded investigation where `deep` is overkill.
 
 ## Tips
@@ -225,5 +225,3 @@ Use our CRM + call corpus (the divergence map), not generic web knowledge. When 
 
 - [Fast lane — `search.query`, mode `fuzzy`](fast-lane-search.md) — the synchronous door, and the `escalate_to_chat` handoff into this one.
 - [The answer envelope](answer-envelope.md) — how to render `content_blocks` + `follow_ups`.
-- [Routines](routines.md) — put a Chat like this on a cron.
-- [Saved agents](saved-agents.md) — pin a reusable prompt into a Chat.

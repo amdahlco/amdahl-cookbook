@@ -82,7 +82,7 @@ Render `content_blocks` (the rebuttal text + the theme card), not just `answer_t
 Two ways to get the brief off the screen:
 
 - **Email the rep** — put the delivery in the ask: end the Chat input with "…and email the takeaway to the deal owner." The run sends through the platform's member-email primitive — members-only, capped, idempotent (see [notifications](../notifications/notify-the-workspace-team.md)).
-- **Make it standing** — a rep with recurring calls can wrap this as a [saved agent](saved-agents.md) pinned into a [Routine](routines.md): `create_agent` a "call-prep brief" agent, then a Routine that fires it each morning for every account with a meeting on the calendar. Scope its config with `actions_allowed: ["email_member"]` so the fired runs can send exactly that and nothing else.
+- **Make it standing** — a rep with recurring calls can have their own scheduler start this Chat each morning for every account with a meeting on the calendar. Pass `config.actions_allowed: ["email_member"]` so those runs can send exactly that and nothing else.
 
 ## Paste this into Claude
 
