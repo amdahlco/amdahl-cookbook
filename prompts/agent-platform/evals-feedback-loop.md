@@ -159,4 +159,3 @@ The four counts **narrow**, and each one answers a different question:
 
 - [Evals — grade a message against customer voice](evals.md) — the run this loop closes.
 - [Amdahl evals in LangSmith](evals-in-langsmith.md) — the pipeline-gate shape, where `mode: "gate"` runs are the ones deliberately excluded from the adoption denominator.
-- [Routines](routines.md) — the usual `applied_to` target when an agent rewrites a scheduled prompt.

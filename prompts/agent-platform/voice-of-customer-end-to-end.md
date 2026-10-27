@@ -122,15 +122,14 @@ That branch — one `if` on `detail.escalate_to_chat` — is the entire fast-lan
 
 ## Step 4 (optional) — make it a standing digest
 
-Once the Chat version answers well, wrap it in a [Routine](routines.md) so a weekly VoC digest runs itself and emails the team:
+Once the Chat version answers well, have your own scheduler start it every Monday at 09:00 so a weekly VoC digest runs itself and emails the team:
 
 ```
-POST /routines
+POST /chat
 {
   "name": "Weekly voice-of-customer digest",
-  "prompt": "Which customer objection and praise themes are growing this week vs last, and what's driving each? Email the top 3 to the GTM team.",
-  "cron": "0 9 * * 1",
-  "config": { "depth": "standard", "actions_allowed": ["email_member"] }
+  "input": "Which customer objection and praise themes are growing this week vs last, and what's driving each? Email the top 3 to the GTM team.",
+  "config": { "depth": "standard", "on_question": "none", "actions_allowed": ["email_member"] }
 }
 ```
 

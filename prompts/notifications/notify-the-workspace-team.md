@@ -1,6 +1,6 @@
 # Notify the workspace team
 
-**What this does**: Gets an email to people on your Amdahl workspace — by asking your agent. A Chat (or a scheduled Routine) performs the send through the platform's notifications primitive, and the run can confirm it landed without double-sending. It's the "tell my team" last mile: the run discovers who it can email, sends, then verifies delivery and checks the rate caps.
+**What this does**: Gets an email to people on your Amdahl workspace — by asking your agent. A Chat performs the send through the platform's notifications primitive, and the run can confirm it landed without double-sending. It's the "tell my team" last mile: the run discovers who it can email, sends, then verifies delivery and checks the rate caps.
 
 **When to use it**: "Claude just finished the win-loss postmortem (or the weekly pipeline recap, or a competitor brief) — now email the two-line takeaway to the deal owner and my manager." Anything where the output of a GTM play should land in a teammate's inbox, not just the chat.
 
@@ -22,7 +22,7 @@ On the current (v2) agent platform the send is driven **through the agent run**,
 | Path | How |
 |---|---|
 | Interactive (a human watching) | Put the send in a [Chat](../agent-platform/agentic-chat.md)'s input — "…and email the takeaway to {names}." The run performs the discover -> send -> verify loop server-side. |
-| Unattended (no human present) | A [Routine](../agent-platform/routines.md) whose config grants the action: `actions_allowed: ["email_member"]`. Each fired Chat may then send, with every guardrail above intact. |
+| Unattended (no human present) | A Chat your own scheduler starts with `on_question: "none"` and `actions_allowed: ["email_member"]` in its config. The run may then send, with every guardrail above intact. |
 | Typed recipe | A Workflow (blueprint) `tool` step calling `notifications.email_member` — see the variant below. Workflows are authored in the console. |
 
 There's no standalone `notifications` tool on the MCP surface and the send endpoint isn't on the public API — the run is the door, and the guardrails live server-side either way.
@@ -93,9 +93,9 @@ tell me and don't retry.
 - The verification read showing every recipient at `status: "sent"`, plus the cap headroom.
 - If anything was rejected (`invalid_argument` + `non_members`) or capped (`rate_limited`), a plain statement of what happened and no silent retry.
 
-## Sending unattended — Routines and Workflows
+## Sending unattended — scheduled Chats and Workflows
 
-**The "every Monday, no human present" path is a Routine.** A Routine is a cron that fires a Chat — one server-side Master agent turn in a fresh Session — each occurrence, and its config carries an `actions_allowed` list that scopes what the fired run may do. **Mind the default: leaving `actions_allowed` off means ALL cataloged actions are allowed** — so a routine can send email autonomously out of the box. Best practice for a sending routine is to name the grant explicitly — `actions_allowed: ["email_member"]` — which narrows the run to exactly that action; `[]` disables outbound actions entirely, and a run whose effective list lacks the action surfaces the send as a proposal with a structured `action_not_allowed` instead of firing it. Every guardrail above (member-only, capped, idempotent) applies unchanged. Create one from any connected Claude session with the `agents` tool (`create_routine` with a name, a prompt like "compile the weekly pipeline recap and email it to {names}", and a cron).
+**The "every Monday, no human present" path is a Chat your own scheduler starts** (`POST /chat`, or `start_chat` over MCP) with `on_question: "none"`, so the run never waits on a person. Amdahl's own Routines were retired on 27 October 2026. The Chat's config carries an `actions_allowed` list that scopes what the run may do. **Mind the default: leaving `actions_allowed` off means ALL cataloged actions are allowed** — so the run can send email autonomously out of the box. Best practice for a sending run is to name the grant explicitly — `actions_allowed: ["email_member"]` — which narrows the run to exactly that action; `[]` disables outbound actions entirely, and a run whose effective list lacks the action surfaces the send as a proposal with a structured `action_not_allowed` instead of firing it. Every guardrail above (member-only, capped, idempotent) applies unchanged. A good input: "compile the weekly pipeline recap and email it to {names}".
 
 **Workflows (blueprints) can send too.** Inside an [Amdahl blueprint](../blueprints/authoring-a-blueprint.md) — a typed Workflow recipe, authored in the console — emailing the team is a normal `tool` step calling `notifications.email_member`; there's no special "notification" step kind. It looks like any other tool step:
 
@@ -116,7 +116,7 @@ tell me and don't retry.
 
 Add `notifications.email_member` to the blueprint's `policy.tool_allowlist` so the recipe documents that it intends to send mail (per the [authoring guide](../blueprints/authoring-a-blueprint.md), headless runs derive their scopes from the allowlist).
 
-**When does the email actually fire?** On a headless Workflow run (fired from the console, or by a Workflow schedule), the platform walks the recipe server-side and the `notify_team` step sends the moment the runner reaches it. On the interactive path, it sends when the agent walking the recipe reaches that step. Either is fully unattended once scheduled — but for most standing "email the team a digest" jobs, the Routine above is the simpler build: a prompt and a cron instead of a typed step graph.
+**When does the email actually fire?** On a headless Workflow run (fired from the console, or by a Workflow schedule), the platform walks the recipe server-side and the `notify_team` step sends the moment the runner reaches it. On the interactive path, it sends when the agent walking the recipe reaches that step. Either is fully unattended once scheduled — but for most standing "email the team a digest" jobs, the scheduled Chat above is the simpler build: a prompt and a cron instead of a typed step graph.
 
 ## Variations
 
@@ -124,7 +124,7 @@ Add `notifications.email_member` to the blueprint's `policy.tool_allowlist` so t
 - **Digest to the whole team:** ask the run to send to every addressable member — and to check the cap headroom first so a big team doesn't trip the hourly cap mid-batch.
 - **Just-the-failures audit:** ask "has {person} been getting my sends this week?" — the run reads the ledger filtered to that recipient.
 - **Confirm-before-send (human in the loop):** the primitive is autonomous by design (no confirmation gate). If you *want* a gate, instruct Claude to draft the subject + body and show them to you for approval before sending — the gate lives in your prompt, not the API.
-- **From code, not chat:** drive the same thing over the public Chat API — `POST /chat` with the send in the `input` (and poll the run to completion). For a standing job, create the Routine over `POST /routines` with `actions_allowed: ["email_member"]` in its config.
+- **From code, not chat:** drive the same thing over the public Chat API — `POST /chat` with the send in the `input` (and poll the run to completion). For a standing job, start that Chat from your scheduler with `actions_allowed: ["email_member"]` in its config.
 
 ## Tips
 
@@ -136,7 +136,6 @@ Add `notifications.email_member` to the blueprint's `policy.tool_allowlist` so t
 
 ## See also
 
-- [Routines](../agent-platform/routines.md) — the scheduled Chat that carries the unattended send, and the `actions_allowed` contract in full.
-- [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md) — the `tool`-step model the Workflow variant above builds on, and when a Routine is the better fit.
+- [How to write an Amdahl blueprint](../blueprints/authoring-a-blueprint.md) — the `tool`-step model the Workflow variant above builds on.
 - The rest of the cookbook: [recipe library](../README.md) — paste-ready GTM prompts that produce the readouts worth emailing.
 - Product docs: <https://docs.amdahl.ai>.

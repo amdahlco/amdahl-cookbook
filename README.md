@@ -136,11 +136,11 @@ The full index lives at [prompts/README.md](prompts/README.md).
 
 ---
 
-## Make it recur (Routines) or build your own recipes (blueprints)
+## Make it recur, or build your own recipes (blueprints)
 
-The recipes above are paste-ready prompts. When you want work to repeat *inside Amdahl* — without you pasting anything — there are two paths in:
+The recipes above are paste-ready prompts. When you want work to repeat without you pasting anything:
 
-- **Routines** — the MCP-native way to schedule work. A Routine is a cron that fires a **Chat** (one server-side Master agent turn, in a fresh Session) each occurrence. From any connected Claude session, ask for a standing refresh ("every Monday, refresh the pipeline health report") and Claude creates it with the `create_routine` tool — a name, a prompt, and a cron. No DSL required, and each fire shows up as its own Session you can open and read.
+- **Run it on your own schedule.** Start a Chat from your scheduler (cron, CI, an orchestrator) with the `start_chat` MCP tool or `POST /chat`, then poll for the answer. Each run is its own Chat you can open and read. See [Agentic Chat](prompts/agent-platform/agentic-chat.md). Amdahl's own scheduled Chats (Routines) and event triggers (Subscriptions) were retired on 27 October 2026.
 - **Workflows (blueprints)** — the fully-typed path: a **blueprint** is a typed recipe with declared inputs, outputs, and a validated step graph that the platform can version, fork, schedule, and run headlessly. Authoring and running Workflows is a **console capability** (the Workflows surface; the `blueprints` MCP tool was retired, and the endpoints behind the console aren't reachable with an external API key). It's a different thing from a cookbook prompt; the guide opens by untangling the two.
 
 > **Surface note:** the agent platform (MCP tools such as `search_customers` and `start_chat`) is on **every** workspace — the per-workspace rollout flag it once sat behind is retired, so there is no capability check to make and no `feature_disabled` error to handle. The `blueprints` and `pages` MCP tools were retired with it; Workflows and Pages are console surfaces now.
@@ -148,7 +148,7 @@ The recipes above are paste-ready prompts. When you want work to repeat *inside 
 
 - [How to write an Amdahl blueprint](prompts/blueprints/authoring-a-blueprint.md) — the mental model, the DSL anatomy, validating in the console, and two worked examples (one from scratch, one fork-and-customize).
 
-If you've installed the plugin, the `blueprint-authoring` skill routes "make this recur" asks to Routines and composes the Workflow DSL with you, handing off to the console's Workflows surface for the create -> validate -> fork -> iterate loop.
+If you've installed the plugin, the `blueprint-authoring` skill composes the Workflow DSL with you, handing off to the console's Workflows surface for the create -> validate -> fork -> iterate loop.
 
 ---
 
@@ -181,7 +181,6 @@ Everything above runs on two "ask Amdahl" doors, and you can drive both from you
 - **Fast lane (`search.query`, mode `fuzzy`)** — one synchronous call that returns the rows *and* the SQL it ran. For "get me the number." [Recipe](prompts/agent-platform/fast-lane-search.md).
 - **The endpoints** — synchronous primitives beside the doors: [structured search](prompts/agent-platform/structured-search.md) (typed filters + `group_by`/`metrics` over a discoverable field catalog), and [semantic search](prompts/agent-platform/semantic-search.md) (meaning over the call corpus — also how you find "more accounts like this one").
 - **Agentic Chat** — the always-async Master agent: start, get handles, poll or stream for the cited answer, respond to a pause. For "investigate this." [Recipe](prompts/agent-platform/agentic-chat.md).
-- **Routines & saved agents** — put a Chat on a cron, or save a reusable agent and pin it. [Routines](prompts/agent-platform/routines.md) · [Saved agents](prompts/agent-platform/saved-agents.md).
 - **Evals** — grade a drafted message against how your customers actually talk: pass in the message, poll the run, read the scorecard (verdict + per-dimension grades, the customer quotes that support or contradict it, and a grounded rewrite). Or author your own eval. [Recipe](prompts/agent-platform/evals.md). Then close the loop: report whether the recommendation was applied, and roll adoption up across runs. [Feedback loop](prompts/agent-platform/evals-feedback-loop.md).
 - **Rendering the answer** — the seven content-block types and the `amdahl:q` / `amdahl:cite` link grammar, for showing a Chat result in your own UI. [Recipe](prompts/agent-platform/answer-envelope.md).
 - **End-to-end use cases** — full journeys over both surfaces: [voice of customer](prompts/agent-platform/voice-of-customer-end-to-end.md) (teaches the fast -> Chat handoff), [call prep + objection handling](prompts/agent-platform/call-prep-objection-end-to-end.md), and [the expansion motion](prompts/agent-platform/expansion-motion-end-to-end.md) (read your best win's own language, then semantic-search the corpus for the accounts that sound like it).
@@ -192,9 +191,9 @@ Available on every workspace: the `search_customers` and `start_chat` MCP tools,
 
 ## Push results to your team (notifications)
 
-The recipes above end in the chat. When the output should reach a teammate who isn't watching the session — the deal owner, your manager, RevOps — email it to them. Amdahl's notifications primitive is members-only (a non-member rejects the whole send), rate-capped, and idempotent, so an agent can deliver autonomously without becoming a spam cannon. You drive it through the agent: put the send in a Chat's input, or grant it on a Routine via `actions_allowed`.
+The recipes above end in the chat. When the output should reach a teammate who isn't watching the session — the deal owner, your manager, RevOps — email it to them. Amdahl's notifications primitive is members-only (a non-member rejects the whole send), rate-capped, and idempotent, so an agent can deliver autonomously without becoming a spam cannon. You drive it through the agent: put the send in a Chat's input.
 
-- [Notify the workspace team](prompts/notifications/notify-the-workspace-team.md) — the **discover -> send -> verify** discipline (resolve recipients from the member list, send with an idempotency key, then confirm delivery), the guardrail contract, and the unattended Routine + Workflow paths.
+- [Notify the workspace team](prompts/notifications/notify-the-workspace-team.md) — the **discover -> send -> verify** discipline (resolve recipients from the member list, send with an idempotency key, then confirm delivery), the guardrail contract, and the unattended Workflow path.
 
 ---
 
@@ -202,7 +201,7 @@ The recipes above end in the chat. When the output should reach a teammate who i
 
 Your team lives in Notion but your canonical reference library — competitive briefs, positioning memos, the research your agents keep producing — lives in Amdahl. Mirror it: connect Notion once, pick a parent page, and every document you promote in Amdahl shows up (and stays current) in a Notion database your whole team can read. One-way, current-version-only, self-healing on an hourly reconcile — it runs server-side with no open session required.
 
-- [Mirror your knowledge base to Notion](prompts/knowledge-sync/mirror-knowledge-base-to-notion.md) — the **connect -> configure -> it-syncs-itself -> monitor** loop. Setup and monitoring live in the console (Connections); agents feed it — a doc a Chat or Routine lands in the knowledge base (`write_outputs`) mirrors to Notion the moment you promote it.
+- [Mirror your knowledge base to Notion](prompts/knowledge-sync/mirror-knowledge-base-to-notion.md) — the **connect -> configure -> it-syncs-itself -> monitor** loop. Setup and monitoring live in the console (Connections); agents feed it — a doc a Chat lands in the knowledge base (`write_outputs`) mirrors to Notion the moment you promote it.
 
 ---
 
