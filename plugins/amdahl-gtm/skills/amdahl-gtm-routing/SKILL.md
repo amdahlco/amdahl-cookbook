@@ -26,7 +26,6 @@ The server lists one tool per operation. The ones this skill routes to: **`searc
 | Account history, deal context | `search_customers` over the interactions + deals surfaces — mode `fuzzy` to describe the ask, `filter` for an exact slice. |
 | Company profile / ICP / brand voice | These live server-side — run the ask as a Chat (`start_chat`); the Master pulls the workspace context itself. |
 | Draft content in tenant voice | Ground on `search_customers` (mode `semantic`) and draft in-conversation; for an on-voice draft or one that should persist, run it as a Chat (`write_outputs: true` lands a knowledge-base version the user promotes). |
-| Build a page / dashboard / data view | `/create-page` — draft the page spec (catalog components + SQL bindings) and hand the user the JSON for the console's Pages surface. Page authoring is console-only. |
 | Reference library (knowledge base) | Console capability. Feed it via a Chat/Routine with `write_outputs: true`; the user promotes in the console. |
 | "Is my data flowing?" / a source looks stale / connect or fix a data source | `list_connections` to see every source with its derived `health`, then `list_connection_syncs` { connection_id } for the failing one — the bucketed `error_reason` (`auth` / `rate_limit` / `transient` / `config`) is the answer; an `auth` reason means `reconnect_connection`. Browse what CAN be connected with `list_connectors` (each entry carries its logo + the exact connect fields). ⚠️ The reads work on any credential; `connect_source` / `disconnect_connection` / `reconnect_connection` need this session's OAuth token — an API key gets a `403` there by design. |
 
@@ -42,7 +41,7 @@ If this session lists none of these tools, new or old, the Amdahl server is not 
 
 - Ground every claim: a verbatim call quote (speaker role + date) or a dated public source. No claims from memory.
 - The divergence section is the moat — generic tools cannot write it. Include it whenever both internal and external signal exist.
-- For the named plays (account deep-dive, competitor, meeting prep, win-loss, positioning, draft, pipeline, create-page), the `/amdahl-gtm:*` slash commands carry the full wave-structured recipe — prefer them when the user's ask maps cleanly to one.
+- For the named plays (account deep-dive, competitor, meeting prep, win-loss, positioning, draft, pipeline), the `/amdahl-gtm:*` slash commands carry the full wave-structured recipe — prefer them when the user's ask maps cleanly to one.
 - If the Amdahl server isn't connected or a call fails on auth, tell the user to run `/amdahl-gtm:setup`.
 - The deep routing detail and operational defaults live server-side in the `system/amdahl_gtm_playbook` MCP prompt — pull it when you need more than this table.
 
