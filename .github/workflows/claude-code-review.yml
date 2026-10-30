@@ -74,9 +74,14 @@ jobs:
     name: Code Review
     runs-on: ubuntu-latest
     # Same-repo, non-draft PRs only (a fork PR cannot read secrets anyway).
+    # A draft is reviewed once, on ready_for_review. PRs opened by Dependabot
+    # or by the amdahl-review-bot App are not reviewed: nothing here merges
+    # them on this bot's approval, so a person reviews them.
     if: >-
       !github.event.pull_request.draft &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      github.event.pull_request.user.login != 'amdahl-review-bot[bot]'
     permissions:
       contents: read
       pull-requests: write
