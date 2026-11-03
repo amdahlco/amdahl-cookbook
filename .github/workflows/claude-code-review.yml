@@ -65,8 +65,21 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
+# Only a run whose review job will run joins the PR's group, so a newer
+# push still cancels an older review in progress. A run whose review job
+# will skip gets a group of its own and cancels nothing. On frontend #1967
+# a push run whose payload still said draft, created 1 s after the
+# ready_for_review run, cancelled that run and then skipped its own review.
+# The condition below must stay identical to the review job's `if:`.
 concurrency:
-  group: code-review-${{ github.event.pull_request.number }}
+  group: >-
+    ${{ (
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      github.event.pull_request.user.login != 'amdahl-review-bot[bot]'
+    ) && format('code-review-{0}', github.event.pull_request.number)
+    || format('code-review-{0}-skip-{1}', github.event.pull_request.number, github.run_id) }}
   cancel-in-progress: true
 
 jobs:
@@ -77,6 +90,7 @@ jobs:
     # A draft is reviewed once, on ready_for_review. PRs opened by Dependabot
     # or by the amdahl-review-bot App are not reviewed: nothing here merges
     # them on this bot's approval, so a person reviews them.
+    # Keep this identical to the condition in the top-level concurrency group.
     if: >-
       !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository &&
