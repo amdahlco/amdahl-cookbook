@@ -41,7 +41,8 @@
 #   included, so a collaborator with push access to a branch here could
 #   still edit this file directly to bypass the gate. See the note on the
 #   "Checkout review scripts" step below. The reviewed diff is still built
-#   from the checked-out head.
+#   from the checked-out head. The pr-state job reads the live PR, so a
+#   stale event payload cannot skip a ready PR or pick an old head to review.
 #
 # Required secrets (an admin sets these on the repo or the amdahlco org):
 #   - CI_ANTHROPIC_API_KEY   the Anthropic key the review call uses. Without
@@ -65,16 +66,15 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
-# Only a run whose review job will run joins the PR's group, so a newer
-# push still cancels an older review in progress. A run whose review job
-# will skip gets a group of its own and cancels nothing. On frontend #1967
-# a push run whose payload still said draft, created 1 s after the
-# ready_for_review run, cancelled that run and then skipped its own review.
-# The condition below must stay identical to the review job's `if:`.
+# Every run that may review joins the PR's group, and a newer run cancels
+# an older one. That includes a run whose payload says draft: the payload
+# can be stale, so the pr-state job reads the live PR and decides. A run
+# that can never review (fork, bot author) gets a group of its own and
+# cancels nothing, so it cannot cancel a review in progress.
+# The condition below must stay identical to the pr-state job's `if:`.
 concurrency:
   group: >-
     ${{ (
-      !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.login != 'dependabot[bot]' &&
       github.event.pull_request.user.login != 'amdahl-review-bot[bot]'
@@ -83,19 +83,92 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  review:
-    name: Code Review
+  # ===========================================================================
+  # Job 0: Read the PR as it is now
+  # ===========================================================================
+  # Whether to review, and which commit, come from the live PR. The event
+  # payload can be stale. On frontend #1967 the ready_for_review run carried
+  # the old head and the push run created 1 s later still said draft, so no
+  # run reviewed the new head. This job starts after its run joined the PR's
+  # concurrency group, which cancelled every older run, so it sees every
+  # push those runs were for. A push after this read starts a newer run that
+  # cancels this one. Whichever run is left reviews the PR's current head.
+  # If GitHub cannot be read, this job fails: nothing is reviewed or
+  # approved, and the failed check shows on the PR.
+  pr-state:
+    name: Read PR state
     runs-on: ubuntu-latest
-    # Same-repo, non-draft PRs only (a fork PR cannot read secrets anyway).
-    # A draft is reviewed once, on ready_for_review. PRs opened by Dependabot
-    # or by the amdahl-review-bot App are not reviewed: nothing here merges
-    # them on this bot's approval, so a person reviews them.
+    # Same-repo PRs only (a fork PR cannot read secrets anyway). A draft is
+    # skipped by the live check below and reviewed once it is marked ready.
+    # PRs opened by Dependabot or by the amdahl-review-bot App are not
+    # reviewed: nothing here merges them on this bot's approval, so a person
+    # reviews them.
     # Keep this identical to the condition in the top-level concurrency group.
     if: >-
-      !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.login != 'dependabot[bot]' &&
       github.event.pull_request.user.login != 'amdahl-review-bot[bot]'
+    permissions:
+      pull-requests: read
+    timeout-minutes: 5
+    outputs:
+      review: ${{ steps.read.outputs.review }}
+      head_sha: ${{ steps.read.outputs.head_sha }}
+    steps:
+      - name: Read the live PR
+        id: read
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 << 'PY'
+          import json, os, re, sys, time, urllib.request
+
+          number = os.environ['PR_NUMBER']
+          request = urllib.request.Request(
+              '%s/repos/%s/pulls/%s' % (os.environ['GITHUB_API_URL'], os.environ['GITHUB_REPOSITORY'], number),
+              headers={
+                  'authorization': 'Bearer ' + os.environ['GITHUB_TOKEN'],
+                  'accept': 'application/vnd.github+json',
+                  'x-github-api-version': '2022-11-28',
+              },
+          )
+          for attempt in range(1, 5):
+              try:
+                  with urllib.request.urlopen(request, timeout=15) as response:
+                      pr = json.loads(response.read())
+                  head, state, draft = pr['head']['sha'], pr['state'], pr['draft']
+                  if not re.fullmatch(r'[0-9a-f]{40}', head):
+                      raise ValueError('head sha %r' % head)
+                  break
+              except Exception as error:
+                  print('::warning::Could not read PR #%s (try %d of 4): %s' % (number, attempt, error))
+                  if attempt == 4:
+                      print('::error::Could not read PR #%s, so this run reviews and approves nothing. Re-run it.' % number)
+                      sys.exit(1)
+                  time.sleep(10 * attempt)
+
+          if head != os.environ['EVENT_HEAD_SHA']:
+              print('::notice::The event was for %s; the PR head is now %s' % (os.environ['EVENT_HEAD_SHA'][:12], head[:12]))
+          review = state == 'open' and not draft
+          if state != 'open':
+              print('PR #%s is %s: not reviewing' % (number, state))
+          elif draft:
+              print('PR #%s is a draft: not reviewing. The run for its ready_for_review event reviews it.' % number)
+          else:
+              print('Reviewing %s' % head)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('review=%s\nhead_sha=%s\n' % ('true' if review else 'false', head))
+          PY
+
+  review:
+    name: Code Review
+    runs-on: ubuntu-latest
+    needs: pr-state
+    # Only when the pr-state job found the PR open and ready for review.
+    # The PRs this never reviews are listed on that job.
+    if: needs.pr-state.outputs.review == 'true'
     permissions:
       contents: read
       pull-requests: write
@@ -116,7 +189,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ needs.pr-state.outputs.head_sha }}
 
       # The review scripts run from the PR's base commit, not github.sha
       # (GitHub's test-merge commit for pull_request triggers, base+head
@@ -164,7 +237,7 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.CI_ANTHROPIC_API_KEY }}
           BASE_REF: ${{ github.event.pull_request.base.ref }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_SHA: ${{ needs.pr-state.outputs.head_sha }}
         run: |
           set -eo pipefail
           rm -f /tmp/review_findings.json
@@ -375,7 +448,7 @@ jobs:
       - name: Mark review completed
         id: review-complete
         env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_SHA: ${{ needs.pr-state.outputs.head_sha }}
         run: |
           if ! python3 -c "import json, sys; d = json.load(open(sys.argv[1])); sys.exit(0 if isinstance(d, list) and all(isinstance(x, dict) for x in d) else 1)" /tmp/review_findings.json 2>/dev/null; then
             echo "::error::/tmp/review_findings.json is missing or not a JSON list of findings"
@@ -421,7 +494,7 @@ jobs:
           REVIEW_COMPLETED: ${{ steps.review-complete.outputs.review_completed }}
           # The commit this run checked out and reviewed. The approval is
           # pinned to it and skipped if the PR head has moved.
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_SHA: ${{ needs.pr-state.outputs.head_sha }}
         run: |
           set -eo pipefail
 
@@ -530,7 +603,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_SHA: ${{ needs.pr-state.outputs.head_sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           python3 << 'PY'
