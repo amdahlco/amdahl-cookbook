@@ -93,8 +93,10 @@ jobs:
   # concurrency group, which cancelled every older run, so it sees every
   # push those runs were for. A push after this read starts a newer run that
   # cancels this one. Whichever run is left reviews the PR's current head.
-  # If GitHub cannot be read, this job fails: nothing is reviewed or
-  # approved, and the failed check shows on the PR.
+  # If GitHub cannot be read, this job falls back to the event payload, as
+  # the workflow did before this job existed, and flags it with an error. If
+  # GitHub really is down, the review job then fails, so the PR shows a
+  # failed Code Review check. A skipped job would pass a required check.
   pr-state:
     name: Read PR state
     runs-on: ubuntu-latest
@@ -121,6 +123,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_DRAFT: ${{ github.event.pull_request.draft }}
         run: |
           python3 << 'PY'
           import json, os, re, sys, time, urllib.request
@@ -144,10 +147,15 @@ jobs:
                   break
               except Exception as error:
                   print('::warning::Could not read PR #%s (try %d of 4): %s' % (number, attempt, error))
-                  if attempt == 4:
-                      print('::error::Could not read PR #%s, so this run reviews and approves nothing. Re-run it.' % number)
-                      sys.exit(1)
-                  time.sleep(10 * attempt)
+                  if attempt < 4:
+                      time.sleep(10 * attempt)
+          else:
+              # Every event this workflow runs on is sent for an open PR.
+              head, state, draft = os.environ['EVENT_HEAD_SHA'], 'open', os.environ['EVENT_DRAFT'] == 'true'
+              print('::error::Could not read PR #%s, so this run uses the event payload, which can be stale (head %s, draft %s).' % (number, head[:12], draft))
+              if not re.fullmatch(r'[0-9a-f]{40}', head):
+                  print('::error::The event head sha %r is not a commit sha' % head)
+                  sys.exit(1)
 
           if head != os.environ['EVENT_HEAD_SHA']:
               print('::notice::The event was for %s; the PR head is now %s' % (os.environ['EVENT_HEAD_SHA'][:12], head[:12]))
