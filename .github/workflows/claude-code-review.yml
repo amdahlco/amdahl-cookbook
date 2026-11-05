@@ -27,10 +27,11 @@
 #   (the same helper as amdahl-frontend), which returns the model's text or
 #   fails the step with a named reason in /tmp/review_status.txt. A missing
 #   key, an API error, a diff too large to review whole, a changed file git
-#   shows as binary, or model output with no parseable JSON array fails the
-#   job; none of them counts as zero findings. A failed job posts one
-#   "Automated review did not run" comment with the reason and does not
-#   approve. The summary comment and the approve run only after the review
+#   shows as binary, or model output with no parseable JSON array (after one
+#   re-ask) fails the job; none of them counts as zero findings. A failed job
+#   posts one "Automated review did not run" comment with the reason and does
+#   not approve. If the job dies before its own report step can run (a lost
+#   runner, a cancel or the job timeout), the review-died job posts it. The summary comment and the approve run only after the review
 #   completed, and the approval is pinned to the reviewed commit. A run that
 #   withholds or fails does not dismiss an approval an earlier run gave the
 #   same commit (a re-run); new pushes are covered by dismiss_stale_reviews.
@@ -219,12 +220,16 @@ jobs:
       # file directly within their own PR and bypass the gate that way. That
       # is the trust boundary branch-push access already gives everywhere
       # else in the repo; this checkout only closes the .github/scripts path.
+      # The base's workflows come too: the retry test runs the base's own
+      # Generate step, so the scripts and the step it tests stay one commit.
       - name: Checkout review scripts
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           path: .review-tools
-          sparse-checkout: .github/scripts
+          sparse-checkout: |
+            .github/scripts
+            .github/workflows
           persist-credentials: false
 
       - name: Test the review scripts
@@ -404,22 +409,31 @@ jobs:
           # text to /tmp/review_output.txt or fails with a named reason
           # (no_key, billing, auth, http_<n>, truncated, ...) in
           # /tmp/review_status.txt. There is no '[]' fallback.
-          if ! python3 .review-tools/.github/scripts/anthropic_review_call.py \
+          call_review() {
+            python3 .review-tools/.github/scripts/anthropic_review_call.py \
               --step "review" \
               --prompt-file /tmp/full_prompt.txt \
               --max-tokens 8192 \
-              --timeout 180 \
-              --budget-seconds 420 \
-              --out /tmp/review_output.txt; then
+              --timeout "$1" \
+              --budget-seconds "$2" \
+              --out /tmp/review_output.txt
+          }
+          if ! call_review 180 420; then
             exit 1
           fi
 
           # The output must hold a JSON array of finding objects. Anything else
           # fails the job: it is an unreviewed PR, not a PR with zero findings.
-          python3 << 'PARSEEOF' || exit 1
-          import json, re, sys
+          # On the first answer (PARSE_ATTEMPT=1) a failure exits 3 and records
+          # nothing, so the step can ask once more.
+          parse_review() {
+            PARSE_ATTEMPT="$1" python3 << 'PARSEEOF'
+          import json, os, re, sys
 
           def fail(why):
+              if os.environ['PARSE_ATTEMPT'] == '1':
+                  print(f'::warning::the review output did not parse ({why}); asking once more')
+                  sys.exit(3)
               line = f'review: unparseable ({why})'
               print(f'::error::{line}')
               with open('/tmp/review_status.txt', 'a') as status:
@@ -448,6 +462,27 @@ jobs:
               json.dump(findings, out, indent=2)
           print(f'Review produced {len(findings)} finding(s)')
           PARSEEOF
+          }
+
+          # An answer that does not parse is asked for once more, in the time
+          # this step has left (its limit is 9 minutes). Only on a parse
+          # failure, and at most once. A second answer that does not parse
+          # fails the review, as before.
+          PARSED=0
+          parse_review 1 || PARSED=$?
+          if [ "$PARSED" -eq 3 ]; then
+            LEFT=$((500 - SECONDS))
+            if [ "$LEFT" -ge 60 ]; then
+              if ! call_review $((LEFT < 180 ? LEFT : 180)) $((LEFT < 420 ? LEFT : 420)); then
+                exit 1
+              fi
+            else
+              echo "::warning::only ${LEFT}s left in this step; not asking again"
+            fi
+            parse_review 2 || exit 1
+          elif [ "$PARSED" -ne 0 ]; then
+            exit 1
+          fi
 
       # -----------------------------------------------------------------
       # Step 2: Positive evidence that the review ran to the end. The
@@ -646,3 +681,43 @@ jobs:
           cat /tmp/review_did_not_run.md
           gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/review_did_not_run.md \
             || echo "::warning::Could not post the did-not-run comment on PR #$PR_NUMBER"
+
+  # ===========================================================================
+  # Job 2: Say on the PR that the review did not run, when the job died
+  # ===========================================================================
+  # The review job's "Report that the review did not run" step needs the
+  # job's own runner. A lost runner (amdahl-pipelines #1556, Nov 4 2026), a
+  # cancel or the job timeout skips it, and the PR shows nothing. This job
+  # runs on a GitHub-hosted runner instead. review_job_died.py posts nothing
+  # when that step ran, when the PR moved on, or when a newer run replaced
+  # this one (a superseded run is cancelled too). It changes no check, so
+  # Code Review stays failed.
+  review-died:
+    name: Report a review that did not finish
+    needs: [pr-state, review]
+    if: >-
+      always() &&
+      needs.pr-state.outputs.review == 'true' &&
+      (needs.review.result == 'failure' || needs.review.result == 'cancelled')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # the sparse checkout of .github/scripts
+      actions: read # the review job's steps, and newer runs on this PR
+      pull-requests: write # the one notice comment
+    timeout-minutes: 5
+    steps:
+      # From the PR's base commit, like the review scripts above.
+      - name: Checkout the notice script
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - name: Post the did-not-run notice
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ needs.pr-state.outputs.head_sha }}
+          REVIEW_RESULT: ${{ needs.review.result }}
+        run: python3 .github/scripts/review_job_died.py
