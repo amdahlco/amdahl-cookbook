@@ -52,15 +52,16 @@ def marker(run_id):
 class Api:
     """A small GitHub REST client. Tests replace it with a fake."""
 
-    def __init__(self, base, token, sleep=time.sleep):
+    def __init__(self, base, token, sleep=time.sleep, urlopen=urllib.request.urlopen):
         self.base = base.rstrip("/")
         self.token = token
         self.sleep = sleep
+        self.urlopen = urlopen
 
     def request(self, method, path, body=None):
         data = None if body is None else json.dumps(body).encode()
         req = urllib.request.Request(
-            path if path.startswith("http") else self.base + path,
+            self.base + path,
             data=data,
             method=method,
             headers={
@@ -72,7 +73,7 @@ class Api:
         )
         for attempt in range(1, ATTEMPTS + 1):
             try:
-                with urllib.request.urlopen(req, timeout=20) as response:
+                with self.urlopen(req, timeout=20) as response:
                     return json.loads(response.read() or b"null")
             except urllib.error.HTTPError as error:
                 if error.code < 500 or attempt == ATTEMPTS:
