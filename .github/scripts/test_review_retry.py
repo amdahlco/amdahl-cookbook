@@ -56,7 +56,7 @@ def git(cwd, *args):
 
 @unittest.skipIf(shutil.which("git") is None, "needs git")
 class GenerateStep(unittest.TestCase):
-    def run_step(self, answers):
+    def run_step(self, answers, seconds_used=0):
         tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmp, True)
         origin, work = os.path.join(tmp, "origin.git"), os.path.join(tmp, "work")
@@ -77,7 +77,8 @@ class GenerateStep(unittest.TestCase):
             fake.write(FAKE_HELPER % tmp)
         with open(os.path.join(tmp, "answers.json"), "w") as queue:
             json.dump(answers, queue)
-        script = step_script().replace("/tmp/", tmp + "/")
+        # SECONDS is bash's clock for the step; setting it stands in for time already spent.
+        script = "SECONDS=%d\n" % seconds_used + step_script().replace("/tmp/", tmp + "/")
         self.assertNotIn("${{", script)
         done = subprocess.run(
             ["bash", "--noprofile", "--norc", "-e", "-c", script],
@@ -113,6 +114,23 @@ class GenerateStep(unittest.TestCase):
         self.assertEqual(done.returncode, 1, done.stdout)
         self.assertEqual(len(calls), 2)
         self.assertIsNone(findings)
+        self.assertIn("review: unparseable (JSON parse error", status)
+
+    def test_the_re_ask_gets_only_the_time_the_step_has_left(self):
+        done, calls, findings, _ = self.run_step(["[{bad json]", json.dumps([FINDING])], seconds_used=400)
+        self.assertEqual(done.returncode, 0, done.stdout)
+        self.assertEqual(len(calls), 2)
+        _, timeout, _, budget = calls[1].split()
+        self.assertEqual(timeout, budget)
+        self.assertTrue(90 <= int(budget) <= 100, calls[1])
+        self.assertEqual(findings, [FINDING])
+
+    def test_no_re_ask_with_under_a_minute_left(self):
+        done, calls, findings, status = self.run_step(["[{bad json]", json.dumps([FINDING])], seconds_used=460)
+        self.assertEqual(done.returncode, 1, done.stdout)
+        self.assertEqual(len(calls), 1)
+        self.assertIsNone(findings)
+        self.assertIn("not asking again", done.stdout)
         self.assertIn("review: unparseable (JSON parse error", status)
 
     def test_an_api_failure_is_not_re_asked(self):

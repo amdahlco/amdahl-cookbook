@@ -220,12 +220,16 @@ jobs:
       # file directly within their own PR and bypass the gate that way. That
       # is the trust boundary branch-push access already gives everywhere
       # else in the repo; this checkout only closes the .github/scripts path.
+      # The base's workflows come too: the retry test runs the base's own
+      # Generate step, so the scripts and the step it tests stay one commit.
       - name: Checkout review scripts
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           path: .review-tools
-          sparse-checkout: .github/scripts
+          sparse-checkout: |
+            .github/scripts
+            .github/workflows
           persist-credentials: false
 
       - name: Test the review scripts

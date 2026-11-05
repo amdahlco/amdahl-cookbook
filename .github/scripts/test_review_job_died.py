@@ -186,5 +186,59 @@ class Reasons(unittest.TestCase):
         self.assertIn("could not be read", died.why_it_died(None, "failure"))
 
 
+# Beside this file, or in the PR checkout the review job runs these tests from.
+WORKFLOW = next((path for path in (
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "workflows", "claude-code-review.yml"),
+    os.path.join(os.getcwd(), ".github", "workflows", "claude-code-review.yml"),
+) if os.path.exists(path)), None)
+
+
+def job_block(text, key):
+    """The lines of one top-level job in the workflow, comments dropped."""
+    lines = text.splitlines()
+    start = lines.index("  %s:" % key)
+    end = next((i for i in range(start + 1, len(lines))
+                if lines[i].startswith("  ") and not lines[i].startswith("   ")
+                and lines[i].strip() and not lines[i].strip().startswith("#")), len(lines))
+    return [line for line in lines[start:end] if not line.strip().startswith("#")]
+
+
+@unittest.skipIf(WORKFLOW is None, "claude-code-review.yml is not in this checkout")
+class Workflow(unittest.TestCase):
+    # A renamed job or report step would make the script post a second notice on every failure.
+
+    @classmethod
+    def setUpClass(cls):
+        with open(WORKFLOW, encoding="utf-8") as handle:
+            cls.text = handle.read()
+
+    def test_the_review_and_pr_state_jobs_have_the_names_the_script_reads(self):
+        self.assertIn("    name: %s" % died.REVIEW_JOB, job_block(self.text, "review"))
+        self.assertIn("    name: %s" % died.PR_STATE_JOB, job_block(self.text, "pr-state"))
+
+    def test_the_review_job_has_one_report_step_that_runs_on_failure(self):
+        review = [line.strip() for line in job_block(self.text, "review")]
+        at = [i for i, line in enumerate(review) if line == "- name: %s" % died.REPORT_STEP]
+        self.assertEqual(len(at), 1)
+        self.assertEqual(review[at[0] + 1], "if: failure()")
+
+    def test_the_notice_runs_only_after_a_review_that_was_due_and_died(self):
+        block = job_block(self.text, "review-died")
+        condition = " ".join(" ".join(block).split())
+        self.assertIn("if: >- always() && needs.pr-state.outputs.review == 'true' && "
+                      "(needs.review.result == 'failure' || needs.review.result == 'cancelled')", condition)
+        stripped = [line.strip() for line in block]
+        self.assertIn("needs: [pr-state, review]", stripped)
+        self.assertIn("runs-on: ubuntu-latest", stripped)
+        self.assertNotIn("continue-on-error: true", stripped)
+        self.assertNotIn("name: %s" % died.REVIEW_JOB, stripped)
+        self.assertIn("REVIEW_RESULT: ${{ needs.review.result }}", stripped)
+        self.assertIn("HEAD_SHA: ${{ needs.pr-state.outputs.head_sha }}", stripped)
+        self.assertIn("run: python3 .github/scripts/review_job_died.py", stripped)
+        permissions = stripped[stripped.index("permissions:") + 1:stripped.index("permissions:") + 4]
+        self.assertEqual([p.split(" #")[0] for p in permissions],
+                         ["contents: read", "actions: read", "pull-requests: write"])
+
+
 if __name__ == "__main__":
     unittest.main()
