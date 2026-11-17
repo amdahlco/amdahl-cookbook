@@ -160,10 +160,10 @@ grade, fix, rerun. Copy a directory into your harness's skills path
 Create the key in the console under Settings, then Developer, **Create key**,
 with **Access** set to **Customer agent**.
 
-| Skill                                                    | Does                                                   | Hands back                  |
-| -------------------------------------------------------- | ------------------------------------------------------ | --------------------------- |
-| [`ground-and-draft`](skills/ground-and-draft/SKILL.md)   | Pulls customer evidence, freezes it, drafts against it | A draft for a human to read |
-| [`grade-and-report`](skills/grade-and-report/SKILL.md)   | Submits to Eval, polls, renders the report card        | The scorecard               |
+| Skill                                                  | Does                                                        | Hands back                  |
+| ------------------------------------------------------ | ----------------------------------------------------------- | --------------------------- |
+| [`ground-and-draft`](skills/ground-and-draft/SKILL.md) | Pulls customer evidence, freezes it, drafts against it      | A draft for a human to read |
+| [`grade-and-report`](skills/grade-and-report/SKILL.md) | Grades a draft with the Message Optimizer, renders the card | The card                    |
 
 They are deliberately two skills, not one: the gap between them is where a
 person looks at a draft before it is graded. The full walkthrough is

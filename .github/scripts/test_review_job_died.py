@@ -63,9 +63,9 @@ class FakeApi:
         if path == "/repos/%s/pulls/7" % REPO:
             return self.pr
         if path == "/repos/%s/actions/runs/%s" % (REPO, RUN_ID):
-            return {"workflow_id": 55, "head_branch": "shahin/composer", "run_number": 100}
+            return {"workflow_id": 55, "head_branch": "feature/composer", "run_number": 100}
         if path.startswith("/repos/%s/actions/workflows/55/runs?" % REPO):
-            assert "branch=shahin%2Fcomposer" in path, path
+            assert "branch=feature%2Fcomposer" in path, path
             older = {"id": 1, "run_number": 99, "pull_requests": [{"number": 7}]}
             this = {"id": int(RUN_ID), "run_number": 100, "pull_requests": [{"number": 7}]}
             return {"workflow_runs": [r for r, _ in self.newer_runs] + [this, older]}
@@ -123,7 +123,7 @@ class LostRunner(unittest.TestCase):
         self.assertIn("(attempt 2)", body["body"])
 
     def test_a_marker_written_by_someone_else_is_not_edited(self):
-        quoted = {"id": 901, "user": {"login": "shahin"}, "body": died.marker(RUN_ID)}
+        quoted = {"id": 901, "user": {"login": "someone-else"}, "body": died.marker(RUN_ID)}
         api = FakeApi(comments=[quoted])
         self.assertEqual(run(api), "posted")
         self.assertEqual(api.writes[0][0], "POST")
