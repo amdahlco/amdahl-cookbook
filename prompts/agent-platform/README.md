@@ -19,7 +19,7 @@ Everything in this section (the per-operation MCP tools such as `search_customer
 
 Earlier versions of this page named an `agent_v2` per-workspace flag and a `403` with `error.code: "feature_disabled"`. **Neither exists** — the flag is retired and there is one code path. If you built a capability check around that error, delete it.
 
-The MCP server lists one tool per operation (for example `search_customers`, `start_research`, `optimize_message` and `get_setup_status`), and none of them takes an `action` param. The older names (`search`, `agents_read`, `evals_manage`, ...) still answer for a deprecation window but are not listed. Subscriptions are REST only. The `blueprints` and `pages` tools were retired (those are console surfaces now).
+The MCP server lists one tool per operation (for example `search_customers`, `get_research`, `optimize_message` and `get_setup_status`), and none of them takes an `action` param. The older names (`search`, `agents_read`, `evals_manage`, ...) still answer for a deprecation window but are not listed. Subscriptions are REST only. The `blueprints` and `pages` tools were retired (those are console surfaces now).
 
 ## Scopes — what an MCP key / API key needs
 

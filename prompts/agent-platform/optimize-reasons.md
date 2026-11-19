@@ -70,9 +70,9 @@ With no draft, `before` can only be `null`, because there is no draft text to ma
 {
   "added_claims": [
     {
-      "sentence": "Northwind posted two platform roles this month.",
+      "sentence": "Helix cut provisioning tickets by 70% after the rollout.",
       "sources": [
-        { "id": "src_1", "tag": "caller", "text": "Northwind posted two platform engineering roles this month." }
+        { "id": "src_1", "tag": "call", "text": "We cut provisioning tickets by 70% in the first quarter after the rollout." }
       ]
     }
   ]
