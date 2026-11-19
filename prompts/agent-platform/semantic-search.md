@@ -117,9 +117,9 @@ similarity scores.
 ## Variations
 
 - **Let the router decide**: send the query with `mode: "auto"` (or no mode). Meaning-shaped wording routes semantic on its own; check `mode_ran` to see where it landed.
-- **Theme-level instead of utterance-level**: when you want "which *themes* sound like this" rather than individual moments, group the results by `cluster_id` — or hand the question to a [Chat](agentic-chat.md), which runs the theme reads internally.
+- **Theme-level instead of utterance-level**: when you want "which *themes* sound like this" rather than individual moments, group the results by `cluster_id`: or hand the question to a [research job](fast-lane-search.md#routing-and-research) (`route: "research"`).
 - **Concept + hard slice**: run semantic with a `company_id in […]` filter to ask one question across a specific account list — the pattern the [expansion motion](expansion-motion-end-to-end.md) is built on.
-- **Escalate when "find" becomes "explain"**: similarity finds the moments; it doesn't explain the trend. "Which of these themes are growing and why" is a [Chat](agentic-chat.md).
+- **Escalate when "find" becomes "explain"**: similarity finds the moments; it doesn't explain the trend. "Which of these themes are growing and why" is a [research job](fast-lane-search.md#routing-and-research).
 
 ## Tips
 

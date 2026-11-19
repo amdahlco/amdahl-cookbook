@@ -7,7 +7,9 @@ Two doors, and the whole trick is knowing which one you're at:
 - **Fast lane — `search.query`, mode `fuzzy`.** One synchronous call. You ask a concrete question, it writes SQL over your tenant data, runs it, and hands back the rows **and the SQL it ran** in a single blocking response. For "get me the number." It **blocks and returns the answer**.
 - **Agentic lane — Chat.** A multi-step Master agent that decomposes the question, calls the data/cluster/web tools itself, and composes a cited answer. Because a real investigation takes longer than one HTTP request, Chat is **always asynchronous**: you `start` it and get **handles** back immediately, then poll (or stream) for the result.
 
-> **The one seam worth learning:** the fast lane returns `escalate_to_chat: true` when your ask outgrows it. That field is the designed bridge — fire fast, and if it comes back `escalate_to_chat`, re-fire the same question as a Chat. [Fast lane -> Chat](fast-lane-search.md#escalate-to-chat) walks it end to end.
+> **Chat is retired.** `POST /chat` and the other Chat routes answer `410` with `error.code: "gone"`, and `start_chat` is no longer an MCP tool. For one question and one cited answer, start a research job: `POST /search/query` with `route: "research"` (MCP `search_customers`), then read it with `GET /research/{id}` (MCP `get_research`). The pages below that still describe Chat, Routines, Subscriptions, saved agents and Evals describe surfaces the public API no longer lists.
+
+> **The one seam worth learning:** the fast lane returns `escalate_to_chat: true` when your ask outgrows it, and `search.query` returns `routing` and sometimes a `research_offer` on every successful answer. Those are the designed bridge to research. [Routing and research](fast-lane-search.md#routing-and-research) walks it end to end.
 
 All three synchronous lanes are the SAME endpoint. `search.query` (`POST /search/query`) routes each ask to one of `fuzzy` (the fast lane above), [`filter`](structured-search.md) (typed predicates), or [`semantic`](semantic-search.md) (meaning over the call corpus). Omit `mode` and a router picks; pass it and your choice wins.
 
@@ -17,7 +19,7 @@ Everything in this section (the per-operation MCP tools such as `search_customer
 
 Earlier versions of this page named an `agent_v2` per-workspace flag and a `403` with `error.code: "feature_disabled"`. **Neither exists** — the flag is retired and there is one code path. If you built a capability check around that error, delete it.
 
-The MCP server lists one tool per operation (52 tools, for example `search_customers`, `start_chat`, `run_eval` and `get_setup_status`), and none of them takes an `action` param. The older names (`search`, `agents_read`, `evals_manage`, …) still answer for a deprecation window but are not listed. Subscriptions are REST only. The `blueprints` and `pages` tools were retired (those are console surfaces now).
+The MCP server lists one tool per operation (for example `search_customers`, `get_research`, `optimize_message` and `get_setup_status`), and none of them takes an `action` param. The older names (`search`, `agents_read`, `evals_manage`, ...) still answer for a deprecation window but are not listed. Subscriptions are REST only. The `blueprints` and `pages` tools were retired (those are console surfaces now).
 
 ## Scopes — what an MCP key / API key needs
 
@@ -26,6 +28,9 @@ Everything here is covered by the **`mcp_customer_agent`** scope bundle (the def
 | Door / family | Scope |
 |---|---|
 | `search.query` (fast lane, structured, semantic) / `search.fields` | `data:read` |
+| Start a research job (`route: "research"` or `POST /research`) | `conversations:write` |
+| Read or poll a research job | `conversations:read` |
+| Optimize or grade a message / read a prompt run | `messages:execute` (editor role or above) |
 | Start / rename a Chat | `conversations:write` |
 | Read a Chat / poll a run | `conversations:read` |
 | Answer a pause / cancel a run | `workflows:write` |
@@ -49,7 +54,7 @@ Before the individual calls, the shape of the whole thing — where Amdahl sits 
 
 ## The recipes
 
-- [Fast lane — `search.query`, mode `fuzzy`](fast-lane-search.md) — one synchronous call over REST + MCP: the request, the full response envelope (`detail.internal.status`, the SQL, `uncovered` + `retry_guidance`), the typed-failure contract (it never throws past validation), the async/`max_subqueries` path for broad asks, and the `escalate_to_chat` handoff into Chat.
+- [Fast lane: `search.query`, mode `fuzzy`](fast-lane-search.md): one synchronous call over REST + MCP: the request, the full response envelope (`detail.internal.status`, the SQL, `uncovered` + `retry_guidance`), the typed-failure contract (it never throws past validation), the async/`max_subqueries` path for broad asks, the `route` param with `routing`, `query_id` and `research_offer` (when an ask goes to research, and how to read the job), and `GET /search/suggestions` ("For you" and the recipe library).
 - [Structured search — typed filters](structured-search.md) — the config-DSL lane of `search.query`: declarative `{field, op, value}` filters, `group_by` + `metrics` aggregations, the compiled SQL as the receipt, and the `GET /search/fields` vocabulary catalog.
 - [Semantic search — meaning over the call corpus](semantic-search.md) — the vector lane of the same endpoint: meaning-shaped asks, combining a semantic query with the narrow semantic filter set, and reading `mode_ran` + `freshness` before you trust the results.
 - [Agentic Chat — start, poll, respond](agentic-chat.md) — the async lane end to end: `start` -> poll `read_url` (or MCP `get_chat_run`) -> render the answer -> answer an `awaiting_input` pause (MCP `answer_chat_question`) -> stream a run live. Over REST and over MCP. Includes the `depth` knob (and why the default is `deep`).
@@ -61,6 +66,14 @@ Before the individual calls, the shape of the whole thing — where Amdahl sits 
 - [Eval feedback loop](evals-feedback-loop.md) — close the loop: report what happened *after* a run (`feedback`), read one run's reports back (`feedback_status`), and roll adoption up across runs (`adoption`). The `evidence` field an agent must be honest about, the three-state `verified`, the narrowing denominators on the roll-up, and why adoption is a signal to cull with rather than optimize for.
 - [Connections — connector CRUD](connections.md) — manage the workspace's data sources from code or an agent turn: the self-describing catalog (logo + connect-flow spec per entry), connect over api_key / handle / OAuth, watch health + sync runs + the data summary, and repair in place. Reads on any key; the writes are OAuth-session-only.
 - [The answer envelope](answer-envelope.md) — how to render a Chat answer in your own UI: the seven `content_block` types (`text` / `callout` / `citation` / `table` / `chart_spec` / `metric` / `cluster_finding`), `follow_ups`, and the `amdahl:q` / `amdahl:cite` link grammar (figures explore, claims prove).
+
+## Messages: improve or write a sequence
+
+The Message Optimizer (`POST /messages/optimize`, MCP `optimize_message`) writes and improves one message per call. These recipes chain it across a sequence and read its reasons.
+
+- [Improve a sequence](improve-a-sequence.md): improve a multi-email sequence in order: email k carries the improved emails 1 to k-1 as `context.prior_touches`, so it is written as a follow-up. A worked request and response.
+- [Write a sequence from a goal and a plan](write-a-sequence.md): no drafts: one optimize per email with `context.rules` for the goal and the email's job, plus `prior_touches` from the emails already written.
+- [Reasons on each change](optimize-reasons.md): `changes`, `added_claims` and `placeholders` on a rewrite, `changes` on a prompt run, and when each is absent.
 
 ## End-to-end use cases
 
