@@ -2,7 +2,7 @@
 
 **What this does**: Answers one concrete question about your data in a single **synchronous** call — "how many open deals over $50K?", "which accounts went quiet in the last 14 days?" — and returns the matching rows plus the **exact SQL** it ran. This is the developer view (REST + MCP payloads) of the [quick lookup](../pipeline-pulse/quick-lookup-fast-lane.md) prompt recipe.
 
-**When to use it**: You want a number or a short list *right now*, from your own code or an agent turn, and you want to hand the answer back without waiting on a multi-step investigation. If the ask is "figure out *why* X across the whole pipeline," that's the [agentic Chat](agentic-chat.md) lane instead — and the fast lane will tell you so via `escalate_to_chat`.
+**When to use it**: You want a number or a short list *right now*, from your own code or an agent turn, and you want to hand the answer back without waiting on a multi-step investigation. If the ask is "figure out *why* X across the whole pipeline," that's a [research job](#routing-and-research) instead, and the fast lane will tell you so via `escalate_to_chat` or a `research_offer`.
 
 > **The endpoint changed.** This lane used to be its own operation, `search.run` at `POST /search`. It is now one lane of the routed `search.query` verb at `POST /search/query`, reached with `mode: "fuzzy"`. Same engine, same envelope — the envelope just rides on `detail` now. The old door is gone, not deprecated: `POST /search` returns 404. Two features went with it and have no replacement on this lane — see [What is gone](#what-is-gone).
 
@@ -33,6 +33,9 @@ One verb, three lanes. `mode: "fuzzy"` is this one; the siblings are [structured
 | `max_subqueries` | int | `3` | how many parts a multi-intent ask may split into (sync cap `5`) |
 | `async` | bool | `false` | return a job handle instead of blocking — see [Broad asks](#broad-asks) |
 | `job_id` | string | — | poll a handle from a previous `async` call |
+| `route` | `auto` \| `search` \| `research` | `auto` | pass `research` to start a research job, or `search` to stay on a search lane. See [Routing and research](#routing-and-research) |
+| `from_query_id` | string (UUID) |: | REST: the `query_id` of the earlier answer whose `research_offer` you are taking. Send it with `route: "research"` |
+| `research_id` | string (UUID) |: | poll a research job this call started. Needs `conversations:read` |
 
 **REST:**
 
@@ -101,7 +104,7 @@ The load-bearing fields:
 - **`corpus`** — which store answered, over how many rows, whether your filters ran, and why an empty is empty.
 - **`timing`** — `total_ms` plus this lane's phase split (`plan_ms` / `fan_out_ms` / `coverage_ms`), so a slow call is attributable without guessing.
 - **`detail.message`** — a one-line plain-language summary, always safe to show a user; never a raw error string.
-- **`detail.escalate_to_chat`** — see below.
+- **`detail.escalate_to_chat`**: see [Routing and research](#routing-and-research). The field keeps its old name.
 
 **The only `success: false` shape is input validation / routing / quota:**
 
@@ -124,28 +127,93 @@ POST /search/query  { "job_id": "sj_..." }
 
 Job results are kept for a limited time; re-run the query if a handle has expired.
 
-## <a id="escalate-to-chat"></a>Escalate to Chat — the handoff
+## <a id="routing-and-research"></a>Routing and research
 
-The fast lane knows its own limits. When the question needs decomposition, cross-source synthesis, or a "why," it returns `detail.internal.status: "unsupported"` and `detail.escalate_to_chat: true` rather than forcing a bad SQL answer. The right integration pattern is: **fire fast, and on escalation re-fire the same question as a Chat.**
+Chat is retired: `POST /chat` and the other Chat routes now answer `410` with `error.code: "gone"`. For one question and one cited answer, use a research job. `search.query` routes each ask to a search lane or to research, and tells you which.
+
+**A successful answer carries the route** as `routing`, with a `query_id` you can quote later:
+
+```json
+{
+  "success": true,
+  "mode_ran": "fuzzy",
+  "query_id": "6b1f0f0e-...",
+  "routing": { "route": "research", "reason": "deal_facts", "signals": ["last contact"] },
+  "research_offer": { "reason": "This asks about deal facts, such as last contact or close date. Research can check them across your deals." }
+}
+```
+
+- **`routing.route`**: `search`, `research` or `both` (a written answer such as a prep needs both).
+- **`routing.reason`**: one of `structured`, `explicit`, `recipe`, `written_answer`, `statistical`, `deal_facts`, `counts`, `comparison`, `cause`, `multi_step`, `long_query`, `what_was_said`, `plain`. What people said stays on search. Deal facts, counts, comparisons, causes and multi-step asks need research.
+- **`routing.signals`**: the words or patterns that led to the choice.
+
+**Pick the route yourself with `route`:**
+
+- **`route: "search"`** stays on a search lane whatever the ask says.
+- **`route: "research"`** hands the query to a research job, on every workspace. The answer has `mode_ran: "research"`, no rows, and `research: { research_id, chat_id, status, poll }`.
+- **`route: "auto"`** (the default) reads the ask. On a workspace that has search-to-research routing on, the server starts the job itself. Where it is off, the search runs and the answer carries a `research_offer`. A query longer than a search lane reads also goes to research.
+
+**`research_offer`** is `{ reason }`: one plain sentence on why research could answer better. It appears only on a `route: "auto"` search answer. To take the offer, send the same question with `route: "research"` and `from_query_id` set to the answer's `query_id`.
+
+**Read the job** with `GET /research/{research_id}` (add `?wait_ms=45000` to block until it settles), MCP `get_research`, or `POST /search/query` with only `research_id`. The body has `status` (`running`, `needs_input`, `complete`, `failed` or `canceled`) and, once complete, `answer` with `text`, `content_blocks` and `follow_ups`.
+
+```
+POST /search/query
+{ "query": "Which objections come up before a deal stalls in security review?", "route": "research" }
+->  { "success": true, "mode_ran": "research", "results": [],
+      "research": { "research_id": "...", "chat_id": "...", "status": "running",
+                    "poll": "Poll GET /research/:id (add ?wait_ms=<ms>, max 45000, to block until it settles)." } }
+
+GET /research/{research_id}?wait_ms=45000
+->  { "research_id": "...", "status": "complete", "answer": { "text": "...", "partial": false, "follow_ups": [] } }
+```
+
+**Notes on a handoff:**
+
+- A handoff from `search.query` starts the job without clarifying questions. Start one yourself with `POST /research` (MCP `start_research`) if you want to answer them. That start is deprecated in favour of `route: "research"`, and removal is not before 2026-11-23.
+- A job spends the workspace's monthly research cap. A repeat of a question the workspace already had answered returns the finished job (`cache_hit: true`) and spends nothing.
+- A credential that cannot start a job (it needs `conversations:write`), or a quota or setup refusal, does not fail the call. The search runs and a note says why.
+- `from_query_id` is not a parameter of the MCP `search_customers` tool. `route` is.
+
+**The fast lane's own escalation.** When the question needs decomposition or a "why," the lane returns `detail.internal.status: "unsupported"` and `detail.escalate_to_chat: true` rather than forcing a bad SQL answer. The field keeps its old name. `detail.escalate_reason` says why, and for a part the lane could not answer it points to research. Treat the flag as the signal to send the same question with `route: "research"`.
 
 ```
 POST /search/query  { "query": "Why are our enterprise deals stalling at security review this quarter?" }
-->  { "detail": { "internal": { "status": "unsupported" }, "escalate_to_chat": true,
-      "message": "This needs a multi-step investigation — ask it as a Chat." } }
+->  { "detail": { "internal": { "status": "unsupported" }, "escalate_to_chat": true } }
 
-# then, same question, agentic lane:
-POST /chat    { "input": "Why are our enterprise deals stalling at security review this quarter?" }
-->  { "chat_id": "...", "run_id": "...", "read_url": "...", "stream_url": "...", "resume_url": "..." }
+# then, the same question, as a research job:
+POST /search/query  { "query": "Why are our enterprise deals stalling at security review this quarter?", "route": "research" }
 ```
 
-See [Agentic Chat](agentic-chat.md) for the poll/stream loop that finishes the job.
+## <a id="what-to-ask-next"></a>What to ask next: `GET /search/suggestions`
+
+One read returns the questions worth asking next, as ready-made recipes. Scope `data:read`. Over MCP it is the resource `suggestions://current`.
+
+```json
+{
+  "for_you": [
+    { "recipe_id": "stalled-deals", "kind": "try", "reason": "3 deals stuck in Proposal for 30+ days", "fills": {} }
+  ],
+  "library": [ { "id": "stalled-deals", "title": "...", "route": "research", "search": { "question": "..." } } ],
+  "generated_at": "2026-11-18T09:00:00.000Z"
+}
+```
+
+- **`for_you`**: up to 4 recipes ranked for the caller. Each is `{ recipe_id, kind, reason, fills }`. `kind` is `used` (the caller ran it), `team` (the team runs it) or `try` (the workspace's data says it is worth a look). `reason` is a plain sentence.
+- **`library`**: every recipe. Each has `id`, `title`, `blurb`, `category`, `needs` (the data it reads), `route` (`search`, `research` or `both`) and `search.question`, the text to send to `search.query`. A `{key}` in the question is filled from the recipe's `fills`.
+- **`pending: true`**: the workspace's data rows are still being worked out. Read again in a few seconds.
+- **`setup_needed`**: present only when no data source is connected. It carries a message and a link for the user.
+- **`hidden_recipe_ids`**: recipes the caller hid for 30 days. Present only when there are some.
+- **A new workspace** with nothing to rank and no runs gets four featured recipes.
+
+Send a recipe's question to `search.query` with `recipe_id` set to the recipe's id. The server then counts the run for that recipe. It stores no question text with it. A `recipe_id` that is not in the library is refused with a `400`.
 
 ## <a id="what-is-gone"></a>What is gone
 
 Two features of the old `search.run` were removed with it, and neither has a drop-in replacement on this lane:
 
-- **`mode: "blended"`** — the web + news fan-out that returned `external` citations alongside your rows, plus `external_limit`, `external_omitted` and `sources_timed_out`. For synchronous market signal, call `external_search.execute` directly; for a market question answered *in context with your data*, ask it as a [Chat](agentic-chat.md).
-- **`synthesize: true`** and the `synthesis` block — the one-paragraph headline over the rows. Prose is Chat's job. `detail.message` still gives you the one-line summary.
+- **`mode: "blended"`**: the web + news fan-out that returned `external` citations alongside your rows, plus `external_limit`, `external_omitted` and `sources_timed_out`. For synchronous market signal, call `external_search.execute` directly; for a market question answered *in context with your data*, start a [research job](#routing-and-research).
+- **`synthesize: true`** and the `synthesis` block: the one-paragraph headline over the rows. For a short cited answer over the rows, send `answer: true`. `detail.message` still gives you the one-line summary.
 
 ## Paste this into Claude
 
@@ -175,6 +243,6 @@ Return the matching rows AND the SQL you ran. If the result hit the row cap, say
 ## See also
 
 - [Quick lookup (fast lane)](../pipeline-pulse/quick-lookup-fast-lane.md) — the paste-ready prompt version of this door.
-- [Agentic Chat](agentic-chat.md) — where an `escalate_to_chat` ask goes to get finished.
+- [Routing and research](#routing-and-research): where an `escalate_to_chat` ask goes to get finished.
 - The sibling lanes of the same verb: [Structured search](structured-search.md) (typed filters + aggregations instead of prose) and [Semantic search](semantic-search.md) (meaning over the call corpus).
 - [Agent platform overview](README.md) — the doors, the scopes, the surface.
