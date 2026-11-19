@@ -34,8 +34,8 @@ One verb, three lanes. `mode: "fuzzy"` is this one; the siblings are [structured
 | `async` | bool | `false` | return a job handle instead of blocking — see [Broad asks](#broad-asks) |
 | `job_id` | string | — | poll a handle from a previous `async` call |
 | `route` | `auto` \| `search` \| `research` | `auto` | pass `research` to start a research job, or `search` to stay on a search lane. See [Routing and research](#routing-and-research) |
-| `from_query_id` | string (UUID) |: | REST: the `query_id` of the earlier answer whose `research_offer` you are taking. Send it with `route: "research"` |
-| `research_id` | string (UUID) |: | poll a research job this call started. Needs `conversations:read` |
+| `from_query_id` | string (UUID) | none | REST: the `query_id` of the earlier answer whose `research_offer` you are taking. Send it with `route: "research"` |
+| `research_id` | string (UUID) | none | poll a research job this call started. Needs `conversations:read` |
 
 **REST:**
 
