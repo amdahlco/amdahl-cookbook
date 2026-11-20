@@ -67,13 +67,6 @@ Weekly health, risk surfacing, zombie cleanup, and fast lookups — all on a cad
 - [Stalled pipeline triage](pipeline-pulse/stalled-pipeline-triage.md) — chase / nurture / close-lost, with the honest verbatim "why it died" on each loss.
 - [Quick lookup (fast lane)](pipeline-pulse/quick-lookup-fast-lane.md) — one concrete question, one synchronous `search_customers` call: the rows plus the SQL it ran, over your own data. For "get me the number," not a multi-step investigation.
 
-## Pages & dashboards (2)
-
-Turn an answer into a real, designed Page in your console — a workspace data UI over your live tenant data, not a chat transcript — and embed it live anywhere. Page authoring is a **console capability** (the `pages` MCP tool was retired and the endpoints behind the console aren't reachable with an external API key), so these plays have Claude draft the page spec and you create it in the console's Pages surface. See the [section README](pages-and-dashboards/README.md) for the three page layouts (dashboard / single / document) and the [create-a-page command](../plugins/amdahl-gtm/commands/create-page.md) for the full contract.
-
-- [Build a markdown report page](pages-and-dashboards/markdown-report-page.md) — publish a written deliverable (competitive brief, account one-pager, positioning memo) as a `document`-layout Page: a centered prose column built from `Markdown` blocks, no SQL required.
-- [Embed a live page](pages-and-dashboards/embed-a-page.md) — build a Page, then mint a self-scoped, signed, short-lived embed link to drop it live into another site. Fails closed by design; public/workspace embeds are admin-gated; rotating the per-tenant secret revokes every embed at once.
-
 ## Knowledge sync (1)
 
 Mirror your Amdahl knowledge base into a Notion database in your own workspace — set it up once, then every document you promote in Amdahl shows up (and stays current) in Notion automatically. See the [section README](knowledge-sync/README.md).
