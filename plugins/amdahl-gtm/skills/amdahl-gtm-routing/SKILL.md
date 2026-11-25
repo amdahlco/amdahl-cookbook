@@ -15,7 +15,7 @@ The server lists one tool per operation. The ones this skill routes to: **`optim
 
 | The user wants… | Use |
 |---|---|
-| Write outbound emails or LinkedIn messages | `optimize_message` for one; `optimize_message_batch`, then `get_message_batch`, for a list. A list of any size is one batch call (up to 500 items), including a 3-to-5 test batch: a loop of `optimize_message` writes one message every 1 to 2 minutes. |
+| Write outbound emails or LinkedIn messages | `optimize_message` for one; `optimize_message_batch`, then `get_message_batch`, for a list. A list of any size is one batch call (up to 500 items), including a 3-to-5 test batch. A loop of `optimize_message` writes one message per call, so a long list takes hours. |
 | A quick data lookup or fast answer ("just get me the number / the rows", a single fact) | `search_customers` { query, mode: "fuzzy" }. SYNCHRONOUS: returns rows + the SQL it ran in ONE call, no polling. Check `detail.uncovered` before presenting it as complete: a non-empty array names a part of the ask that produced no answer. There is no `blended` mode and no `synthesize`. |
 | A deterministic slice or an aggregate (exact filters, group-bys, metrics) | `search_customers` { mode: "filter" } with typed `filters` + `group_by`/`metrics`. The compiled SQL comes back as the receipt. Discover the field vocabulary first with `list_search_fields`. |
 | "What do customers say about X" / any meaning-shaped ask no column encodes | `search_customers` { mode: "semantic" }: ranked matches over the call corpus; read `mode_ran` + `freshness` before trusting the results. |
