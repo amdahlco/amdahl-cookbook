@@ -14,7 +14,7 @@ Run the Amdahl connection health check. Be concise — report status as a short 
 2. **Tenant readiness.** Report what's connected and what's on file:
    - From the same result: `connections.total` sources, `connections.healthy` of them healthy, and each entry in `connections.needs_attention` by `name` and `status`. A source that needs attention is the usual reason data looks thin.
    - Then one read for volume: `search_customers` { mode: "fuzzy", query: "how many customer interactions do we have on file, and how many in the last 30 days" }. If it's empty or thin, say so plainly: the divergence map will be light until data syncs.
-   - Note that brand voice / ICP live server-side and are picked up automatically by deep runs (`start_chat`); if `/amdahl-gtm:draft` output reads generic, the voice profile is still filling in.
+   - Note that brand voice / ICP live server-side in the workspace story, which `get_story` reads; if `/amdahl-gtm:draft` output reads generic, the story is still filling in.
 
 3. **No workspace yet?** If sign-in ends on a page that says **Join the beta** (or **Create a workspace first**), the user has no Amdahl workspace yet. Point them to https://console.amdahl.ai/new to join the beta waitlist (or create the workspace, if they are approved), then re-run `/amdahl-gtm:setup`. If their company already uses Amdahl, an admin there can add them instead.
 

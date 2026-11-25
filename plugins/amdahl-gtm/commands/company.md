@@ -5,16 +5,16 @@ argument-hint: <company name or domain>
 
 You are running the Amdahl "deep-dive on an account" play for **$ARGUMENTS**.
 
-Use the connected **Amdahl** MCP tools — they fuse this tenant's own CRM + call transcripts with the public web. Prefer them over generic `web_search`; `web_search` is only for raw public facts with no tenant angle. If the Amdahl server isn't connected, stop and tell the user to run `/amdahl-gtm:setup` first.
+Use the connected **Amdahl** MCP tools for this tenant's own CRM + call transcripts. Prefer them over generic `web_search` for anything with a tenant angle. Amdahl has no public web lane, so public facts come from `web_search`. If the Amdahl server isn't connected, stop and tell the user to run `/amdahl-gtm:setup` first.
 
 **Disambiguate first.** If "$ARGUMENTS" is a nickname or an ambiguous name, resolve it to a domain (ask the user if unsure). If it's a giant multi-BU company, ask which division to focus on before you spend the calls.
 
 **Wave 1 — gather in parallel:**
 - Internal history → `search_customers` over the interactions + deals surfaces (mode `fuzzy` to describe the ask, `filter` for an exact slice): every deal, call, support ticket, email, CRM note. Surface deal stage, ACV, who we've talked to (with roles), the last 3 meaningful things said on calls (verbatim, speaker + date), open objections, sentiment trajectory.
-- Public signal (last 90 days first, last 12 months if thin) → `start_chat`: ask for funding, hiring patterns, product launches, leadership changes, M&A, and public commentary from their execs. The Master holds the web fan-out; poll `get_chat_run`. There is no synchronous enrichment verb.
+- Public signal (last 90 days first, last 12 months if thin) → `web_search`: funding, hiring patterns, product launches, leadership changes, M&A, and public commentary from their execs. Cite each as a public source.
 - Adjacent mentions → `search_customers` { mode: "semantic" }: any time this company has come up on calls or notes from OTHER accounts — partners, customers, prospects mentioning them.
 
-If the gathers keep coming back thin or the account is sprawling, escalate: `start_chat` with the whole brief as the input and poll `get_chat_run` — the Master decomposes it server-side.
+If the internal gathers keep coming back thin or the account is sprawling, escalate the internal half: `start_research` with the whole brief as the question, then poll `get_research` for the cited answer. Research reads your own calls, accounts and deals only.
 
 **Wave 2 — synthesize into ONE page (under 400 words), every section named:**
 1. **Snapshot** — what they do, where they are in the buying journey with us, deal stage / status (3 lines).

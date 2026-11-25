@@ -3,14 +3,14 @@ description: Competitor deep-dive — their public posture vs. how buyers actual
 argument-hint: <competitor name or domain>
 ---
 
-Run the Amdahl "competitor deep-dive" play for **$ARGUMENTS**. Use the connected **Amdahl** MCP tools (CRM + calls fused with the public web), not generic `web_search`. If the server isn't connected, tell the user to run `/amdahl-gtm:setup`.
+Run the Amdahl "competitor deep-dive" play for **$ARGUMENTS**. Use the connected **Amdahl** MCP tools for everything from your own CRM + calls. Amdahl has no public web lane, so their public posture comes from `web_search`. If the server isn't connected, tell the user to run `/amdahl-gtm:setup`.
 
 **Wave 1 — gather in parallel:**
-- Public posture → `start_chat`: their positioning, pricing posture, recent launches, funding, messaging, who they say they're for — and the divergence against what your buyers say about them.
+- Public posture → `web_search`: their positioning, pricing posture, recent launches, funding, messaging, who they say they're for.
 - Call reality → `search_customers` { mode: "semantic" } and `search_customers` { mode: "fuzzy" }: every time this competitor comes up on our calls — who raised them, in what context (incumbent, active eval, late entrant), what buyers actually said about them. Pull verbatim quotes with role + date.
 - Trend → `search_customers` with `group_by` over time: are they showing up earlier / later, more / less, in which segments?
 
-If the synthesis needs real decomposition (many segments, long history), escalate to `start_chat` with the whole ask.
+If the synthesis needs real decomposition (many segments, long history), start a research job on the call side: `start_research` with the whole ask, then poll `get_research`.
 
 **Wave 2 — synthesize:**
 1. **Public posture** in 3 lines — how they sell themselves.

@@ -10,7 +10,7 @@ The copy to pressure-test is: **$ARGUMENTS**
 
 **Wave 1 — gather:**
 - Customer voice → `search_customers` { mode: "semantic" }: how our actual customers describe us, this category, and the problem — on calls, verbatim, with roles. Pull the recurring phrases.
-- Our stated positioning and brand voice live server-side — if the audit should be checked against the workspace's positioning canon (not just the pasted copy), run the whole audit as `start_chat` instead: the Master pulls the workspace context itself. Otherwise audit the pasted copy against the customer voice you gathered.
+- Our stated positioning and brand voice live server-side. If the audit should be checked against the workspace's positioning canon (not just the pasted copy), read it with `get_story` and audit against that as well. Otherwise audit the pasted copy against the customer voice you gathered.
 
 **Wave 2 — audit, line by line:**
 1. Where the copy **matches** customer language (quote both sides).
