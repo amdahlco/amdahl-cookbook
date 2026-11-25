@@ -9,12 +9,12 @@ Topic + channel: **$ARGUMENTS** (default channel: LinkedIn post.)
 
 **Wave 1 — gather:**
 - Customer language → `search_customers` { mode: "semantic" }: how buyers actually talk about this topic on our calls. Pull at least one verbatim phrase (anonymized) that captures it.
-- Voice → the brand voice profile lives server-side. For a quick draft, write from the customer language you gathered and say so. For an on-voice draft, run it as `start_chat` — the Master drafts with the workspace's voice profile applied.
+- Voice and offer → `get_story`: the workspace's approved story (value lines, offers, differentiation, audience and proof).
 
 **Wave 2 — draft:**
-- Write the piece anchored on the verbatim buyer phrase (anonymized), ending in a real question — not a CTA cliché.
-- LinkedIn: under 150 words, no emoji, no hashtags. Email: subject + 2–3 tight sentences. Blog: outline + opening.
+- An outbound email or LinkedIn message to a person → Amdahl writes it. Send the buyer phrase and the story lines as `facts` in `context`, and the ask in `rules`. One recipient: `optimize_message`. A list of recipients: one `optimize_message_batch` call (up to 500 items), then `get_message_batch`. Do not loop `optimize_message` over a list. The bundled `amdahl` skill says how to send the context and relay the result.
+- A LinkedIn post or a blog → write the piece anchored on the verbatim buyer phrase (anonymized), ending in a real question, not a CTA cliché. LinkedIn: under 150 words, no emoji, no hashtags. Blog: outline + opening.
 - Show the verbatim phrase you anchored on, separately, so the user can verify it's real.
-- Stop there — the draft lives in this conversation. To keep it, re-run it as a Chat with `write_outputs` on (it lands a knowledge-base version the user promotes in the console); suggest that if they ask where it goes.
+- Stop there: the draft lives in this conversation.
 
 Full recipe + variations — `prompts/content-and-outbound/draft-linkedin-post-grounded.md`.
