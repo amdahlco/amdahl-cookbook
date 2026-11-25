@@ -1,5 +1,7 @@
 # Notify the workspace team
 
+> **Chat and Routines are retired.** `start_chat` and `create_routine` are no longer MCP tools, and the Chat and Routine routes are off the public API, so the Chat and Routine paths on this page no longer run. The Workflow path, authored in the console, is the one that remains.
+
 **What this does**: Gets an email to people on your Amdahl workspace — by asking your agent. A Chat (or a scheduled Routine) performs the send through the platform's notifications primitive, and the run can confirm it landed without double-sending. It's the "tell my team" last mile: the run discovers who it can email, sends, then verifies delivery and checks the rate caps.
 
 **When to use it**: "Claude just finished the win-loss postmortem (or the weekly pipeline recap, or a competitor brief) — now email the two-line takeaway to the deal owner and my manager." Anything where the output of a GTM play should land in a teammate's inbox, not just the chat.

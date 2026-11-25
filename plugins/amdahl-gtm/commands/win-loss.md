@@ -22,6 +22,6 @@ Run the Amdahl "why we lost this deal" postmortem for **$ARGUMENTS**. Use the co
 6. CRM reason vs. call reality — same or divergent?
 7. The 3 do-overs — each tied to a specific moment in the timeline.
 
-If the deal is long or the record is dense, escalate the whole postmortem to `start_chat` and poll it with `get_chat_run` — this is exactly the shape a server-side investigation is for.
+If the deal is long or the record is dense, escalate the whole postmortem to `start_research` and poll it with `get_research`: one question investigated end to end over your own data, with a cited answer.
 
 If a competitor showed up late (after stage 3), chase WHY they got the late look — it's almost always something WE did that opened the door. Full recipe + variations — `prompts/win-loss-deal-postmortem/why-we-lost-this-deal.md`.

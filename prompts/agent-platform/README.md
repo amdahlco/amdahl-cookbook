@@ -15,7 +15,7 @@ All three synchronous lanes are the SAME endpoint. `search.query` (`POST /search
 
 ## No prerequisite — this surface ships to every workspace
 
-Everything in this section (the per-operation MCP tools such as `search_customers`, `start_chat`, `create_routine` and `create_agent`; `POST /search/query`, `GET /search/fields`, `POST /chat`, `/routines`, `/subscriptions`, `/agents` on REST) is available on **every** workspace.
+Everything in this section that is still live (the per-operation MCP tools such as `search_customers`, `start_research`, `get_research` and `optimize_message`; `POST /search/query` and `GET /search/fields` on REST) is available on **every** workspace. The Chat, Routine and saved-agent tools and routes are retired (see the note above).
 
 Earlier versions of this page named an `agent_v2` per-workspace flag and a `403` with `error.code: "feature_disabled"`. **Neither exists** — the flag is retired and there is one code path. If you built a capability check around that error, delete it.
 

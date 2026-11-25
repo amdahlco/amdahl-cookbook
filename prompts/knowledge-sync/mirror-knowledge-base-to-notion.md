@@ -1,5 +1,7 @@
 # Mirror your knowledge base to Notion
 
+> **Chat and Routines are retired.** `start_chat` and `create_routine` are no longer MCP tools, and the Chat and Routine routes are off the public API. The steps on this page that feed the knowledge base from a Chat or Routine with `write_outputs` no longer run.
+
 **What this does**: Keeps a Notion database in your own workspace continuously in sync with your Amdahl knowledge base — one-way, Amdahl -> Notion. You connect Notion once and pick a parent page; from then on every document you promote in Amdahl mirrors itself into Notion automatically, with no human in the loop. It's the "make our KB readable where my team already works" primitive: set it up, then forget it.
 
 **When to use it**: Your team lives in Notion but your canonical reference library — competitive briefs, positioning memos, account one-pagers, the research your agents keep producing — lives in Amdahl. Instead of copy-pasting, you mirror it: write or promote a doc in Amdahl, and it shows up (and stays current) in a Notion database your whole team can read and link to.
