@@ -1,4 +1,3 @@
-@AGENTS.md
 # Amdahl Cookbook: notes for contributors
 
 ## Opening a PR
